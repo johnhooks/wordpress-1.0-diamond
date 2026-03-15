@@ -1,0 +1,6 @@
+storage/
+.env
+.claude/
+.idea/
+docs/plans/.wip
+press
