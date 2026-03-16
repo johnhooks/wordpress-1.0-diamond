@@ -31,7 +31,7 @@ func Load(envPath string) (*Config, error) {
 		AppHost:    getEnv("APP_HOST", "localhost"),
 		AppPort:    getEnvInt("APP_PORT", 3000),
 		AppDebug:   getEnvBool("APP_DEBUG", false),
-		SecretKey:  getEnv("SECRET_KEY", "changeme"),
+		SecretKey:  getEnv("SECRET_KEY", ""),
 		DBPath:     getEnv("DB_PATH", "./storage/press.db"),
 		UploadsDir: getEnv("UPLOADS_DIR", "./storage/uploads"),
 		Theme:      getEnv("THEME", "default"),
