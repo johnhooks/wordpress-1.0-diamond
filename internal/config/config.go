@@ -16,6 +16,7 @@ type Config struct {
 	SecretKey  string
 	DBPath     string
 	UploadsDir string
+	PublicDir  string
 	Theme      string
 }
 
@@ -34,6 +35,7 @@ func Load(envPath string) (*Config, error) {
 		SecretKey:  getEnv("SECRET_KEY", ""),
 		DBPath:     getEnv("DB_PATH", "./storage/press.db"),
 		UploadsDir: getEnv("UPLOADS_DIR", "./storage/uploads"),
+		PublicDir:  getEnv("PUBLIC_DIR", "./public"),
 		Theme:      getEnv("THEME", "default"),
 	}
 

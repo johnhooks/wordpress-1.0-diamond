@@ -67,7 +67,9 @@ func (r *CommentsRepository) Create(ctx context.Context, comment *model.Comment)
 	comment.CommentID = id
 
 	if comment.CommentApproved == "1" {
-		r.db.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count + 1 WHERE id = ?", comment.CommentPostID)
+		if _, err := r.db.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count + 1 WHERE id = ?", comment.CommentPostID); err != nil {
+			return errors.Internal(err, errors.ErrQueryFailed)
+		}
 	}
 	return nil
 }
@@ -162,9 +164,13 @@ func (r *CommentsRepository) Update(ctx context.Context, comment *model.Comment)
 
 	if old.CommentApproved != comment.CommentApproved {
 		if comment.CommentApproved == "1" {
-			r.db.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count + 1 WHERE id = ?", comment.CommentPostID)
+			if _, err := r.db.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count + 1 WHERE id = ?", comment.CommentPostID); err != nil {
+				return nil, errors.Internal(err, errors.ErrQueryFailed)
+			}
 		} else if old.CommentApproved == "1" {
-			r.db.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count - 1 WHERE id = ? AND comment_count > 0", comment.CommentPostID)
+			if _, err := r.db.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count - 1 WHERE id = ? AND comment_count > 0", comment.CommentPostID); err != nil {
+				return nil, errors.Internal(err, errors.ErrQueryFailed)
+			}
 		}
 	}
 	return comment, nil
@@ -176,19 +182,34 @@ func (r *CommentsRepository) Delete(ctx context.Context, id int64) (*model.Comme
 		return nil, err
 	}
 
+	tx, err := r.db.BeginTxx(ctx, nil)
+	if err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
+	defer tx.Rollback()
+
 	// Re-parent child comments
-	r.db.ExecContext(ctx, "UPDATE wp_comments SET comment_parent = ? WHERE comment_parent = ?", comment.CommentParent, id)
+	if _, err := tx.ExecContext(ctx, "UPDATE wp_comments SET comment_parent = ? WHERE comment_parent = ?", comment.CommentParent, id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
 
 	// Delete comment metadata
-	r.db.ExecContext(ctx, "DELETE FROM wp_commentmeta WHERE comment_id = ?", id)
+	if _, err := tx.ExecContext(ctx, "DELETE FROM wp_commentmeta WHERE comment_id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
 
-	_, err = r.db.ExecContext(ctx, "DELETE FROM wp_comments WHERE comment_id = ?", id)
-	if err != nil {
+	if _, err := tx.ExecContext(ctx, "DELETE FROM wp_comments WHERE comment_id = ?", id); err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
 	}
 
 	if comment.CommentApproved == "1" {
-		r.db.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count - 1 WHERE id = ? AND comment_count > 0", comment.CommentPostID)
+		if _, err := tx.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count - 1 WHERE id = ? AND comment_count > 0", comment.CommentPostID); err != nil {
+			return nil, errors.Internal(err, errors.ErrQueryFailed)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
 	}
 	return comment, nil
 }
@@ -208,7 +229,9 @@ func (r *CommentsRepository) Approve(ctx context.Context, id int64) error {
 		return errors.Internal(err, errors.ErrQueryFailed)
 	}
 
-	r.db.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count + 1 WHERE id = ?", comment.CommentPostID)
+	if _, err := r.db.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count + 1 WHERE id = ?", comment.CommentPostID); err != nil {
+		return errors.Internal(err, errors.ErrQueryFailed)
+	}
 	return nil
 }
 
@@ -227,6 +250,8 @@ func (r *CommentsRepository) Unapprove(ctx context.Context, id int64) error {
 		return errors.Internal(err, errors.ErrQueryFailed)
 	}
 
-	r.db.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count - 1 WHERE id = ? AND comment_count > 0", comment.CommentPostID)
+	if _, err := r.db.ExecContext(ctx, "UPDATE wp_posts SET comment_count = comment_count - 1 WHERE id = ? AND comment_count > 0", comment.CommentPostID); err != nil {
+		return errors.Internal(err, errors.ErrQueryFailed)
+	}
 	return nil
 }

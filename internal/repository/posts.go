@@ -49,15 +49,15 @@ func (r *PostsRepository) Create(ctx context.Context, post *model.Post) error {
 	result, err := r.db.NamedExecContext(ctx, `
 		INSERT INTO wp_posts (
 			post_author, post_date, post_date_gmt, post_content, post_title,
-			post_excerpt, post_status, comment_status, ping_status, post_password,
-			post_name, to_ping, pinged, post_modified, post_modified_gmt,
-			post_content_filtered, post_parent, guid, menu_order, post_type,
+			post_excerpt, post_status, comment_status, post_password,
+			post_name, post_modified, post_modified_gmt,
+			post_parent, guid, menu_order, post_type,
 			post_mime_type, comment_count
 		) VALUES (
 			:post_author, :post_date, :post_date_gmt, :post_content, :post_title,
-			:post_excerpt, :post_status, :comment_status, :ping_status, :post_password,
-			:post_name, :to_ping, :pinged, :post_modified, :post_modified_gmt,
-			:post_content_filtered, :post_parent, :guid, :menu_order, :post_type,
+			:post_excerpt, :post_status, :comment_status, :post_password,
+			:post_name, :post_modified, :post_modified_gmt,
+			:post_parent, :guid, :menu_order, :post_type,
 			:post_mime_type, :comment_count
 		)`, post)
 	if err != nil {
@@ -189,12 +189,12 @@ func (r *PostsRepository) Update(ctx context.Context, post *model.Post) (*model.
 		UPDATE wp_posts SET
 			post_author = :post_author, post_date = :post_date, post_date_gmt = :post_date_gmt,
 			post_content = :post_content, post_title = :post_title, post_excerpt = :post_excerpt,
-			post_status = :post_status, comment_status = :comment_status, ping_status = :ping_status,
-			post_password = :post_password, post_name = :post_name, to_ping = :to_ping,
-			pinged = :pinged, post_modified = :post_modified, post_modified_gmt = :post_modified_gmt,
-			post_content_filtered = :post_content_filtered, post_parent = :post_parent,
-			guid = :guid, menu_order = :menu_order, post_type = :post_type,
-			post_mime_type = :post_mime_type, comment_count = :comment_count
+			post_status = :post_status, comment_status = :comment_status,
+			post_password = :post_password, post_name = :post_name,
+			post_modified = :post_modified, post_modified_gmt = :post_modified_gmt,
+			post_parent = :post_parent, guid = :guid, menu_order = :menu_order,
+			post_type = :post_type, post_mime_type = :post_mime_type,
+			comment_count = :comment_count
 		WHERE id = :id`, post)
 	if err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
@@ -212,14 +212,27 @@ func (r *PostsRepository) Delete(ctx context.Context, id int64) (*model.Post, er
 		return nil, err
 	}
 
-	_, err = r.db.ExecContext(ctx, "DELETE FROM wp_posts WHERE id = ?", id)
+	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
 	}
+	defer tx.Rollback()
 
-	// Clean up related data
-	r.db.ExecContext(ctx, "DELETE FROM wp_postmeta WHERE post_id = ?", id)
-	r.db.ExecContext(ctx, "DELETE FROM wp_comments WHERE comment_post_id = ?", id)
-	r.db.ExecContext(ctx, "DELETE FROM wp_term_relationships WHERE object_id = ?", id)
+	if _, err := tx.ExecContext(ctx, "DELETE FROM wp_postmeta WHERE post_id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM wp_comments WHERE comment_post_id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM wp_term_relationships WHERE object_id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM wp_posts WHERE id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
 	return post, nil
 }

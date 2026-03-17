@@ -222,27 +222,53 @@ func (r *UsersRepository) Delete(ctx context.Context, id int64, reassignTo int64
 		return nil, err
 	}
 
-	_, err = r.db.ExecContext(ctx, "DELETE FROM wp_users WHERE id = ?", id)
+	tx, err := r.db.BeginTxx(ctx, nil)
 	if err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
 	}
+	defer tx.Rollback()
 
 	if reassignTo > 0 {
-		r.db.ExecContext(ctx, "UPDATE wp_posts SET post_author = ? WHERE post_author = ?", reassignTo, id)
-		r.db.ExecContext(ctx, "UPDATE wp_links SET link_owner = ? WHERE link_owner = ?", reassignTo, id)
+		if _, err := tx.ExecContext(ctx, "UPDATE wp_posts SET post_author = ? WHERE post_author = ?", reassignTo, id); err != nil {
+			return nil, errors.Internal(err, errors.ErrQueryFailed)
+		}
+		if _, err := tx.ExecContext(ctx, "UPDATE wp_links SET link_owner = ? WHERE link_owner = ?", reassignTo, id); err != nil {
+			return nil, errors.Internal(err, errors.ErrQueryFailed)
+		}
 	} else {
 		var postIDs []int64
-		r.db.SelectContext(ctx, &postIDs, "SELECT id FROM wp_posts WHERE post_author = ?", id)
-		for _, pid := range postIDs {
-			r.db.ExecContext(ctx, "DELETE FROM wp_postmeta WHERE post_id = ?", pid)
-			r.db.ExecContext(ctx, "DELETE FROM wp_comments WHERE comment_post_id = ?", pid)
-			r.db.ExecContext(ctx, "DELETE FROM wp_term_relationships WHERE object_id = ?", pid)
+		if err := tx.SelectContext(ctx, &postIDs, "SELECT id FROM wp_posts WHERE post_author = ?", id); err != nil {
+			return nil, errors.Internal(err, errors.ErrQueryFailed)
 		}
-		r.db.ExecContext(ctx, "DELETE FROM wp_posts WHERE post_author = ?", id)
-		r.db.ExecContext(ctx, "DELETE FROM wp_links WHERE link_owner = ?", id)
+		for _, pid := range postIDs {
+			if _, err := tx.ExecContext(ctx, "DELETE FROM wp_postmeta WHERE post_id = ?", pid); err != nil {
+				return nil, errors.Internal(err, errors.ErrQueryFailed)
+			}
+			if _, err := tx.ExecContext(ctx, "DELETE FROM wp_comments WHERE comment_post_id = ?", pid); err != nil {
+				return nil, errors.Internal(err, errors.ErrQueryFailed)
+			}
+			if _, err := tx.ExecContext(ctx, "DELETE FROM wp_term_relationships WHERE object_id = ?", pid); err != nil {
+				return nil, errors.Internal(err, errors.ErrQueryFailed)
+			}
+		}
+		if _, err := tx.ExecContext(ctx, "DELETE FROM wp_posts WHERE post_author = ?", id); err != nil {
+			return nil, errors.Internal(err, errors.ErrQueryFailed)
+		}
+		if _, err := tx.ExecContext(ctx, "DELETE FROM wp_links WHERE link_owner = ?", id); err != nil {
+			return nil, errors.Internal(err, errors.ErrQueryFailed)
+		}
 	}
 
-	r.db.ExecContext(ctx, "DELETE FROM wp_usermeta WHERE user_id = ?", id)
+	if _, err := tx.ExecContext(ctx, "DELETE FROM wp_usermeta WHERE user_id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
+	if _, err := tx.ExecContext(ctx, "DELETE FROM wp_users WHERE id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
 	return user, nil
 }
 

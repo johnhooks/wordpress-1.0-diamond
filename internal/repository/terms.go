@@ -252,15 +252,27 @@ func (r *TermsRepository) Delete(ctx context.Context, id int64) (*model.Term, er
 		TermTaxonomyID int64 `db:"term_taxonomy_id"`
 		Parent         int64 `db:"parent"`
 	}
-	tx.Select(&ttRows, "SELECT term_taxonomy_id, parent FROM wp_term_taxonomy WHERE term_id = ?", id)
+	if err := tx.Select(&ttRows, "SELECT term_taxonomy_id, parent FROM wp_term_taxonomy WHERE term_id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
 	for _, tt := range ttRows {
-		tx.Exec("UPDATE wp_term_taxonomy SET parent = ? WHERE parent = ?", tt.Parent, tt.TermTaxonomyID)
+		if _, err := tx.Exec("UPDATE wp_term_taxonomy SET parent = ? WHERE parent = ?", tt.Parent, tt.TermTaxonomyID); err != nil {
+			return nil, errors.Internal(err, errors.ErrQueryFailed)
+		}
 	}
 
-	tx.Exec("DELETE FROM wp_term_relationships WHERE term_taxonomy_id IN (SELECT term_taxonomy_id FROM wp_term_taxonomy WHERE term_id = ?)", id)
-	tx.Exec("DELETE FROM wp_term_taxonomy WHERE term_id = ?", id)
-	tx.Exec("DELETE FROM wp_termmeta WHERE term_id = ?", id)
-	tx.Exec("DELETE FROM wp_terms WHERE term_id = ?", id)
+	if _, err := tx.Exec("DELETE FROM wp_term_relationships WHERE term_taxonomy_id IN (SELECT term_taxonomy_id FROM wp_term_taxonomy WHERE term_id = ?)", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
+	if _, err := tx.Exec("DELETE FROM wp_term_taxonomy WHERE term_id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
+	if _, err := tx.Exec("DELETE FROM wp_termmeta WHERE term_id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
+	if _, err := tx.Exec("DELETE FROM wp_terms WHERE term_id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
 
 	if err := tx.Commit(); err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
@@ -298,8 +310,12 @@ func (r *TermsRepository) SetPostTerms(ctx context.Context, postID int64, termTa
 	defer tx.Rollback()
 
 	var oldTTIDs []int64
-	tx.Select(&oldTTIDs, "SELECT term_taxonomy_id FROM wp_term_relationships WHERE object_id = ?", postID)
-	tx.Exec("DELETE FROM wp_term_relationships WHERE object_id = ?", postID)
+	if err := tx.Select(&oldTTIDs, "SELECT term_taxonomy_id FROM wp_term_relationships WHERE object_id = ?", postID); err != nil {
+		return errors.Internal(err, errors.ErrQueryFailed)
+	}
+	if _, err := tx.Exec("DELETE FROM wp_term_relationships WHERE object_id = ?", postID); err != nil {
+		return errors.Internal(err, errors.ErrQueryFailed)
+	}
 
 	for i, ttID := range termTaxonomyIDs {
 		_, err = tx.Exec(
@@ -312,10 +328,14 @@ func (r *TermsRepository) SetPostTerms(ctx context.Context, postID int64, termTa
 	}
 
 	for _, ttID := range oldTTIDs {
-		tx.Exec("UPDATE wp_term_taxonomy SET count = (SELECT COUNT(*) FROM wp_term_relationships WHERE term_taxonomy_id = ?) WHERE term_taxonomy_id = ?", ttID, ttID)
+		if _, err := tx.Exec("UPDATE wp_term_taxonomy SET count = (SELECT COUNT(*) FROM wp_term_relationships WHERE term_taxonomy_id = ?) WHERE term_taxonomy_id = ?", ttID, ttID); err != nil {
+			return errors.Internal(err, errors.ErrQueryFailed)
+		}
 	}
 	for _, ttID := range termTaxonomyIDs {
-		tx.Exec("UPDATE wp_term_taxonomy SET count = (SELECT COUNT(*) FROM wp_term_relationships WHERE term_taxonomy_id = ?) WHERE term_taxonomy_id = ?", ttID, ttID)
+		if _, err := tx.Exec("UPDATE wp_term_taxonomy SET count = (SELECT COUNT(*) FROM wp_term_relationships WHERE term_taxonomy_id = ?) WHERE term_taxonomy_id = ?", ttID, ttID); err != nil {
+			return errors.Internal(err, errors.ErrQueryFailed)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -332,7 +352,9 @@ func (r *TermsRepository) AddTermToPost(ctx context.Context, postID, termTaxonom
 	if err != nil {
 		return errors.Internal(err, errors.ErrQueryFailed)
 	}
-	r.db.ExecContext(ctx, "UPDATE wp_term_taxonomy SET count = (SELECT COUNT(*) FROM wp_term_relationships WHERE term_taxonomy_id = ?) WHERE term_taxonomy_id = ?", termTaxonomyID, termTaxonomyID)
+	if _, err := r.db.ExecContext(ctx, "UPDATE wp_term_taxonomy SET count = (SELECT COUNT(*) FROM wp_term_relationships WHERE term_taxonomy_id = ?) WHERE term_taxonomy_id = ?", termTaxonomyID, termTaxonomyID); err != nil {
+		return errors.Internal(err, errors.ErrQueryFailed)
+	}
 	return nil
 }
 
@@ -345,7 +367,9 @@ func (r *TermsRepository) RemoveTermFromPost(ctx context.Context, postID, termTa
 	if rows == 0 {
 		return errors.NotFound(errors.ErrNotFound, "Relationship not found")
 	}
-	r.db.ExecContext(ctx, "UPDATE wp_term_taxonomy SET count = (SELECT COUNT(*) FROM wp_term_relationships WHERE term_taxonomy_id = ?) WHERE term_taxonomy_id = ?", termTaxonomyID, termTaxonomyID)
+	if _, err := r.db.ExecContext(ctx, "UPDATE wp_term_taxonomy SET count = (SELECT COUNT(*) FROM wp_term_relationships WHERE term_taxonomy_id = ?) WHERE term_taxonomy_id = ?", termTaxonomyID, termTaxonomyID); err != nil {
+		return errors.Internal(err, errors.ErrQueryFailed)
+	}
 	return nil
 }
 

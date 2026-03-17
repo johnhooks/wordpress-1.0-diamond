@@ -157,6 +157,8 @@ func (r *LinksRepository) Delete(ctx context.Context, id int64) (*model.Link, er
 	if err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
 	}
-	r.db.ExecContext(ctx, "DELETE FROM wp_term_relationships WHERE object_id = ?", id)
+	if _, err := r.db.ExecContext(ctx, "DELETE FROM wp_term_relationships WHERE object_id = ?", id); err != nil {
+		return nil, errors.Internal(err, errors.ErrQueryFailed)
+	}
 	return link, nil
 }

@@ -1,0 +1,29 @@
+{{template "header" .}}
+
+{{if .Posts}}
+{{range .Posts}}
+<div class="post" id="post-{{.ID}}">
+    <h2><a href="{{.Permalink}}">{{.Title}}</a></h2>
+    <div class="post-meta">
+        <span class="post-date">{{.Date}}</span> &middot;
+        Filed under: {{categories .CategoryNames}} &middot;
+        by {{.AuthorName}} &middot;
+        <a href="{{.Permalink}}#comments">{{.CommentCount}} Comments</a>
+    </div>
+    <div class="post-content">
+        {{.Content}}
+    </div>
+</div>
+{{end}}
+
+<div class="navigation">
+    {{if .HasPrev}}<a href="?paged={{.PrevPage}}">&laquo; Newer Posts</a>{{end}}
+    {{if and .HasPrev .HasNext}} &mdash; {{end}}
+    {{if .HasNext}}<a href="?paged={{.NextPage}}">Older Posts &raquo;</a>{{end}}
+</div>
+{{else}}
+<p>No posts found.</p>
+{{end}}
+
+{{template "sidebar" .}}
+{{template "footer" .}}

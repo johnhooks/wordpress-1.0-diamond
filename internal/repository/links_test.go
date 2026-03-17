@@ -122,6 +122,39 @@ func TestLinksRepository_VisibilityFilter(t *testing.T) {
 	}
 }
 
+func TestLinksRepository_DeleteCascadesTermRelationships(t *testing.T) {
+	database := db.SetupTestDB(t)
+	links := repository.NewLinksRepository(database)
+	terms := repository.NewTermsRepository(database)
+	ctx := context.Background()
+
+	cat := &model.Term{Name: "Blogroll", Slug: "blogroll-cascade"}
+	catTT := &model.TermTaxonomy{Taxonomy: "link_category"}
+	terms.Create(ctx, cat, catTT)
+
+	link := &model.Link{
+		LinkURL: "https://cascade.com", LinkName: "Cascade Link",
+		LinkVisible: "Y", LinkOwner: 1,
+	}
+	links.Create(ctx, link)
+	terms.AddTermToPost(ctx, link.LinkID, catTT.TermTaxonomyID)
+
+	// Verify relationship exists
+	postTerms, _ := terms.GetPostTerms(ctx, link.LinkID, "link_category")
+	if len(postTerms) != 1 {
+		t.Fatalf("expected 1 term relationship before delete, got %d", len(postTerms))
+	}
+
+	if _, err := links.Delete(ctx, link.LinkID); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	postTerms, _ = terms.GetPostTerms(ctx, link.LinkID, "link_category")
+	if len(postTerms) != 0 {
+		t.Errorf("expected 0 term relationships after link delete, got %d", len(postTerms))
+	}
+}
+
 func TestLinksRepository_CategoryFilter(t *testing.T) {
 	database := db.SetupTestDB(t)
 	links := repository.NewLinksRepository(database)

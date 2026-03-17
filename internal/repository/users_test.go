@@ -265,6 +265,116 @@ func TestUsersRepository_DeleteWithoutReassign(t *testing.T) {
 	}
 }
 
+func TestUsersRepository_DeleteCascadesPostRelated(t *testing.T) {
+	database := db.SetupTestDB(t)
+	users := repository.NewUsersRepository(database)
+	posts := repository.NewPostsRepository(database)
+	comments := repository.NewCommentsRepository(database)
+	terms := repository.NewTermsRepository(database)
+	postMeta := repository.NewPostMeta(database)
+	ctx := context.Background()
+
+	u := &model.User{UserLogin: "cascade-user", UserPass: "x", UserEmail: "cu@t.com"}
+	users.Create(ctx, u)
+
+	post := &model.Post{
+		PostAuthor: u.ID, PostTitle: "Cascade Post", PostName: "cascade-post",
+		PostContent: "x", PostStatus: "publish", PostType: "post",
+	}
+	posts.Create(ctx, post)
+
+	// Add comments, meta, and terms to the post
+	comments.Create(ctx, &model.Comment{
+		CommentPostID: post.ID, CommentAuthor: "Visitor",
+		CommentContent: "hi", CommentApproved: "1", CommentType: "comment",
+	})
+	postMeta.Set(ctx, post.ID, "custom", "value")
+
+	cat := &model.Term{Name: "UserCat", Slug: "usercat"}
+	tt := &model.TermTaxonomy{Taxonomy: "category"}
+	terms.Create(ctx, cat, tt)
+	terms.AddTermToPost(ctx, post.ID, tt.TermTaxonomyID)
+
+	// Delete without reassign
+	if _, err := users.Delete(ctx, u.ID, 0); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	// Post should be gone
+	_, err := posts.GetByID(ctx, post.ID)
+	if !errors.IsCode(err, errors.ErrPostNotFound) {
+		t.Errorf("expected post not found, got %v", err)
+	}
+
+	// Comments should be gone
+	byPost, _ := comments.GetByPostID(ctx, post.ID)
+	if len(byPost) != 0 {
+		t.Errorf("expected 0 comments, got %d", len(byPost))
+	}
+
+	// Postmeta should be gone
+	all, _ := postMeta.GetAll(ctx, post.ID)
+	if len(all) != 0 {
+		t.Errorf("expected 0 postmeta, got %d", len(all))
+	}
+
+	// Term relationships should be gone
+	postTerms, _ := terms.GetPostTerms(ctx, post.ID, "category")
+	if len(postTerms) != 0 {
+		t.Errorf("expected 0 term relationships, got %d", len(postTerms))
+	}
+}
+
+func TestUsersRepository_DeleteReassignsLinks(t *testing.T) {
+	database := db.SetupTestDB(t)
+	users := repository.NewUsersRepository(database)
+	links := repository.NewLinksRepository(database)
+	ctx := context.Background()
+
+	u1 := &model.User{UserLogin: "linkowner", UserPass: "x", UserEmail: "lo@t.com"}
+	u2 := &model.User{UserLogin: "linkreceiver", UserPass: "x", UserEmail: "lr@t.com"}
+	users.Create(ctx, u1)
+	users.Create(ctx, u2)
+
+	link := &model.Link{
+		LinkURL: "https://example.com", LinkName: "Example",
+		LinkVisible: "Y", LinkOwner: u1.ID,
+	}
+	links.Create(ctx, link)
+
+	users.Delete(ctx, u1.ID, u2.ID)
+
+	got, err := links.GetByID(ctx, link.LinkID)
+	if err != nil {
+		t.Fatalf("GetByID: %v", err)
+	}
+	if got.LinkOwner != u2.ID {
+		t.Errorf("expected link_owner %d, got %d", u2.ID, got.LinkOwner)
+	}
+}
+
+func TestUsersRepository_DeleteWithoutReassignDeletesLinks(t *testing.T) {
+	database := db.SetupTestDB(t)
+	users := repository.NewUsersRepository(database)
+	links := repository.NewLinksRepository(database)
+	ctx := context.Background()
+
+	u := &model.User{UserLogin: "linkdoomed", UserPass: "x", UserEmail: "ld@t.com"}
+	users.Create(ctx, u)
+
+	links.Create(ctx, &model.Link{
+		LinkURL: "https://doomed.com", LinkName: "Doomed",
+		LinkVisible: "Y", LinkOwner: u.ID,
+	})
+
+	users.Delete(ctx, u.ID, 0)
+
+	result, _ := links.List(ctx, query.Query{PerPage: 100})
+	if result.Total != 0 {
+		t.Errorf("expected 0 links after user delete, got %d", result.Total)
+	}
+}
+
 func TestUsersRepository_UsernameExists(t *testing.T) {
 	database := db.SetupTestDB(t)
 	users := repository.NewUsersRepository(database)

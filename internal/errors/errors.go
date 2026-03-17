@@ -36,6 +36,12 @@ const (
 	ErrMissingParam = "missing_param"
 	ErrInvalidJSON  = "invalid_json"
 
+	// Permission
+	ErrGroupNotFound = "group_not_found"
+	ErrTupleNotFound = "tuple_not_found"
+	ErrTokenNotFound = "token_not_found"
+	ErrTokenExpired  = "token_expired"
+
 	// Auth
 	ErrUnauthorized = "unauthorized"
 	ErrForbidden    = "forbidden"

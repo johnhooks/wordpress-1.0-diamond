@@ -297,6 +297,78 @@ func TestCommentsRepository_DeleteReparentsChildren(t *testing.T) {
 	}
 }
 
+func TestCommentsRepository_DeleteCascadesMeta(t *testing.T) {
+	database := db.SetupTestDB(t)
+	comments := repository.NewCommentsRepository(database)
+	posts := repository.NewPostsRepository(database)
+	meta := repository.NewCommentMeta(database)
+	ctx := context.Background()
+
+	post := createTestPost(t, ctx, posts)
+
+	comment := &model.Comment{
+		CommentPostID: post.ID, CommentAuthor: "Metauser",
+		CommentContent: "with meta", CommentApproved: "1", CommentType: "comment",
+	}
+	comments.Create(ctx, comment)
+
+	meta.Set(ctx, comment.CommentID, "rating", "5")
+	meta.Set(ctx, comment.CommentID, "flagged", "false")
+
+	// Verify meta exists
+	all, _ := meta.GetAll(ctx, comment.CommentID)
+	if len(all) != 2 {
+		t.Fatalf("expected 2 comment metas, got %d", len(all))
+	}
+
+	if _, err := comments.Delete(ctx, comment.CommentID); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	all, _ = meta.GetAll(ctx, comment.CommentID)
+	if len(all) != 0 {
+		t.Errorf("expected 0 comment metas after delete, got %d", len(all))
+	}
+}
+
+func TestCommentsRepository_DeleteUnapprovedSkipsCountUpdate(t *testing.T) {
+	database := db.SetupTestDB(t)
+	comments := repository.NewCommentsRepository(database)
+	posts := repository.NewPostsRepository(database)
+	ctx := context.Background()
+
+	post := createTestPost(t, ctx, posts)
+
+	// Create an approved comment to set count to 1
+	approved := &model.Comment{
+		CommentPostID: post.ID, CommentAuthor: "Good",
+		CommentContent: "approved", CommentApproved: "1", CommentType: "comment",
+	}
+	comments.Create(ctx, approved)
+
+	// Create unapproved comment
+	unapproved := &model.Comment{
+		CommentPostID: post.ID, CommentAuthor: "Pending",
+		CommentContent: "pending", CommentApproved: "0", CommentType: "comment",
+	}
+	comments.Create(ctx, unapproved)
+
+	p, _ := posts.GetByID(ctx, post.ID)
+	if p.CommentCount != 1 {
+		t.Fatalf("expected count 1 before delete, got %d", p.CommentCount)
+	}
+
+	// Deleting the unapproved comment should not change count
+	if _, err := comments.Delete(ctx, unapproved.CommentID); err != nil {
+		t.Fatalf("Delete unapproved: %v", err)
+	}
+
+	p, _ = posts.GetByID(ctx, post.ID)
+	if p.CommentCount != 1 {
+		t.Errorf("expected count still 1 after deleting unapproved, got %d", p.CommentCount)
+	}
+}
+
 func TestCommentsRepository_TypeFilter(t *testing.T) {
 	database := db.SetupTestDB(t)
 	comments := repository.NewCommentsRepository(database)

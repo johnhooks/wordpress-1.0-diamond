@@ -132,7 +132,9 @@ func TestMarshalJSON_Safe(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	json.Unmarshal(data, &result)
+	if err := json.Unmarshal(data, &result); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
 
 	if result["code"] != errors.ErrPostNotFound {
 		t.Errorf("expected code %q, got %v", errors.ErrPostNotFound, result["code"])
@@ -152,7 +154,9 @@ func TestMarshalJSON_Unsafe(t *testing.T) {
 	}
 
 	var result map[string]interface{}
-	json.Unmarshal(data, &result)
+	if err := json.Unmarshal(data, &result); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
 
 	// The internal error message must NOT appear in JSON
 	if result["message"] == dbErr.Error() {

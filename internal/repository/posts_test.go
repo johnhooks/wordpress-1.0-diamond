@@ -346,6 +346,126 @@ func TestPostsRepository_DeleteCascade(t *testing.T) {
 	}
 }
 
+func TestPostsRepository_DeleteCascadePostmeta(t *testing.T) {
+	database := db.SetupTestDB(t)
+	posts := repository.NewPostsRepository(database)
+	meta := repository.NewPostMeta(database)
+	ctx := context.Background()
+
+	post := &model.Post{
+		PostAuthor: 1, PostTitle: "Meta Cascade", PostName: "meta-cascade",
+		PostContent: "x", PostStatus: "publish", PostType: "post",
+	}
+	posts.Create(ctx, post)
+
+	meta.Set(ctx, post.ID, "custom_field", "value1")
+	meta.Set(ctx, post.ID, "another_field", "value2")
+
+	// Verify meta exists
+	all, err := meta.GetAll(ctx, post.ID)
+	if err != nil {
+		t.Fatalf("GetAll before delete: %v", err)
+	}
+	if len(all) != 2 {
+		t.Fatalf("expected 2 metas before delete, got %d", len(all))
+	}
+
+	if _, err := posts.Delete(ctx, post.ID); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	all, err = meta.GetAll(ctx, post.ID)
+	if err != nil {
+		t.Fatalf("GetAll after delete: %v", err)
+	}
+	if len(all) != 0 {
+		t.Errorf("expected 0 metas after post delete, got %d", len(all))
+	}
+}
+
+func TestPostsRepository_DeleteCascadeMultipleComments(t *testing.T) {
+	database := db.SetupTestDB(t)
+	posts := repository.NewPostsRepository(database)
+	comments := repository.NewCommentsRepository(database)
+	terms := repository.NewTermsRepository(database)
+	meta := repository.NewPostMeta(database)
+	ctx := context.Background()
+
+	post := &model.Post{
+		PostAuthor: 1, PostTitle: "Full Cascade", PostName: "full-cascade",
+		PostContent: "x", PostStatus: "publish", PostType: "post",
+	}
+	posts.Create(ctx, post)
+
+	// Multiple comments (approved and unapproved)
+	comments.Create(ctx, &model.Comment{
+		CommentPostID: post.ID, CommentAuthor: "A",
+		CommentContent: "first", CommentApproved: "1", CommentType: "comment",
+	})
+	comments.Create(ctx, &model.Comment{
+		CommentPostID: post.ID, CommentAuthor: "B",
+		CommentContent: "second", CommentApproved: "0", CommentType: "comment",
+	})
+
+	// Multiple categories
+	cat1 := &model.Term{Name: "Cat1", Slug: "cat1"}
+	tt1 := &model.TermTaxonomy{Taxonomy: "category"}
+	terms.Create(ctx, cat1, tt1)
+	terms.AddTermToPost(ctx, post.ID, tt1.TermTaxonomyID)
+
+	cat2 := &model.Term{Name: "Cat2", Slug: "cat2"}
+	tt2 := &model.TermTaxonomy{Taxonomy: "category"}
+	terms.Create(ctx, cat2, tt2)
+	terms.AddTermToPost(ctx, post.ID, tt2.TermTaxonomyID)
+
+	// Metadata
+	meta.Set(ctx, post.ID, "key1", "val1")
+
+	// Create another post to verify it's NOT affected
+	other := &model.Post{
+		PostAuthor: 1, PostTitle: "Survivor", PostName: "survivor",
+		PostContent: "x", PostStatus: "publish", PostType: "post",
+	}
+	posts.Create(ctx, other)
+	comments.Create(ctx, &model.Comment{
+		CommentPostID: other.ID, CommentAuthor: "Safe",
+		CommentContent: "safe", CommentApproved: "1", CommentType: "comment",
+	})
+	meta.Set(ctx, other.ID, "safe_key", "safe_val")
+
+	// Delete first post
+	if _, err := posts.Delete(ctx, post.ID); err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+
+	// Verify cascade
+	byPost, _ := comments.GetByPostID(ctx, post.ID)
+	if len(byPost) != 0 {
+		t.Errorf("expected 0 comments after cascade, got %d", len(byPost))
+	}
+
+	postTerms, _ := terms.GetPostTerms(ctx, post.ID, "category")
+	if len(postTerms) != 0 {
+		t.Errorf("expected 0 terms after cascade, got %d", len(postTerms))
+	}
+
+	allMeta, _ := meta.GetAll(ctx, post.ID)
+	if len(allMeta) != 0 {
+		t.Errorf("expected 0 postmeta after cascade, got %d", len(allMeta))
+	}
+
+	// Verify other post is untouched
+	otherComments, _ := comments.GetByPostID(ctx, other.ID)
+	if len(otherComments) != 1 {
+		t.Errorf("expected 1 comment on other post, got %d", len(otherComments))
+	}
+
+	otherMeta, _ := meta.GetAll(ctx, other.ID)
+	if len(otherMeta) != 1 {
+		t.Errorf("expected 1 meta on other post, got %d", len(otherMeta))
+	}
+}
+
 func TestPostsRepository_Sort(t *testing.T) {
 	database := db.SetupTestDB(t)
 	posts := repository.NewPostsRepository(database)

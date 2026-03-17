@@ -31,14 +31,10 @@ CREATE TABLE wp_posts (
     post_excerpt    TEXT    NOT NULL DEFAULT '',
     post_status     TEXT    NOT NULL DEFAULT 'publish',
     comment_status  TEXT    NOT NULL DEFAULT 'open',
-    ping_status     TEXT    NOT NULL DEFAULT 'open',
     post_password   TEXT    NOT NULL DEFAULT '',
     post_name       TEXT    NOT NULL DEFAULT '',
-    to_ping         TEXT    NOT NULL DEFAULT '',
-    pinged          TEXT    NOT NULL DEFAULT '',
     post_modified       TEXT NOT NULL DEFAULT '0000-00-00 00:00:00',
     post_modified_gmt   TEXT NOT NULL DEFAULT '0000-00-00 00:00:00',
-    post_content_filtered TEXT NOT NULL DEFAULT '',
     post_parent     INTEGER NOT NULL DEFAULT 0,
     guid            TEXT    NOT NULL DEFAULT '',
     menu_order      INTEGER NOT NULL DEFAULT 0,
@@ -53,7 +49,7 @@ CREATE INDEX idx_posts_author ON wp_posts (post_author);
 CREATE INDEX idx_posts_name ON wp_posts (post_name);
 ```
 
-**Changes from WP 1.0:** Added post_name (slug), post_modified, post_parent, post_type, guid, menu_order, comment_count, and GMT timestamps. Dropped post_lat/post_lon because GeoURL is a dead feature. Dropped the direct post_category column in favor of the taxonomy system.
+**Changes from WP 1.0:** Added post_name (slug), post_modified, post_parent, post_type, guid, menu_order, comment_count, and GMT timestamps. Dropped post_lat/post_lon because GeoURL is a dead feature. Dropped the direct post_category column in favor of the taxonomy system. Dropped to_ping, pinged, ping_status (dead trackback/pingback protocol), and post_content_filtered (unused cached content).
 
 **Changes from modern WP:** Using TEXT instead of MySQL's longtext/varchar. Using TEXT instead of ENUM (SQLite doesn't have ENUM). Datetimes stored as TEXT in ISO-ish format (SQLite convention).
 
@@ -199,6 +195,7 @@ CREATE INDEX idx_term_taxonomy_taxonomy ON wp_term_taxonomy (taxonomy);
 **Taxonomies we use:**
 - `category` for post categories, replacing wp_categories.
 - `link_category` for blogroll link categories, replacing wp_linkcategories.
+- `series` for post series. See `docs/plans/series.md`.
 
 ### wp_term_relationships
 
@@ -292,10 +289,12 @@ How WP 1.0 category operations map to the modern taxonomy tables:
 
 ## Table Summary
 
+### WordPress Tables (modernized)
+
 | Table | Purpose | WP 1.0 Equivalent |
 |-------|---------|-------------------|
-| wp_posts | Posts | wp_posts (expanded) |
-| wp_postmeta | Post metadata | (new) |
+| wp_posts | Posts, pages, attachments | wp_posts (expanded) |
+| wp_postmeta | Post/page/attachment metadata | (new) |
 | wp_comments | Comments | wp_comments (expanded) |
 | wp_commentmeta | Comment metadata | (new) |
 | wp_users | User accounts | wp_users (slimmed) |
@@ -307,15 +306,32 @@ How WP 1.0 category operations map to the modern taxonomy tables:
 | wp_links | Blogroll | wp_links (minor changes) |
 | wp_options | Settings | wp_options + 4 helper tables (collapsed) |
 
+### Press Tables (new)
+
+| Table | Purpose | Details |
+|-------|---------|---------|
+| wp_steps | ProseMirror edit history | Every editing operation, attributed to a user. Powers undo, collab, and revision history. See `docs/editor.md`. |
+| wp_save_points | Named points in step history | "The author hit save here." Bookmarks in the step log, not full copies. |
+| wp_groups | Permission group metadata | Display name and description. Authorization logic lives in tuples. |
+| wp_tuples | Relationship tuples | `subject → relation → object`. One table for all permissions: roles, per-post sharing, share links. See `docs/permissions.md`. |
+| wp_share_tokens | Share link metadata | Token, creator, expiration. The authorization itself is a tuple. |
+
+WordPress has had 12 tables since 2004. They crammed everything else into
+meta tables and `post_type` overloading (revisions, menu items, CSS
+customizations — all shoved into `wp_posts`). We add tables for things
+that are things.
+
 ## Seed Data
 
 On first run, the database is created and seeded with:
 
-- **Admin user** with login `admin`, a generated password, and user_level 10.
+- **Admin user** with login `admin`, a generated password.
+- **Default groups** — Administrators, Editors, Authors, Subscribers. Admin user added to Administrators.
+- **Default tuples** — Administrators get global owner on site, editor on all types. Editors, Authors, Subscribers get their respective permissions. See `docs/plans/permissions.md`.
 - **Default category** called "Uncategorized" stored as a term with term_taxonomy taxonomy='category'.
 - **Sample post** titled "Hello world!" in Uncategorized, matching the original.
 - **Default link category** called "Blogroll" stored as a term with term_taxonomy taxonomy='link_category'.
-- **Default options** including blogname, blogdescription, siteurl, posts_per_page, date_format, time_format, comment_moderation, use_smilies, use_bbcode, use_quicktags, use_htmltrans, use_balanceTags, and others matching WP 1.0 defaults.
+- **Default options** including blogname, blogdescription, siteurl, posts_per_page, date_format, time_format, comment_moderation, and others matching WP 1.0 defaults.
 
 ## Options Caching Strategy
 

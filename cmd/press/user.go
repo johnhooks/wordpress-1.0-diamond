@@ -73,7 +73,9 @@ var userCreateCmd = &cobra.Command{
 
 		// Set default user level
 		meta := repository.NewUserMeta(db)
-		meta.Set(ctx, user.ID, "wp_user_level", "0")
+		if err := meta.Set(ctx, user.ID, "wp_user_level", "0"); err != nil {
+			return err
+		}
 
 		if porcelain {
 			fmt.Println(user.ID)
