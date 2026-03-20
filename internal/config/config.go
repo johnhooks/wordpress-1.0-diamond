@@ -17,7 +17,7 @@ type Config struct {
 	DBPath     string
 	UploadsDir string
 	PublicDir  string
-	Theme      string
+	ThemeDir   string
 }
 
 func Load(envPath string) (*Config, error) {
@@ -36,7 +36,7 @@ func Load(envPath string) (*Config, error) {
 		DBPath:     getEnv("DB_PATH", "./storage/press.db"),
 		UploadsDir: getEnv("UPLOADS_DIR", "./storage/uploads"),
 		PublicDir:  getEnv("PUBLIC_DIR", "./public"),
-		Theme:      getEnv("THEME", "default"),
+		ThemeDir:   getEnv("THEME_DIR", "./themes/freerange"),
 	}
 
 	return cfg, nil

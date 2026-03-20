@@ -30,6 +30,7 @@ func setupServer(t *testing.T) (*server.Server, *repository.PostsRepository, *re
 		AppHost:   "localhost",
 		AppPort:   8080,
 		PublicDir: publicDir,
+		ThemeDir:  "../../local/themes/freerange",
 	}
 
 	s, err := server.New(cfg, database)

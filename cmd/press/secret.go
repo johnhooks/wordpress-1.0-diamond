@@ -46,7 +46,7 @@ var configGenerateCmd = &cobra.Command{
 			"",
 			"DB_PATH=./storage/press.db",
 			"UPLOADS_DIR=./storage/uploads",
-			"THEME=default",
+			"THEME_DIR=./themes/freerange",
 			"",
 		}, "\n")
 

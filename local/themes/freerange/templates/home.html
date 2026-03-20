@@ -1,0 +1,12 @@
+{{template "site-header" .}}
+
+{{range .Posts}}
+    {{template "post" .}}
+    <hr>
+{{else}}
+    <p>No posts found.</p>
+{{end}}
+
+{{template "pagination" .}}
+{{template "sidebar" .}}
+{{template "site-footer" .}}

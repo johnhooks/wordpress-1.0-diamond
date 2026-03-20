@@ -1,13 +1,13 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 )
 
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	blogName, blogDesc := s.blogInfo(ctx)
 
 	page := 1
 	if p := r.URL.Query().Get("paged"); p != "" {
@@ -37,15 +37,14 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 	views := s.postViews(ctx, result.Items)
 
 	data := HomeData{
-		BlogName:        blogName,
-		BlogDescription: blogDesc,
-		Posts:           views,
-		Page:            page,
-		TotalPages:      result.TotalPages,
-		HasPrev:         page > 1,
-		HasNext:         page < result.TotalPages,
-		PrevPage:        page - 1,
-		NextPage:        page + 1,
+		SiteData:    s.siteData(ctx),
+		Posts:       views,
+		HasPrev:     page > 1,
+		HasNext:     page < result.TotalPages,
+		PrevURL:     fmt.Sprintf("?paged=%d", page-1),
+		NextURL:     fmt.Sprintf("?paged=%d", page+1),
+		CurrentPage: page,
+		TotalPages:  result.TotalPages,
 	}
 
 	s.render(w, r, "home.html", data)

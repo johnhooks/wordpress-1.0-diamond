@@ -1,0 +1,17 @@
+{{template "site-header" .}}
+{{template "archive-header" .}}
+
+{{range .Posts}}
+    <article>
+        <h3><a href="{{.Permalink}}">{{.TheTitle}}</a></h3>
+        {{template "post-meta" .}}
+        <p>{{.TheExcerpt}}</p>
+    </article>
+    <hr>
+{{else}}
+    <p>No posts found.</p>
+{{end}}
+
+{{template "pagination" .}}
+{{template "sidebar" .}}
+{{template "site-footer" .}}

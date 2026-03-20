@@ -1,13 +1,15 @@
 package server
 
 import (
+	"bytes"
 	"context"
-	"embed"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"press/internal/config"
 	"press/internal/model"
@@ -19,17 +21,14 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-//go:embed templates/*.html
-var templateFS embed.FS
-
 // Server is the Press HTTP server.
 type Server struct {
-	cfg      *config.Config
-	db       *sqlx.DB
-	mux      *http.ServeMux
-	tmpl     *template.Template
-	linker   *permalink.Linker
-	router   *permalink.Router
+	cfg        *config.Config
+	db         *sqlx.DB
+	mux        *http.ServeMux
+	tmpl       *template.Template
+	linker     *permalink.Linker
+	router     *permalink.Router
 	posts      *repository.PostsRepository
 	comments   *repository.CommentsRepository
 	terms      *repository.TermsRepository
@@ -46,9 +45,9 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 		"sub":        func(a, b int) int { return a - b },
 	}
 
-	tmpl, err := template.New("").Funcs(funcMap).ParseFS(templateFS, "templates/*.html")
+	tmpl, err := loadThemeTemplates(cfg.ThemeDir, funcMap)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse templates: %w", err)
+		return nil, fmt.Errorf("failed to load theme templates: %w", err)
 	}
 
 	opts := repository.NewOptionsRepository(db)
@@ -72,10 +71,10 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 			SiteURL:   siteURL,
 			Structure: structure,
 		},
-		router:   permalink.NewRouter(structure),
-		posts:    repository.NewPostsRepository(db),
-		comments: repository.NewCommentsRepository(db),
-		terms:    repository.NewTermsRepository(db),
+		router:     permalink.NewRouter(structure),
+		posts:      repository.NewPostsRepository(db),
+		comments:   repository.NewCommentsRepository(db),
+		terms:      repository.NewTermsRepository(db),
 		users:      repository.NewUsersRepository(db),
 		options:    opts,
 		serializer: prosemirror.DefaultSerializer(),
@@ -83,6 +82,37 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 
 	s.setupRoutes()
 	return s, nil
+}
+
+// loadThemeTemplates loads all .html files from the theme directory tree.
+// Molecules are loaded first, then organisms, then page templates.
+func loadThemeTemplates(themeDir string, funcMap template.FuncMap) (*template.Template, error) {
+	tmpl := template.New("").Funcs(funcMap)
+
+	// Load in hierarchy order: molecules, organisms, templates.
+	// Each level's {{define}} blocks are available to the next.
+	dirs := []string{
+		filepath.Join(themeDir, "molecules"),
+		filepath.Join(themeDir, "organisms"),
+		filepath.Join(themeDir, "templates"),
+	}
+
+	for _, dir := range dirs {
+		pattern := filepath.Join(dir, "*.html")
+		matches, err := filepath.Glob(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("failed to glob %s: %w", pattern, err)
+		}
+		if len(matches) == 0 {
+			continue
+		}
+		tmpl, err = tmpl.ParseFiles(matches...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse templates in %s: %w", dir, err)
+		}
+	}
+
+	return tmpl, nil
 }
 
 // Handler returns the server's HTTP handler.
@@ -100,6 +130,13 @@ func (s *Server) setupRoutes() {
 	// Static files served from the site's public directory
 	publicFS := os.DirFS(s.cfg.PublicDir)
 	s.mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(publicFS))))
+
+	// Theme static files (style.css, images, etc.)
+	themeFS := os.DirFS(s.cfg.ThemeDir)
+	s.mux.Handle("GET /theme/", http.StripPrefix("/theme/", http.FileServer(http.FS(themeFS))))
+
+	s.mux.HandleFunc("POST /comments", s.handleCommentSubmit)
+	s.mux.HandleFunc("POST /comments/", s.handleCommentSubmit)
 
 	s.mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		// ?p=<id> — query-string post lookup
@@ -138,6 +175,28 @@ func (s *Server) render(w http.ResponseWriter, r *http.Request, name string, dat
 	}
 }
 
+// renderOOB renders a named template and injects hx-swap-oob="true"
+// into the first element's opening tag. This is a stopgap to prove
+// the OOB swap pattern between engine and theme. The real solution
+// is the theme compiler, which would produce both inline and OOB
+// variants of any swappable component from the same source template.
+// This exists to discover what the compiler needs to do.
+func (s *Server) renderOOB(w io.Writer, name string, data any) {
+	var buf bytes.Buffer
+	if err := s.tmpl.ExecuteTemplate(&buf, name, data); err != nil {
+		log.Printf("template error (oob): %v", err)
+		return
+	}
+	html := buf.Bytes()
+	if i := bytes.IndexByte(html, '>'); i > 0 {
+		w.Write(html[:i])
+		w.Write([]byte(` hx-swap-oob="true"`))
+		w.Write(html[i:])
+	} else {
+		w.Write(html)
+	}
+}
+
 func (s *Server) blogInfo(ctx context.Context) (name, description string) {
 	var err error
 	name, err = s.options.GetValueDefault(ctx, "blogname", "My Weblog")
@@ -151,6 +210,18 @@ func (s *Server) blogInfo(ctx context.Context) (name, description string) {
 		description = "Just another Press weblog"
 	}
 	return
+}
+
+// siteData builds the shared SiteData available on every page.
+// Sidebar data (categories, archives, pages) and auth state will be
+// populated here once the queries are wired up.
+func (s *Server) siteData(ctx context.Context) SiteData {
+	name, desc := s.blogInfo(ctx)
+	return SiteData{
+		BlogName:        name,
+		BlogDescription: desc,
+		LoginURL:        "/wp-login.php",
+	}
 }
 
 func (s *Server) authorName(ctx context.Context, userID int64) string {

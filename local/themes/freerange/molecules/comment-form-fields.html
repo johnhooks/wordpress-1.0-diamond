@@ -1,0 +1,15 @@
+{{define "comment-form-fields"}}
+<p><label>Name<br>
+    <input type="text" name="author" value="{{.SavedAuthor}}" required>
+</label></p>
+<p><label>Email<br>
+    <input type="email" name="email" value="{{.SavedEmail}}" required>
+</label></p>
+<p><label>Website<br>
+    <input type="url" name="url" value="{{.SavedURL}}">
+</label></p>
+<p><label>Comment<br>
+    <textarea name="comment" rows="4" required></textarea>
+</label></p>
+<p><button type="submit">Say it!</button></p>
+{{end}}

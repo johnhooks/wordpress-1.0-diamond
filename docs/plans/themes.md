@@ -1,4 +1,12 @@
-# Themes
+# Themes (Superseded)
+
+> **This document has been superseded.** The theme architecture evolved
+> significantly during design. The current vision lives in
+> `docs/plans/themes/skinning.md` and its companion docs. This file is
+> kept for historical reference — it represents an earlier iteration
+> where Press controlled the visual system through CSS custom properties
+> and themes were variations within it. The current model inverts this:
+> themes control all rendering, Press compiles and serves them.
 
 WordPress's theme system was a PHP runtime with no sandbox. `functions.php`
 could call `exec()`. Every theme was a potential attack surface. When

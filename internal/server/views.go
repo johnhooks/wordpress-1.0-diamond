@@ -11,49 +11,166 @@ import (
 	"press/internal/prosemirror"
 )
 
+// SiteData is shared context available on every page.
+type SiteData struct {
+	BlogName        string
+	BlogDescription string
+	PageTitle       string
+
+	// Sidebar
+	Categories []CategoryView
+	Archives   []ArchiveView
+	Pages      []PageLink
+
+	// Auth
+	IsLoggedIn bool
+	LoginURL   string
+	LogoutURL  string
+	AdminURL   string
+
+	// Search
+	SearchQuery string
+
+	// Sidebar context (archive/search pages)
+	SidebarContext string
+}
+
+// CategoryView is a category for the sidebar.
+type CategoryView struct {
+	Name  string
+	Slug  string
+	URL   string
+	Count int
+}
+
+// CategoryLink is a category as displayed in post metadata.
+type CategoryLink struct {
+	Name string
+	URL  string
+}
+
+// ArchiveView is a monthly archive entry for the sidebar.
+type ArchiveView struct {
+	Label string
+	URL   string
+	Count int
+}
+
+// PageLink is a link to a page or post (sidebar, post navigation).
+type PageLink struct {
+	Title string
+	URL   string
+}
+
+// PageView adapts a model.Post (type=page) for template rendering.
+type PageView struct {
+	ID         int64
+	TheTitle   string
+	TheContent template.HTML
+	EditURL    string
+}
+
 // PostView adapts a model.Post for template rendering.
+// Used as the data context for the "post" fragment template and
+// inside {{range .Posts}} in page templates.
+//
+// The "The" prefix on content fields (TheTitle, TheContent, TheDate,
+// TheExcerpt, TheAuthor, TheCategories) is a deliberate nod to
+// WordPress's template tag heritage — the_title(), the_content(),
+// the_date(), the_author(), the_category(). This is probably a bad
+// idea. But WordPress 1.6 never happened, and we're making it happen,
+// and sometimes you just have to make bad decisions for the joy of it.
 type PostView struct {
 	ID            int64
-	Title         string
-	Content       template.HTML
-	Excerpt       string
+	TheTitle      string
+	TheContent    template.HTML
+	TheExcerpt    string
+	TheDate       string
+	TheTime       string
+	TheAuthor     string
+	TheCategories []CategoryLink
 	Permalink     string
-	Date          string
-	AuthorName    string
-	CategoryNames []string
+	AuthorURL     string
 	CommentCount  int
+	CommentsOpen  bool
+	EditURL       string
 }
 
 // CommentView adapts a model.Comment for template rendering.
+// Used as the data context for the "comment" fragment template and
+// inside {{range .Comments}} in page templates.
 type CommentView struct {
-	ID      int64
-	Author  string
-	URL     string
-	Date    string
-	Content template.HTML
+	ID        int64
+	TheAuthor string
+	URL       string
+	TheDate   string
+	TheContent template.HTML
+	Type      string
+	EditURL   string
 }
 
-// HomeData is the template data for the homepage.
+// CommentFormData is the data context for the "comment-form" fragment.
+type CommentFormData struct {
+	Post         PostView
+	CommentsOpen bool
+	SavedAuthor  string
+	SavedEmail   string
+	SavedURL     string
+}
+
+// HomeData is the template data for the "home" page template.
 type HomeData struct {
-	BlogName        string
-	BlogDescription string
-	PageTitle       string
-	Posts           []PostView
-	Page            int
-	TotalPages      int
-	HasPrev         bool
-	HasNext         bool
-	PrevPage        int
-	NextPage        int
+	SiteData
+	Posts      []PostView
+	HasPrev    bool
+	HasNext    bool
+	PrevURL    string
+	NextURL    string
+	CurrentPage int
+	TotalPages  int
 }
 
-// SingleData is the template data for a single post.
+// SingleData is the template data for the "single" page template.
 type SingleData struct {
-	BlogName        string
-	BlogDescription string
-	PageTitle       string
-	Post            PostView
-	Comments        []CommentView
+	SiteData
+	Post         PostView
+	Comments     []CommentView
+	CommentsOpen bool
+	SavedAuthor  string
+	SavedEmail   string
+	SavedURL     string
+	PrevPost     *PageLink
+	NextPost     *PageLink
+}
+
+// StaticPageData is the template data for the "page" page template.
+type StaticPageData struct {
+	SiteData
+	Page PageView
+}
+
+// ArchiveData is the template data for the "archive" page template.
+type ArchiveData struct {
+	SiteData
+	ArchiveTitle       string
+	ArchiveDescription string
+	Posts              []PostView
+	HasPrev            bool
+	HasNext            bool
+	PrevURL            string
+	NextURL            string
+	CurrentPage        int
+	TotalPages         int
+}
+
+// SearchData is the template data for the "search" page template.
+type SearchData struct {
+	ArchiveData
+}
+
+// NotFoundData is the template data for the "404" page template.
+type NotFoundData struct {
+	SiteData
 }
 
 // renderContent converts post content to HTML. ProseMirror JSON is
@@ -73,20 +190,24 @@ func renderContent(content string, s *prosemirror.Serializer) template.HTML {
 
 // newPostView creates a PostView from a model.Post.
 func newPostView(p *model.Post, authorName string, categories []model.Category, linker *permalink.Linker, s *prosemirror.Serializer) PostView {
-	catNames := make([]string, len(categories))
+	catLinks := make([]CategoryLink, len(categories))
 	for i, c := range categories {
-		catNames[i] = c.Name
+		catLinks[i] = CategoryLink{
+			Name: c.Name,
+			URL:  "/category/" + c.Slug + "/",
+		}
 	}
 
 	return PostView{
 		ID:            p.ID,
-		Title:         p.PostTitle,
-		Content:       renderContent(p.PostContent, s),
-		Excerpt:       p.PostExcerpt,
+		TheTitle:      p.PostTitle,
+		TheContent:    renderContent(p.PostContent, s),
+		TheExcerpt:    p.PostExcerpt,
 		Permalink:     linker.PostPath(p.ID, p.PostDate, p.PostName),
-		Date:          p.PostDate.Format("January 2, 2006"),
-		AuthorName:    authorName,
-		CategoryNames: catNames,
+		TheDate:       p.PostDate.Format("January 2, 2006"),
+		TheTime:       p.PostDate.Format("3:04 pm"),
+		TheAuthor:     authorName,
+		TheCategories: catLinks,
 		CommentCount:  p.CommentCount,
 	}
 }
@@ -94,18 +215,24 @@ func newPostView(p *model.Post, authorName string, categories []model.Category, 
 // newCommentView creates a CommentView from a model.Comment.
 func newCommentView(c *model.Comment) CommentView {
 	return CommentView{
-		ID:      c.CommentID,
-		Author:  c.CommentAuthor,
-		URL:     c.CommentAuthorURL,
-		Date:    c.CommentDate.Format("January 2, 2006 at 3:04 pm"),
-		Content: template.HTML(c.CommentContent),
+		ID:         c.CommentID,
+		TheAuthor:  c.CommentAuthor,
+		URL:        c.CommentAuthorURL,
+		TheDate:    c.CommentDate.Format("January 2, 2006 at 3:04 pm"),
+		TheContent: template.HTML(c.CommentContent),
+		Type:       c.CommentType,
 	}
 }
 
-// categoriesString joins category names with commas.
-func categoriesString(names []string) string {
-	if len(names) == 0 {
+// categoriesString joins category link names with commas.
+func categoriesString(links []CategoryLink) string {
+	if len(links) == 0 {
 		return "Uncategorized"
+	}
+	names := make([]string, len(links))
+	for i, l := range links {
+		names[i] = l.Name
 	}
 	return strings.Join(names, ", ")
 }
+

@@ -70,7 +70,6 @@ func (s *Server) handleByID(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) renderPost(w http.ResponseWriter, r *http.Request, post *postResult) {
 	ctx := r.Context()
-	blogName, blogDesc := s.blogInfo(ctx)
 
 	comments, err := s.comments.GetByPostID(ctx, post.ID)
 	if err != nil {
@@ -83,12 +82,14 @@ func (s *Server) renderPost(w http.ResponseWriter, r *http.Request, post *postRe
 		}
 	}
 
+	siteData := s.siteData(ctx)
+	siteData.PageTitle = post.PostTitle
+
 	data := SingleData{
-		BlogName:        blogName,
-		BlogDescription: blogDesc,
-		PageTitle:       post.PostTitle,
-		Post:            post.View,
-		Comments:        commentViews,
+		SiteData:     siteData,
+		Post:         post.View,
+		Comments:     commentViews,
+		CommentsOpen: post.CommentStatus == "open",
 	}
 
 	s.render(w, r, "single.html", data)

@@ -1,0 +1,7 @@
+{{define "pagination"}}
+<p>
+{{if .HasPrev}}<a href="{{.PrevURL}}">&laquo; Newer</a>{{end}}
+{{if and .HasPrev .HasNext}} | {{end}}
+{{if .HasNext}}<a href="{{.NextURL}}">Older &raquo;</a>{{end}}
+</p>
+{{end}}
