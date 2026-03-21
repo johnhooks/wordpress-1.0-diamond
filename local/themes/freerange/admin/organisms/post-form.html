@@ -1,0 +1,30 @@
+{{define "admin-post-form"}}
+<form name="post" action="{{.Action}}" method="post" id="post">
+    {{.CSRF.For .CSRFAction}}
+
+    {{template "admin-form-errors" .Errors}}
+
+    {{template "admin-text-field" .Title}}
+    {{template "admin-textarea-field" .Content}}
+    {{template "admin-textarea-field" .Excerpt}}
+    {{template "admin-checkbox-group" .Categories}}
+    {{template "admin-radio-group" .Status}}
+    {{template "admin-radio-group" .CommentStatus}}
+
+    <p>
+        {{if .IsEdit}}
+        <input type="submit" name="save" value="Save" style="font-weight: bold;">
+        {{else}}
+        <input type="submit" name="publish" value="Publish" style="font-weight: bold;">
+        <input type="submit" name="draft" value="Save as Draft">
+        {{end}}
+    </p>
+</form>
+
+{{if .IsEdit}}
+{{if .CanDelete}}
+<p><a href="{{.DeleteURL}}" onclick="return confirm('Are you sure you want to delete this post?')">Delete this post</a></p>
+{{end}}
+<p><a href="{{.Permalink}}">View post</a></p>
+{{end}}
+{{end}}

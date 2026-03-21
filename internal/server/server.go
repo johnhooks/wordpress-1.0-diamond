@@ -103,17 +103,15 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 	return s, nil
 }
 
-// loadThemeTemplates loads all .html files from the theme directory tree.
-// Molecules are loaded first, then organisms, then page templates.
+// loadThemeTemplates loads site templates from the theme directory.
+// Shared molecules load first, then site organisms, then site templates.
 func loadThemeTemplates(themeDir string, funcMap template.FuncMap) (*template.Template, error) {
 	tmpl := template.New("").Funcs(funcMap)
 
-	// Load in hierarchy order: molecules, organisms, templates.
-	// Each level's {{define}} blocks are available to the next.
 	dirs := []string{
 		filepath.Join(themeDir, "molecules"),
-		filepath.Join(themeDir, "organisms"),
-		filepath.Join(themeDir, "templates"),
+		filepath.Join(themeDir, "site", "organisms"),
+		filepath.Join(themeDir, "site", "templates"),
 	}
 
 	for _, dir := range dirs {
@@ -134,22 +132,29 @@ func loadThemeTemplates(themeDir string, funcMap template.FuncMap) (*template.Te
 	return tmpl, nil
 }
 
-// loadAdminTemplates loads admin theme templates. For now these live in
-// an admin/ subdirectory alongside the site theme. This will become a
-// separate theme surface.
+// loadAdminTemplates loads admin templates from the theme directory.
+// Shared molecules load first, then admin organisms, then admin templates.
 func loadAdminTemplates(themeDir string, funcMap template.FuncMap) (*template.Template, error) {
 	tmpl := template.New("").Funcs(funcMap)
 
-	adminDir := filepath.Join(filepath.Dir(themeDir), "admin")
-	pattern := filepath.Join(adminDir, "*.html")
-	matches, err := filepath.Glob(pattern)
-	if err != nil {
-		return nil, fmt.Errorf("failed to glob %s: %w", pattern, err)
+	dirs := []string{
+		filepath.Join(themeDir, "molecules"),
+		filepath.Join(themeDir, "admin", "organisms"),
+		filepath.Join(themeDir, "admin", "templates"),
 	}
-	if len(matches) > 0 {
+
+	for _, dir := range dirs {
+		pattern := filepath.Join(dir, "*.html")
+		matches, err := filepath.Glob(pattern)
+		if err != nil {
+			return nil, fmt.Errorf("failed to glob %s: %w", pattern, err)
+		}
+		if len(matches) == 0 {
+			continue
+		}
 		tmpl, err = tmpl.ParseFiles(matches...)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse admin templates: %w", err)
+			return nil, fmt.Errorf("failed to parse admin templates in %s: %w", dir, err)
 		}
 	}
 

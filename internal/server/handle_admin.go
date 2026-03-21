@@ -46,37 +46,79 @@ type LoginData struct {
 	CanRegister bool
 }
 
-type CategoryOption struct {
-	ID       int64
+// ── Molecule Props ────────────────────────────────────────────
+
+type TextField struct {
+	ID        string
+	Name      string
+	Label     string
+	Value     string
+	Error     string
+	Autofocus bool
+}
+
+type TextareaField struct {
+	ID       string
 	Name     string
-	Slug     string
+	Label    string
+	Value    string
+	Rows     int
+	Error    string
+	HelpText string
+}
+
+type RadioGroup struct {
+	Name    string
+	Legend  string
+	Options []RadioOption
+}
+
+type RadioOption struct {
+	Value    string
+	Label    string
 	Selected bool
 }
 
-type WritePostData struct {
-	Shell      AdminShell
-	CSRF       auth.CSRFHelper
-	Categories []CategoryOption
+type CheckboxGroup struct {
+	Name    string
+	Legend  string
+	Options []CheckboxOption
 }
 
-type EditPostData struct {
-	Shell      AdminShell
-	CSRF       auth.CSRFHelper
-	Post       AdminPostEdit
-	Categories []CategoryOption
-	CanDelete  bool
+type CheckboxOption struct {
+	Value   string
+	Label   string
+	Checked bool
 }
 
-type AdminPostEdit struct {
-	ID            int64
-	Title         string
-	Content       string
-	Excerpt       string
-	Status        string
-	CommentStatus string
-	Slug          string
-	Permalink     string
+type PaginationData struct {
+	HasPrev bool
+	HasNext bool
+	PrevURL string
+	NextURL string
 }
+
+// ── Post Form (shared by write and edit) ──────────────────────
+
+type PostFormData struct {
+	Shell          AdminShell
+	CSRF           auth.CSRFHelper
+	Action         string // form action URL
+	CSRFAction     string // CSRF action name
+	Title          TextField
+	Content        TextareaField
+	Excerpt        TextareaField
+	Categories     CheckboxGroup
+	Status         RadioGroup
+	CommentStatus  RadioGroup
+	Errors         []string
+	IsEdit         bool
+	CanDelete      bool
+	DeleteURL      string
+	Permalink      string
+}
+
+// ── Manage Posts ──────────────────────────────────────────────
 
 type AdminPostRow struct {
 	ID           int64
@@ -86,17 +128,16 @@ type AdminPostRow struct {
 	AuthorName   string
 	Categories   string
 	CommentCount int
+	EditURL      string
 	ViewURL      string
+	DeleteURL    string
 }
 
 type ManagePostsData struct {
-	Shell    AdminShell
-	Posts    []AdminPostRow
-	Drafts   []AdminPostRow
-	HasPrev  bool
-	HasNext  bool
-	PrevURL  string
-	NextURL  string
+	Shell      AdminShell
+	Posts      []AdminPostRow
+	Drafts     []AdminPostRow
+	Pagination PaginationData
 }
 
 // ── Shell Builder ─────────────────────────────────────────────
@@ -123,7 +164,7 @@ func (s *Server) adminShell(r *http.Request, pageTitle, currentPage string) Admi
 	}
 }
 
-func (s *Server) adminCategories(r *http.Request, selectedIDs map[int64]bool) []CategoryOption {
+func (s *Server) adminCategoryCheckboxes(r *http.Request, selectedIDs map[int64]bool) []CheckboxOption {
 	result, err := s.terms.List(r.Context(), query.Query{
 		Filters: []query.Filter{{Field: "taxonomy", Operator: query.Is, Value: "category"}},
 		PerPage: 1000,
@@ -133,16 +174,73 @@ func (s *Server) adminCategories(r *http.Request, selectedIDs map[int64]bool) []
 		return nil
 	}
 
-	opts := make([]CategoryOption, len(result.Items))
+	opts := make([]CheckboxOption, len(result.Items))
 	for i, c := range result.Items {
-		opts[i] = CategoryOption{
-			ID:       c.TaxonomyID,
-			Name:     c.Name,
-			Slug:     c.Slug,
-			Selected: selectedIDs[c.TaxonomyID],
+		opts[i] = CheckboxOption{
+			Value:   strconv.FormatInt(c.TaxonomyID, 10),
+			Label:   c.Name,
+			Checked: selectedIDs[c.TaxonomyID],
 		}
 	}
 	return opts
+}
+
+func statusOptions(current string) []RadioOption {
+	return []RadioOption{
+		{Value: "publish", Label: "Publish", Selected: current == "publish" || current == ""},
+		{Value: "draft", Label: "Draft", Selected: current == "draft"},
+		{Value: "private", Label: "Private", Selected: current == "private"},
+	}
+}
+
+func commentStatusOptions(current string) []RadioOption {
+	return []RadioOption{
+		{Value: "open", Label: "Open", Selected: current == "open" || current == ""},
+		{Value: "closed", Label: "Closed", Selected: current == "closed"},
+	}
+}
+
+func (s *Server) postFormData(r *http.Request, post *model.Post, selectedCats map[int64]bool) PostFormData {
+	isEdit := post != nil && post.ID > 0
+
+	data := PostFormData{
+		Shell: s.adminShell(r, "Write Post", "write"),
+		CSRF:  s.csrf(r),
+		Title: TextField{
+			ID: "title", Name: "post_title", Label: "Title", Autofocus: true,
+		},
+		Content: TextareaField{
+			ID: "content", Name: "content", Label: "Post", Rows: 15,
+		},
+		Excerpt: TextareaField{
+			ID: "excerpt", Name: "excerpt", Label: "Excerpt", Rows: 3, HelpText: "optional",
+		},
+		Categories: CheckboxGroup{
+			Name: "post_category", Legend: "Categories",
+			Options: s.adminCategoryCheckboxes(r, selectedCats),
+		},
+		Status:        RadioGroup{Name: "post_status", Legend: "Status", Options: statusOptions("")},
+		CommentStatus: RadioGroup{Name: "comment_status", Legend: "Comments", Options: commentStatusOptions("")},
+		Action:        "/wp-admin/post/new",
+		CSRFAction:    "create-post",
+		IsEdit:        isEdit,
+	}
+
+	if isEdit {
+		data.Shell.PageTitle = "Edit Post"
+		data.Action = "/wp-admin/post/" + strconv.FormatInt(post.ID, 10) + "/edit"
+		data.CSRFAction = "edit-post"
+		data.Title.Value = post.PostTitle
+		data.Content.Value = post.PostContent
+		data.Excerpt.Value = post.PostExcerpt
+		data.Status.Options = statusOptions(post.PostStatus)
+		data.CommentStatus.Options = commentStatusOptions(post.CommentStatus)
+		data.Permalink = s.linker.PostPath(post.ID, post.PostDate, post.PostName)
+		data.CanDelete = true
+		data.DeleteURL = "/wp-admin/post/" + strconv.FormatInt(post.ID, 10) + "/delete"
+	}
+
+	return data
 }
 
 // ── Login ─────────────────────────────────────────────────────
@@ -201,11 +299,7 @@ func (s *Server) handleAdminDashboard(w http.ResponseWriter, r *http.Request) {
 // ── Write Post ────────────────────────────────────────────────
 
 func (s *Server) handleWritePost(w http.ResponseWriter, r *http.Request) {
-	s.renderAdmin(w, "admin-write", WritePostData{
-		Shell:      s.adminShell(r, "Write Post", "write"),
-		CSRF:       s.csrf(r),
-		Categories: s.adminCategories(r, nil),
-	})
+	s.renderAdmin(w, "admin-write", s.postFormData(r, nil, nil))
 }
 
 func (s *Server) handleWritePostSubmit(w http.ResponseWriter, r *http.Request) {
@@ -311,31 +405,13 @@ func (s *Server) handleEditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get selected categories
 	postCats, _ := s.terms.GetPostTerms(ctx, post.ID, "category")
 	selectedIDs := make(map[int64]bool)
 	for _, c := range postCats {
 		selectedIDs[c.TaxonomyID] = true
 	}
 
-	permalink := s.linker.PostPath(post.ID, post.PostDate, post.PostName)
-
-	s.renderAdmin(w, "admin-edit", EditPostData{
-		Shell: s.adminShell(r, "Edit Post", "write"),
-		CSRF:  s.csrf(r),
-		Post: AdminPostEdit{
-			ID:            post.ID,
-			Title:         post.PostTitle,
-			Content:       post.PostContent,
-			Excerpt:       post.PostExcerpt,
-			Status:        post.PostStatus,
-			CommentStatus: post.CommentStatus,
-			Slug:          post.PostName,
-			Permalink:     permalink,
-		},
-		Categories: s.adminCategories(r, selectedIDs),
-		CanDelete:  true, // TODO: check permissions
-	})
+	s.renderAdmin(w, "admin-edit", s.postFormData(r, post, selectedIDs))
 }
 
 func (s *Server) handleEditPostSubmit(w http.ResponseWriter, r *http.Request) {
@@ -468,6 +544,7 @@ func (s *Server) handleManagePosts(w http.ResponseWriter, r *http.Request) {
 			catStr = strings.Join(catNames, ", ")
 		}
 
+		idStr := strconv.FormatInt(p.ID, 10)
 		posts[i] = AdminPostRow{
 			ID:           p.ID,
 			Title:        p.PostTitle,
@@ -476,7 +553,9 @@ func (s *Server) handleManagePosts(w http.ResponseWriter, r *http.Request) {
 			AuthorName:   authorName,
 			Categories:   catStr,
 			CommentCount: p.CommentCount,
+			EditURL:      "/wp-admin/post/" + idStr + "/edit",
 			ViewURL:      s.linker.PostPath(p.ID, p.PostDate, p.PostName),
+			DeleteURL:    "/wp-admin/post/" + idStr + "/delete",
 		}
 	}
 
@@ -500,22 +579,22 @@ func (s *Server) handleManagePosts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	totalPages := (result.Total + perPage - 1) / perPage
-	data := ManagePostsData{
-		Shell:  s.adminShell(r, "Manage Posts", "posts"),
-		Posts:  posts,
-		Drafts: drafts,
-	}
-
+	pagination := PaginationData{}
 	if page > 1 {
-		data.HasPrev = true
-		data.PrevURL = "/wp-admin/posts?paged=" + strconv.Itoa(page-1)
+		pagination.HasPrev = true
+		pagination.PrevURL = "/wp-admin/posts?paged=" + strconv.Itoa(page-1)
 	}
 	if page < totalPages {
-		data.HasNext = true
-		data.NextURL = "/wp-admin/posts?paged=" + strconv.Itoa(page+1)
+		pagination.HasNext = true
+		pagination.NextURL = "/wp-admin/posts?paged=" + strconv.Itoa(page+1)
 	}
 
-	s.renderAdmin(w, "admin-posts", data)
+	s.renderAdmin(w, "admin-posts", ManagePostsData{
+		Shell:      s.adminShell(r, "Manage Posts", "posts"),
+		Posts:      posts,
+		Drafts:     drafts,
+		Pagination: pagination,
+	})
 }
 
 // ── Helpers ───────────────────────────────────────────────────

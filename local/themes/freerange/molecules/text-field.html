@@ -1,0 +1,8 @@
+{{define "admin-text-field"}}
+<p>
+    <label for="{{.ID}}"><strong>{{.Label}}</strong></label><br>
+    <input type="text" name="{{.Name}}" id="{{.ID}}" value="{{.Value}}"
+        style="width: 100%; box-sizing: border-box;"{{if .Autofocus}} autofocus{{end}}>
+    {{if .Error}}<br><small><strong>{{.Error}}</strong></small>{{end}}
+</p>
+{{end}}

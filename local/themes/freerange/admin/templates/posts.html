@@ -1,0 +1,24 @@
+{{define "admin-posts"}}
+{{template "admin-header" .}}
+
+<p><a href="/wp-admin/post/new">Write New Post</a></p>
+
+{{if .Drafts}}
+<p><strong>Your Drafts:</strong>
+    {{range .Drafts}}
+    <a href="{{.EditURL}}">{{.Title}}</a>
+    {{end}}
+</p>
+{{end}}
+
+{{if .Posts}}
+{{range .Posts}}
+{{template "admin-post-row" .}}
+{{end}}
+{{template "admin-pagination" .Pagination}}
+{{else}}
+<p><strong>No posts found.</strong></p>
+{{end}}
+
+{{template "admin-footer" .}}
+{{end}}

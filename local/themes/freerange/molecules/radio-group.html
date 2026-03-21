@@ -1,0 +1,8 @@
+{{define "admin-radio-group"}}
+<fieldset>
+    <legend><strong>{{.Legend}}</strong></legend>
+    {{range .Options}}
+    <label><input type="radio" name="{{$.Name}}" value="{{.Value}}"{{if .Selected}} checked{{end}}> {{.Label}}</label>
+    {{end}}
+</fieldset>
+{{end}}
