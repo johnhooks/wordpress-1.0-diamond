@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "$(dirname "$0")/env"
+
+SITE="${1:-local}"
+PID_FILE="$PID_DIR/${SITE//\//_}.pid"
+
+# Stop any existing server for this site
+"$ROOT/bin/stop" "$SITE"
+
+# Read the port from the site's .env
+port=$(grep -E '^APP_PORT=' "$ROOT/$SITE/.env" 2>/dev/null | cut -d= -f2 || true)
+port="${port:-3000}"
+
+mkdir -p "$PID_DIR"
+
+# Subshell cds into the site directory. exec replaces the subshell
+# with air so signals propagate cleanly. Air manages its own child
+# process (the press binary) and cleans it up on SIGTERM.
+(cd "$ROOT/$SITE" && exec air) &
+pid=$!
+echo "$pid:$port" > "$PID_FILE"
+echo "Started PID $pid on port $port ($SITE)"
+
+# Block so Ctrl+C propagates to air via the process group.
+wait "$pid"

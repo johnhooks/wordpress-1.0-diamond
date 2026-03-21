@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Shared environment for all bin/ scripts.
+# Source this, don't execute it: . bin/env
+
+ROOT="$(git rev-parse --show-toplevel)"
+PID_DIR="$ROOT/tmp/pids"
