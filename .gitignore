@@ -4,5 +4,8 @@ storage/
 .idea/
 docs/plans/.wip
 /press
+tmp/
+.env.dev
 node_modules/
 package-lock.json
+/fixtures

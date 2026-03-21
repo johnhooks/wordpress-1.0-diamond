@@ -1,0 +1,12 @@
+[
+  {"login": "admin",   "displayName": "Admin",   "email": "admin@example.com",   "url": "",                       "level": "10", "group": "administrators"},
+  {"login": "matt",    "displayName": "Matt",    "email": "matt@example.com",    "url": "http://matt.example.com","level": "10", "group": "administrators"},
+  {"login": "jenny",   "displayName": "Jenny",   "email": "jenny@example.com",   "url": "",                       "level": "7",  "group": "editors"},
+  {"login": "alex",    "displayName": "Alex",    "email": "alex@example.com",    "url": "",                       "level": "7",  "group": "editors"},
+  {"login": "sam",     "displayName": "Sam",     "email": "sam@example.com",     "url": "http://sam.example.com", "level": "2",  "group": "authors"},
+  {"login": "river",   "displayName": "River",   "email": "river@example.com",   "url": "",                       "level": "2",  "group": "authors"},
+  {"login": "casey",   "displayName": "Casey",   "email": "casey@example.com",   "url": "",                       "level": "2",  "group": "authors"},
+  {"login": "drew",    "displayName": "Drew",    "email": "drew@example.com",    "url": "",                       "level": "0",  "group": "subscribers"},
+  {"login": "frankie", "displayName": "Frankie", "email": "frankie@example.com", "url": "",                       "level": "0",  "group": "subscribers"},
+  {"login": "morgan",  "displayName": "Morgan",  "email": "morgan@example.com",  "url": "",                       "level": "0",  "group": "subscribers"}
+]

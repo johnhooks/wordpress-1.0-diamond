@@ -5,15 +5,23 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"strings"
+	"time"
 
-	"press/internal/model"
+	"press/internal/permission"
 	"press/internal/query"
+	"press/internal/model"
 	"press/internal/repository"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/bcrypt"
 )
+
+var roleLevels = map[string]string{
+	"administrators": "10",
+	"editors":        "7",
+	"authors":        "2",
+	"subscribers":    "0",
+}
 
 var userCmd = &cobra.Command{
 	Use:   "user",
@@ -30,7 +38,15 @@ var userCreateCmd = &cobra.Command{
 
 		password, _ := cmd.Flags().GetString("pass")
 		displayName, _ := cmd.Flags().GetString("display-name")
+		role, _ := cmd.Flags().GetString("role")
+		userURL, _ := cmd.Flags().GetString("url")
 		porcelain, _ := cmd.Flags().GetBool("porcelain")
+
+		// Validate role
+		level, ok := roleLevels[role]
+		if !ok {
+			return fmt.Errorf("invalid role %q (use: administrators, editors, authors, subscribers)", role)
+		}
 
 		// Generate password if not provided
 		generatedPass := false
@@ -64,6 +80,7 @@ var userCreateCmd = &cobra.Command{
 			UserLogin:   login,
 			UserPass:    string(hashedPassword),
 			UserEmail:   email,
+			UserURL:     userURL,
 			DisplayName: displayName,
 		}
 
@@ -71,10 +88,27 @@ var userCreateCmd = &cobra.Command{
 			return err
 		}
 
-		// Set default user level
+		// Set user level meta
 		meta := repository.NewUserMeta(db)
-		if err := meta.Set(ctx, user.ID, "wp_user_level", "0"); err != nil {
+		if err := meta.Set(ctx, user.ID, "wp_user_level", level); err != nil {
 			return err
+		}
+		if err := meta.Set(ctx, user.ID, "nickname", login); err != nil {
+			return err
+		}
+
+		// Create group membership tuple
+		perms := permission.NewStore(db)
+		if err := perms.CreateTuple(ctx, &permission.Tuple{
+			SubjectType: "user",
+			SubjectID:   fmt.Sprintf("%d", user.ID),
+			Relation:    "member",
+			ObjectType:  "group",
+			ObjectID:    role,
+			CreatedAt:   time.Now().UTC(),
+			CreatedBy:   user.ID,
+		}); err != nil {
+			return fmt.Errorf("failed to set role: %w", err)
 		}
 
 		if porcelain {
@@ -90,10 +124,60 @@ var userCreateCmd = &cobra.Command{
 	},
 }
 
+var userGetCmd = &cobra.Command{
+	Use:   "get <id-or-login>",
+	Short: "Get a user",
+	Args:  cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		format, _ := cmd.Flags().GetString("format")
+
+		db, err := openDB()
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+
+		ctx := context.Background()
+		users := repository.NewUsersRepository(db)
+
+		var user *model.User
+		if id, login := resolveIDOrString(args[0]); id > 0 {
+			user, err = users.GetByID(ctx, id)
+		} else {
+			user, err = users.GetByLogin(ctx, login)
+		}
+		if err != nil {
+			return err
+		}
+
+		// Get role
+		perms := permission.NewStore(db)
+		groups, _ := perms.GetUserGroups(ctx, user.ID)
+		role := ""
+		if len(groups) > 0 {
+			role = groups[0]
+		}
+
+		formatSingle(format, []kv{
+			{"ID", fmt.Sprintf("%d", user.ID)},
+			{"Login", user.UserLogin},
+			{"Email", user.UserEmail},
+			{"Display Name", user.DisplayName},
+			{"URL", user.UserURL},
+			{"Role", role},
+			{"Registered", user.UserRegistered.Format("2006-01-02 15:04:05")},
+		})
+		return nil
+	},
+}
+
 var userListCmd = &cobra.Command{
 	Use:   "list",
-	Short: "List all users",
+	Short: "List users",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		format, _ := cmd.Flags().GetString("format")
+		role, _ := cmd.Flags().GetString("role")
+
 		db, err := openDB()
 		if err != nil {
 			return err
@@ -107,30 +191,62 @@ var userListCmd = &cobra.Command{
 			return err
 		}
 
-		if len(result.Items) == 0 {
+		// If filtering by role, get members of that group
+		var roleFilter map[int64]bool
+		if role != "" {
+			perms := permission.NewStore(db)
+			// Get all users in this group by querying tuples
+			var memberIDs []string
+			dbx := db
+			if err := dbx.SelectContext(ctx, &memberIDs,
+				"SELECT subject_id FROM wp_tuples WHERE subject_type = 'user' AND relation = 'member' AND object_type = 'group' AND object_id = ?",
+				role); err != nil {
+				return err
+			}
+			roleFilter = make(map[int64]bool)
+			for _, idStr := range memberIDs {
+				if id, _ := resolveIDOrString(idStr); id > 0 {
+					roleFilter[id] = true
+				}
+			}
+			_ = perms // used above via db directly
+		}
+
+		columns := []column{
+			{"ID", 4},
+			{"Login", 20},
+			{"Email", 30},
+			{"Display Name", 20},
+		}
+
+		var rows []map[string]any
+		for _, u := range result.Items {
+			if roleFilter != nil && !roleFilter[u.ID] {
+				continue
+			}
+			rows = append(rows, map[string]any{
+				"ID":           u.ID,
+				"Login":        u.UserLogin,
+				"Email":        u.UserEmail,
+				"Display Name": u.DisplayName,
+			})
+		}
+
+		if len(rows) == 0 {
 			fmt.Println("No users found.")
 			return nil
 		}
 
-		fmt.Printf("%-4s %-20s %-30s %s\n", "ID", "Login", "Email", "Display Name")
-		fmt.Println(strings.Repeat("-", 80))
-		for _, u := range result.Items {
-			fmt.Printf("%-4d %-20s %-30s %s\n", u.ID, u.UserLogin, u.UserEmail, u.DisplayName)
-		}
+		formatList(format, "ID", columns, rows)
 		return nil
 	},
 }
 
 var userDeleteCmd = &cobra.Command{
-	Use:   "delete <id>",
-	Short: "Delete a user by ID",
+	Use:   "delete <id-or-login>",
+	Short: "Delete a user",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var id int64
-		if _, err := fmt.Sscanf(args[0], "%d", &id); err != nil {
-			return fmt.Errorf("invalid user ID: %s", args[0])
-		}
-
 		reassign, _ := cmd.Flags().GetInt64("reassign")
 
 		db, err := openDB()
@@ -141,12 +257,29 @@ var userDeleteCmd = &cobra.Command{
 
 		ctx := context.Background()
 		users := repository.NewUsersRepository(db)
+
+		// Resolve ID or login
+		var id int64
+		if numID, login := resolveIDOrString(args[0]); numID > 0 {
+			id = numID
+		} else {
+			user, err := users.GetByLogin(ctx, login)
+			if err != nil {
+				return err
+			}
+			id = user.ID
+		}
+
 		if _, err := users.Delete(ctx, id, reassign); err != nil {
 			return err
 		}
 
+		// Clean up permission tuples
+		perms := permission.NewStore(db)
+		perms.DeleteTuplesForSubject(ctx, "user", fmt.Sprintf("%d", id))
+
 		if reassign > 0 {
-			fmt.Printf("Success: Removed user %d. Posts and links reassigned to user %d.\n", id, reassign)
+			fmt.Printf("Success: Removed user %d. Posts reassigned to user %d.\n", id, reassign)
 		} else {
 			fmt.Printf("Success: Removed user %d.\n", id)
 		}
@@ -157,10 +290,17 @@ var userDeleteCmd = &cobra.Command{
 func init() {
 	userCreateCmd.Flags().String("pass", "", "user password (generated if omitted)")
 	userCreateCmd.Flags().String("display-name", "", "display name (defaults to login)")
+	userCreateCmd.Flags().String("role", "subscribers", "user role (administrators, editors, authors, subscribers)")
+	userCreateCmd.Flags().String("url", "", "user URL")
 	userCreateCmd.Flags().Bool("porcelain", false, "output just the new user ID")
 
-	userDeleteCmd.Flags().Int64("reassign", 0, "reassign posts and links to this user ID")
+	userGetCmd.Flags().String("format", "table", "output format (table, json)")
 
-	userCmd.AddCommand(userCreateCmd, userListCmd, userDeleteCmd)
+	userListCmd.Flags().String("format", "table", "output format (table, json, csv, ids)")
+	userListCmd.Flags().String("role", "", "filter by role")
+
+	userDeleteCmd.Flags().Int64("reassign", 0, "reassign posts to this user ID")
+
+	userCmd.AddCommand(userCreateCmd, userGetCmd, userListCmd, userDeleteCmd)
 	rootCmd.AddCommand(userCmd)
 }

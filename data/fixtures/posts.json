@@ -1,0 +1,156 @@
+[
+  {
+    "author": "admin", "title": "Hello world!", "slug": "hello-world",
+    "categories": ["uncategorized"], "daysAfterBase": 0,
+    "content": ["Welcome to Press. This is your first post. Edit or delete it, then start writing!"]
+  },
+  {
+    "author": "matt", "title": "Why We Chose SQLite", "slug": "why-we-chose-sqlite",
+    "categories": ["development"], "daysAfterBase": 2,
+    "content": [
+      "Every database server is a process you have to keep alive. SQLite is a file. Your blog is a file. There is something deeply satisfying about that.",
+      "We considered Postgres. We considered MySQL. Then we considered not having to consider either of them."
+    ]
+  },
+  {
+    "author": "sam", "title": "My First Post (Please Be Gentle)", "slug": "my-first-post",
+    "categories": ["musings"], "daysAfterBase": 4,
+    "content": [
+      "I was told there would be no math. There is also no post editor yet, so I am writing JSON by hand. This is fine.",
+      "Everything is fine."
+    ]
+  },
+  {
+    "author": "jenny", "title": "The Sidebar Problem", "slug": "the-sidebar-problem",
+    "categories": ["design"], "daysAfterBase": 6,
+    "content": [
+      "Every blog has a sidebar. Nobody knows why. It is the vestigial tail of web design. We love it anyway.",
+      "The sidebar contains: categories you will never click, archives you will never browse, and a search form you will use exactly once to find that post you wrote three months ago."
+    ]
+  },
+  {
+    "author": "matt", "title": "Go Templates Are Fine", "slug": "go-templates-are-fine",
+    "categories": ["development"], "daysAfterBase": 8,
+    "content": [
+      "People complain about Go templates. They want logic. They want filters. They want inheritance. They want Jinja2.",
+      "Go templates do not want to be Jinja2. Go templates want to be left alone. We respect that."
+    ]
+  },
+  {
+    "author": "river", "title": "I Wrote a Poem About htmx", "slug": "poem-about-htmx",
+    "categories": ["musings"], "daysAfterBase": 10,
+    "content": [
+      "Roses are red, JSON is blue, the server sends HTML, and htmx swaps it for you.",
+      "Thank you. I will be here all week."
+    ]
+  },
+  {
+    "author": "alex", "title": "Comment Moderation Is a Thankless Job", "slug": "comment-moderation",
+    "categories": ["musings"], "daysAfterBase": 12,
+    "content": [
+      "I have been moderating comments for three days. Most of them are from Sam testing the comment form. Sam, please stop.",
+      "The rest are trackback spam from websites that do not exist. The internet is a strange place."
+    ]
+  },
+  {
+    "author": "casey", "title": "Themes Should Be Simple", "slug": "themes-should-be-simple",
+    "categories": ["design"], "daysAfterBase": 14,
+    "content": [
+      "A theme is HTML and CSS. That is it. If your theme requires a build step, a package manager, and a CI pipeline, you have not built a theme. You have built a small software company.",
+      "The best theme is one you forget is there."
+    ]
+  },
+  {
+    "author": "sam", "title": "How I Broke the Database (Twice)", "slug": "broke-the-database",
+    "categories": ["bugs"], "daysAfterBase": 16,
+    "content": [
+      "The first time was an accident. I forgot a WHERE clause. The entire posts table became one post. It was a good post, but it was all of them.",
+      "The second time was also an accident but I am choosing to frame it as a learning experience."
+    ]
+  },
+  {
+    "author": "admin", "title": "On Naming Things", "slug": "on-naming-things",
+    "categories": ["development"], "daysAfterBase": 18,
+    "content": [
+      "We use TheTitle, TheContent, TheDate. This is objectively wrong by Go conventions. We do not care.",
+      "WordPress called them the_title(), the_content(), the_date(). We are WordPress 1.6. The heritage matters, even when it makes us wince."
+    ]
+  },
+  {
+    "author": "jenny", "title": "The Case for Server-Rendered HTML", "slug": "server-rendered-html",
+    "categories": ["development", "design"], "daysAfterBase": 20,
+    "content": [
+      "The server sends HTML. The browser shows it. This is how the web worked for twenty years and it was fine.",
+      "Then we invented client-side rendering and now your blog needs 400KB of JavaScript to display text. We are going back."
+    ]
+  },
+  {
+    "author": "matt", "title": "ProseMirror Is Not Simple", "slug": "prosemirror-not-simple",
+    "categories": ["development"], "daysAfterBase": 22,
+    "content": [
+      "We chose ProseMirror for the editor because it is the right tool for collaborative rich text editing. It is also the most complex piece of software in this project by an order of magnitude.",
+      "Every time I open the ProseMirror docs I age slightly."
+    ]
+  },
+  {
+    "author": "river", "title": "A Blog About Blogging", "slug": "blog-about-blogging",
+    "categories": ["musings"], "daysAfterBase": 24,
+    "content": ["We are building a blogging engine and using it to blog about building the blogging engine. This is either very meta or very lazy. Possibly both."]
+  },
+  {
+    "author": "casey", "title": "CSS Custom Properties Are Underrated", "slug": "css-custom-properties",
+    "categories": ["design"], "daysAfterBase": 26,
+    "content": [
+      "Every visual value in a theme should be a custom property. Not because it is technically necessary, but because it forces you to name your design decisions.",
+      "If you cannot name a color, you probably should not be using it."
+    ]
+  },
+  {
+    "author": "alex", "title": "Things I Have Deleted From the Codebase", "slug": "things-deleted",
+    "categories": ["development", "bugs"], "daysAfterBase": 28,
+    "content": [
+      "GeoURL support. MD5 password hashing. The four-table options system. A function called get_currentuserinfo(). An entire XML-RPC layer.",
+      "Deleting code is more satisfying than writing it. This is a hill I will comfortably sit on."
+    ]
+  },
+  {
+    "author": "sam", "title": "The Loop", "slug": "the-loop",
+    "categories": ["development"], "daysAfterBase": 30,
+    "content": [
+      "In WordPress, The Loop is how you iterate over posts. It is the fundamental concept of the entire platform. Every WordPress developer knows The Loop.",
+      "In Press, The Loop is a range statement. That is all it is. Sometimes progress is boring."
+    ]
+  },
+  {
+    "author": "admin", "title": "Why We Will Never Ship 2.0", "slug": "never-ship-two",
+    "categories": ["musings"], "daysAfterBase": 32,
+    "content": [
+      "There is no 2.0. There is no CMS pivot. The version number stays in 1.x forever. If we run out of minor versions we will use 1.10 and keep going.",
+      "This constraint is the whole experiment. What happens when you commit to being a blog and never waver?"
+    ]
+  },
+  {
+    "author": "jenny", "title": "htmx Fragments and Full Pages", "slug": "htmx-fragments",
+    "categories": ["development", "design"], "daysAfterBase": 34,
+    "content": [
+      "Every page has two rendering modes. A full page request gets the complete HTML document. An htmx request gets just the piece that changed.",
+      "Same templates build both. The server checks for the HX-Request header and decides how much HTML to send. It is elegant in a way that makes me suspicious."
+    ]
+  },
+  {
+    "author": "river", "title": "I Named the Default Theme Freerange", "slug": "freerange-theme",
+    "categories": ["design"], "daysAfterBase": 36,
+    "content": [
+      "The default theme is called Freerange because it roams free. No constraints. No framework. Just HTML and CSS wandering the open fields of the internet.",
+      "Also because every other good name was taken."
+    ]
+  },
+  {
+    "author": "matt", "title": "Single Binary Distribution", "slug": "single-binary",
+    "categories": ["development"], "daysAfterBase": 38,
+    "content": [
+      "Press is one binary. You run it and you are blogging. No Docker. No database server. No runtime dependencies.",
+      "Your blog is a file on your computer. Your database is a file next to it. If this sounds too simple, you have been overcomplicating things."
+    ]
+  }
+]

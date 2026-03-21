@@ -1,0 +1,46 @@
+[
+  {"post": "hello-world",         "author": "Drew",    "email": "drew@example.com",    "url": "",                       "hoursAfterPost": 2,   "content": "First comment! Do I win something?"},
+  {"post": "hello-world",         "author": "Frankie", "email": "frankie@example.com", "url": "",                       "hoursAfterPost": 3,   "content": "You win the mass approval of strangers on the internet. Congratulations."},
+
+  {"post": "why-we-chose-sqlite", "author": "Sam",     "email": "sam@example.com",     "url": "http://sam.example.com", "hoursAfterPost": 1,   "content": "But what about concurrent writes? Asking for a friend who is me."},
+  {"post": "why-we-chose-sqlite", "author": "Matt",    "email": "matt@example.com",    "url": "http://matt.example.com","hoursAfterPost": 2,   "content": "It is a blog, Sam. The write load is one person pressing publish."},
+  {"post": "why-we-chose-sqlite", "author": "Morgan",  "email": "morgan@example.com",  "url": "",                       "hoursAfterPost": 4,   "content": "I once ran a Postgres cluster for a blog with six posts. I am not proud."},
+
+  {"post": "my-first-post",       "author": "Jenny",   "email": "jenny@example.com",   "url": "",                       "hoursAfterPost": 1,   "content": "Writing JSON by hand builds character."},
+  {"post": "my-first-post",       "author": "Alex",    "email": "alex@example.com",    "url": "",                       "hoursAfterPost": 2,   "content": "It also builds carpal tunnel syndrome."},
+
+  {"post": "the-sidebar-problem", "author": "River",   "email": "river@example.com",   "url": "",                       "hoursAfterPost": 3,   "content": "I clicked every category in the sidebar just to prove you wrong. I regret nothing."},
+  {"post": "the-sidebar-problem", "author": "Casey",   "email": "casey@example.com",   "url": "",                       "hoursAfterPost": 5,   "content": "The search form works great. I used it to search for 'why is the sidebar so long'."},
+
+  {"post": "go-templates-are-fine","author": "Sam",     "email": "sam@example.com",     "url": "http://sam.example.com", "hoursAfterPost": 1,   "content": "They are fine in the way that a ham sandwich is fine. Technically food."},
+  {"post": "go-templates-are-fine","author": "Alex",    "email": "alex@example.com",    "url": "",                       "hoursAfterPost": 3,   "content": "I tried to do string formatting in a Go template and had a spiritual experience."},
+  {"post": "go-templates-are-fine","author": "Jenny",   "email": "jenny@example.com",   "url": "",                       "hoursAfterPost": 4,   "content": "The experience was bad, to be clear."},
+
+  {"post": "poem-about-htmx",     "author": "Drew",    "email": "drew@example.com",    "url": "",                       "hoursAfterPost": 0.5, "content": "This is the best poem I have ever read about a JavaScript library."},
+  {"post": "poem-about-htmx",     "author": "Frankie", "email": "frankie@example.com", "url": "",                       "hoursAfterPost": 1,   "content": "This is the only poem I have ever read about a JavaScript library."},
+  {"post": "poem-about-htmx",     "author": "Matt",    "email": "matt@example.com",    "url": "http://matt.example.com","hoursAfterPost": 2,   "content": "htmx is not a JavaScript library it is a way of life."},
+
+  {"post": "comment-moderation",   "author": "Sam",     "email": "sam@example.com",     "url": "http://sam.example.com", "hoursAfterPost": 1,   "content": "I was testing! The comment form needed testing! Someone had to do it!"},
+  {"post": "comment-moderation",   "author": "Sam",     "email": "sam@example.com",     "url": "http://sam.example.com", "hoursAfterPost": 2,   "content": "Also this comment is a test."},
+
+  {"post": "themes-should-be-simple","author": "Morgan","email": "morgan@example.com",  "url": "",                       "hoursAfterPost": 2,   "content": "My previous blog theme had a webpack config longer than any post I ever wrote."},
+
+  {"post": "broke-the-database",   "author": "Jenny",   "email": "jenny@example.com",   "url": "",                       "hoursAfterPost": 1,   "content": "The WHERE clause incident is going in the team hall of fame."},
+  {"post": "broke-the-database",   "author": "Admin",   "email": "admin@example.com",   "url": "",                       "hoursAfterPost": 3,   "content": "We have backups. We have always had backups. Right? Right."},
+
+  {"post": "on-naming-things",     "author": "Alex",    "email": "alex@example.com",    "url": "",                       "hoursAfterPost": 2,   "content": "TheTitle makes every Go linter cry. I respect the commitment."},
+  {"post": "on-naming-things",     "author": "River",   "email": "river@example.com",   "url": "",                       "hoursAfterPost": 4,   "content": "I showed this to a Go developer and they closed the tab."},
+
+  {"post": "server-rendered-html", "author": "Casey",   "email": "casey@example.com",   "url": "",                       "hoursAfterPost": 1,   "content": "My blog loads in 200ms. My neighbor's React blog is still hydrating."},
+  {"post": "server-rendered-html", "author": "Drew",    "email": "drew@example.com",    "url": "",                       "hoursAfterPost": 3,   "content": "400KB of JavaScript to render 'Hello World' is the funniest thing about modern web development."},
+
+  {"post": "prosemirror-not-simple","author": "Sam",    "email": "sam@example.com",     "url": "http://sam.example.com", "hoursAfterPost": 2,   "content": "I opened the ProseMirror docs and I am pretty sure I saw the void staring back."},
+
+  {"post": "blog-about-blogging",  "author": "Frankie", "email": "frankie@example.com", "url": "",                       "hoursAfterPost": 1,   "content": "Is this post about blogging or about blogging about blogging? I need a diagram."},
+
+  {"post": "never-ship-two",       "author": "Morgan",  "email": "morgan@example.com",  "url": "",                       "hoursAfterPost": 2,   "content": "What happens at version 1.99? Do you start using decimals? 1.99.1?"},
+  {"post": "never-ship-two",       "author": "Matt",    "email": "matt@example.com",    "url": "http://matt.example.com","hoursAfterPost": 3,   "content": "1.10. Then 1.11. Then 1.12. SemVer was never the point."},
+
+  {"post": "single-binary",        "author": "Drew",    "email": "drew@example.com",    "url": "",                       "hoursAfterPost": 1,   "content": "I have been running my blog from a USB stick for two weeks. This rules."},
+  {"post": "single-binary",        "author": "River",   "email": "river@example.com",   "url": "",                       "hoursAfterPost": 4,   "content": "Your blog is literally a file. That is the most beautiful sentence in software."}
+]

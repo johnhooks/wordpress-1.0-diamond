@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"press/internal/database"
-	"press/internal/database/seed"
 
 	"github.com/pressly/goose/v3"
 	"github.com/spf13/cobra"
@@ -16,25 +15,10 @@ var dbCmd = &cobra.Command{
 	Short: "Database management commands",
 }
 
-var dbSeedCmd = &cobra.Command{
-	Use:   "seed",
-	Short: "Seed the database with default data",
-	RunE: func(cmd *cobra.Command, args []string) error {
-		db, err := openDB()
-		if err != nil {
-			return err
-		}
-		defer db.Close()
-
-		return seed.Run(db)
-	},
-}
-
 var dbResetCmd = &cobra.Command{
 	Use:   "reset",
-	Short: "Drop database, re-run migrations, and seed",
+	Short: "Drop database and re-run migrations",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		// Delete the database file
 		if err := os.Remove(appConfig.DBPath); err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to remove database: %w", err)
 		}
@@ -55,12 +39,11 @@ var dbResetCmd = &cobra.Command{
 			return fmt.Errorf("failed to run migrations: %w", err)
 		}
 		fmt.Println("Migrations complete.")
-
-		return seed.Run(db)
+		return nil
 	},
 }
 
 func init() {
-	dbCmd.AddCommand(dbSeedCmd, dbResetCmd)
+	dbCmd.AddCommand(dbResetCmd)
 	rootCmd.AddCommand(dbCmd)
 }

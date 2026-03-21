@@ -2,18 +2,49 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"press/internal/model"
+	"press/internal/permission"
 	"press/internal/query"
 	"press/internal/repository"
 	"press/internal/slug"
 
 	"github.com/spf13/cobra"
 )
+
+// wrapProseMirror wraps plain text content in ProseMirror document JSON.
+// If the content already looks like ProseMirror JSON, it is returned as-is.
+func wrapProseMirror(content string) string {
+	trimmed := strings.TrimSpace(content)
+	if len(trimmed) > 0 && trimmed[0] == '{' {
+		// Check if it is valid ProseMirror JSON
+		var doc map[string]any
+		if json.Unmarshal([]byte(trimmed), &doc) == nil {
+			if _, ok := doc["type"]; ok {
+				return trimmed
+			}
+		}
+	}
+
+	// Split on double newlines into paragraphs
+	paragraphs := strings.Split(trimmed, "\n\n")
+	parts := make([]string, 0, len(paragraphs))
+	for _, p := range paragraphs {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		escaped, _ := json.Marshal(p)
+		parts = append(parts, fmt.Sprintf(`{"type":"paragraph","content":[{"type":"text","text":%s}]}`, string(escaped)))
+	}
+	return fmt.Sprintf(`{"type":"doc","content":[%s]}`, strings.Join(parts, ","))
+}
 
 var postCmd = &cobra.Command{
 	Use:   "post",
@@ -32,6 +63,7 @@ var postCreateCmd = &cobra.Command{
 		postType, _ := cmd.Flags().GetString("type")
 		author, _ := cmd.Flags().GetInt64("author")
 		slugFlag, _ := cmd.Flags().GetString("slug")
+		category, _ := cmd.Flags().GetString("category")
 		porcelain, _ := cmd.Flags().GetBool("porcelain")
 
 		// Read content from file or stdin if positional arg provided
@@ -56,6 +88,11 @@ var postCreateCmd = &cobra.Command{
 
 		if title == "" {
 			return fmt.Errorf("--title is required")
+		}
+
+		// Wrap content in ProseMirror JSON
+		if content != "" {
+			content = wrapProseMirror(content)
 		}
 
 		db, err := openDB()
@@ -91,6 +128,41 @@ var postCreateCmd = &cobra.Command{
 			return err
 		}
 
+		// Assign category if provided
+		if category != "" {
+			terms := repository.NewTermsRepository(db)
+
+			// Try by slug first, then by name
+			term, err := terms.GetBySlug(ctx, category)
+			if err != nil {
+				term, err = terms.GetByName(ctx, category, "category")
+			}
+			if err != nil {
+				return fmt.Errorf("category not found: %s", category)
+			}
+
+			tt, err := terms.GetTaxonomy(ctx, term.TermID, "category")
+			if err != nil {
+				return fmt.Errorf("category taxonomy not found: %w", err)
+			}
+
+			if err := terms.AddTermToPost(ctx, post.ID, tt.TermTaxonomyID); err != nil {
+				return fmt.Errorf("failed to assign category: %w", err)
+			}
+		}
+
+		// Create authorship tuple
+		perms := permission.NewStore(db)
+		perms.CreateTuple(ctx, &permission.Tuple{
+			SubjectType: "user",
+			SubjectID:   fmt.Sprintf("%d", author),
+			Relation:    "writer",
+			ObjectType:  "post",
+			ObjectID:    fmt.Sprintf("%d", post.ID),
+			CreatedAt:   time.Now().UTC(),
+			CreatedBy:   author,
+		})
+
 		if porcelain {
 			fmt.Println(post.ID)
 			return nil
@@ -101,10 +173,13 @@ var postCreateCmd = &cobra.Command{
 	},
 }
 
-var postListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all posts",
+var postGetCmd = &cobra.Command{
+	Use:   "get <id-or-slug>",
+	Short: "Get a post",
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		format, _ := cmd.Flags().GetString("format")
+
 		db, err := openDB()
 		if err != nil {
 			return err
@@ -113,38 +188,100 @@ var postListCmd = &cobra.Command{
 
 		ctx := context.Background()
 		posts := repository.NewPostsRepository(db)
+
+		var post *model.Post
+		if id, s := resolveIDOrString(args[0]); id > 0 {
+			post, err = posts.GetByID(ctx, id)
+		} else {
+			post, err = posts.GetBySlug(ctx, s)
+		}
+		if err != nil {
+			return err
+		}
+
+		formatSingle(format, []kv{
+			{"ID", fmt.Sprintf("%d", post.ID)},
+			{"Title", post.PostTitle},
+			{"Slug", post.PostName},
+			{"Status", post.PostStatus},
+			{"Type", post.PostType},
+			{"Author", fmt.Sprintf("%d", post.PostAuthor)},
+			{"Date", post.PostDate.Format("2006-01-02 15:04:05")},
+			{"Comment Status", post.CommentStatus},
+			{"Comment Count", fmt.Sprintf("%d", post.CommentCount)},
+		})
+		return nil
+	},
+}
+
+var postListCmd = &cobra.Command{
+	Use:   "list",
+	Short: "List posts",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		format, _ := cmd.Flags().GetString("format")
+		status, _ := cmd.Flags().GetString("status")
+		postType, _ := cmd.Flags().GetString("type")
+		author, _ := cmd.Flags().GetInt64("author")
+
+		db, err := openDB()
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+
+		ctx := context.Background()
+		posts := repository.NewPostsRepository(db)
+
+		filters := []query.Filter{
+			{Field: "type", Operator: query.Is, Value: postType},
+		}
+		if status != "" {
+			filters = append(filters, query.Filter{Field: "status", Operator: query.Is, Value: status})
+		}
+		if author > 0 {
+			filters = append(filters, query.Filter{Field: "author", Operator: query.Is, Value: author})
+		}
+
 		result, err := posts.List(ctx, query.Query{
-			Filters: []query.Filter{{Field: "type", Operator: query.Is, Value: "post"}},
+			Filters: filters,
 			PerPage: 1000,
 		})
 		if err != nil {
 			return err
 		}
 
-		if len(result.Items) == 0 {
+		columns := []column{
+			{"ID", 4},
+			{"Title", 40},
+			{"Status", 12},
+			{"Date", 10},
+		}
+
+		var rows []map[string]any
+		for _, p := range result.Items {
+			rows = append(rows, map[string]any{
+				"ID":     p.ID,
+				"Title":  p.PostTitle,
+				"Status": p.PostStatus,
+				"Date":   p.PostDate.Format("2006-01-02"),
+			})
+		}
+
+		if len(rows) == 0 {
 			fmt.Println("No posts found.")
 			return nil
 		}
 
-		fmt.Printf("%-4s %-40s %-12s %s\n", "ID", "Title", "Status", "Date")
-		fmt.Println(strings.Repeat("-", 80))
-		for _, p := range result.Items {
-			fmt.Printf("%-4d %-40s %-12s %s\n", p.ID, truncate(p.PostTitle, 38), p.PostStatus, p.PostDate.Format("2006-01-02"))
-		}
+		formatList(format, "ID", columns, rows)
 		return nil
 	},
 }
 
 var postDeleteCmd = &cobra.Command{
-	Use:   "delete [id]",
-	Short: "Delete a post by ID",
+	Use:   "delete <id-or-slug>",
+	Short: "Delete a post",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var id int64
-		if _, err := fmt.Sscanf(args[0], "%d", &id); err != nil {
-			return fmt.Errorf("invalid post ID: %s", args[0])
-		}
-
 		db, err := openDB()
 		if err != nil {
 			return err
@@ -153,11 +290,27 @@ var postDeleteCmd = &cobra.Command{
 
 		ctx := context.Background()
 		posts := repository.NewPostsRepository(db)
+
+		var id int64
+		if numID, s := resolveIDOrString(args[0]); numID > 0 {
+			id = numID
+		} else {
+			post, err := posts.GetBySlug(ctx, s)
+			if err != nil {
+				return err
+			}
+			id = post.ID
+		}
+
 		if _, err := posts.Delete(ctx, id); err != nil {
 			return err
 		}
 
-		fmt.Printf("Post %d deleted.\n", id)
+		// Clean up permission tuples
+		perms := permission.NewStore(db)
+		perms.DeleteTuplesForObject(ctx, "post", fmt.Sprintf("%d", id))
+
+		fmt.Printf("Success: Deleted post %d.\n", id)
 		return nil
 	},
 }
@@ -169,15 +322,16 @@ func init() {
 	postCreateCmd.Flags().String("type", "post", "post type")
 	postCreateCmd.Flags().Int64("author", 1, "post author user ID")
 	postCreateCmd.Flags().String("slug", "", "post slug (generated from title if omitted)")
+	postCreateCmd.Flags().String("category", "", "category name or slug")
 	postCreateCmd.Flags().Bool("porcelain", false, "output just the new post ID")
 
-	postCmd.AddCommand(postCreateCmd, postListCmd, postDeleteCmd)
-	rootCmd.AddCommand(postCmd)
-}
+	postGetCmd.Flags().String("format", "table", "output format (table, json)")
 
-func truncate(s string, max int) string {
-	if len(s) <= max {
-		return s
-	}
-	return s[:max-1] + "…"
+	postListCmd.Flags().String("format", "table", "output format (table, json, csv, ids)")
+	postListCmd.Flags().String("status", "", "filter by status")
+	postListCmd.Flags().String("type", "post", "filter by post type")
+	postListCmd.Flags().Int64("author", 0, "filter by author ID")
+
+	postCmd.AddCommand(postCreateCmd, postGetCmd, postListCmd, postDeleteCmd)
+	rootCmd.AddCommand(postCmd)
 }

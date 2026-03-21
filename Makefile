@@ -10,7 +10,7 @@ VENDOR_MAP = orderedmap:dist/index.js \
              rope-sequence:dist/index.js \
              htmx.org:dist/htmx.min.js
 
-.PHONY: vendor vendor-clean build test
+.PHONY: vendor vendor-clean build test dev serve reset fixtures fresh press clean
 
 vendor: node_modules
 	@mkdir -p $(VENDOR_DIR)
@@ -31,7 +31,33 @@ node_modules: package.json
 	npm install
 
 build:
-	go build ./...
+	go build -o press ./cmd/press
+
+# Start the development server with file watching
+dev:
+	cd local && air
+
+# Start the development server (no file watching)
+serve: build
+	cd local && ../press serve
+
+# Drop database and re-run migrations
+reset: build
+	cd local && ../press db reset
+
+# Load fixture data into the database
+fixtures:
+	go run ./data/fixtures/ local/storage/press.db
+
+# Reset and reload: drop, migrate, load fixtures
+fresh: reset fixtures
+
+# Run press CLI commands (usage: make press CMD="user list")
+press: build
+	cd local && ../press $(CMD)
 
 test:
 	go test ./...
+
+clean:
+	rm -f press

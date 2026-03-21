@@ -1,0 +1,7 @@
+[
+  {"name": "Uncategorized", "slug": "uncategorized"},
+  {"name": "Development",   "slug": "development"},
+  {"name": "Design",        "slug": "design"},
+  {"name": "Musings",       "slug": "musings"},
+  {"name": "Bugs",          "slug": "bugs"}
+]
