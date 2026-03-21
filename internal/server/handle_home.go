@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -30,14 +31,15 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 
 	result, err := s.posts.List(ctx, s.publishedPostQuery(page, perPage))
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		log.Printf("failed to list posts: %v", err)
+		s.httpError(w, r, "An internal error occurred.", http.StatusInternalServerError)
 		return
 	}
 
 	views := s.postViews(ctx, result.Items)
 
 	data := HomeData{
-		SiteData:    s.siteData(ctx),
+		SiteData:    s.siteData(r),
 		Posts:       views,
 		HasPrev:     page > 1,
 		HasNext:     page < result.TotalPages,

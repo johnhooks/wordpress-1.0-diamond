@@ -82,7 +82,7 @@ func (s *Server) renderPost(w http.ResponseWriter, r *http.Request, post *postRe
 		}
 	}
 
-	siteData := s.siteData(ctx)
+	siteData := s.siteData(r)
 	siteData.PageTitle = post.PostTitle
 
 	data := SingleData{

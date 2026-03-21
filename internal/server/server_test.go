@@ -27,10 +27,11 @@ func setupServer(t *testing.T) (*server.Server, *repository.PostsRepository, *re
 
 	publicDir := t.TempDir()
 	cfg := &config.Config{
-		AppHost:   "localhost",
-		AppPort:   8080,
-		PublicDir: publicDir,
-		ThemeDir:  "../../local/themes/freerange",
+		AppHost:       "localhost",
+		AppPort:       8080,
+		PublicDir:     publicDir,
+		ThemeDir:      "../../local/themes/freerange",
+		SessionMaxAge: 30,
 	}
 
 	s, err := server.New(cfg, database)

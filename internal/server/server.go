@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"press/internal/auth"
 	"press/internal/config"
 	"press/internal/model"
 	"press/internal/permalink"
@@ -27,14 +28,17 @@ type Server struct {
 	db         *sqlx.DB
 	mux        *http.ServeMux
 	tmpl       *template.Template
+	adminTmpl  *template.Template
 	linker     *permalink.Linker
 	router     *permalink.Router
 	posts      *repository.PostsRepository
 	comments   *repository.CommentsRepository
 	terms      *repository.TermsRepository
 	users      *repository.UsersRepository
+	sessions   *repository.SessionsRepository
 	options    *repository.OptionsRepository
 	serializer *prosemirror.Serializer
+	auth       *auth.Service
 }
 
 // New creates a new Server with routes and templates configured.
@@ -62,11 +66,24 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 		return nil, fmt.Errorf("failed to load permalink_structure option: %w", err)
 	}
 
+	// Load admin templates from the built-in admin theme.
+	// For now, admin templates live alongside the site theme in an
+	// admin/ subdirectory. This will become a separate theme surface.
+	adminTmpl, err := loadAdminTemplates(cfg.ThemeDir, funcMap)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load admin templates: %w", err)
+	}
+
+	users := repository.NewUsersRepository(db)
+	sessions := repository.NewSessionsRepository(db)
+	secure := !cfg.IsDevelopment()
+
 	s := &Server{
-		cfg:  cfg,
-		db:   db,
-		mux:  http.NewServeMux(),
-		tmpl: tmpl,
+		cfg:       cfg,
+		db:        db,
+		mux:       http.NewServeMux(),
+		tmpl:      tmpl,
+		adminTmpl: adminTmpl,
 		linker: &permalink.Linker{
 			SiteURL:   siteURL,
 			Structure: structure,
@@ -75,9 +92,11 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 		posts:      repository.NewPostsRepository(db),
 		comments:   repository.NewCommentsRepository(db),
 		terms:      repository.NewTermsRepository(db),
-		users:      repository.NewUsersRepository(db),
+		users:      users,
+		sessions:   sessions,
 		options:    opts,
 		serializer: prosemirror.DefaultSerializer(),
+		auth:       auth.NewService(users, sessions, secure, cfg.SessionMaxAge),
 	}
 
 	s.setupRoutes()
@@ -115,6 +134,28 @@ func loadThemeTemplates(themeDir string, funcMap template.FuncMap) (*template.Te
 	return tmpl, nil
 }
 
+// loadAdminTemplates loads admin theme templates. For now these live in
+// an admin/ subdirectory alongside the site theme. This will become a
+// separate theme surface.
+func loadAdminTemplates(themeDir string, funcMap template.FuncMap) (*template.Template, error) {
+	tmpl := template.New("").Funcs(funcMap)
+
+	adminDir := filepath.Join(filepath.Dir(themeDir), "admin")
+	pattern := filepath.Join(adminDir, "*.html")
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return nil, fmt.Errorf("failed to glob %s: %w", pattern, err)
+	}
+	if len(matches) > 0 {
+		tmpl, err = tmpl.ParseFiles(matches...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse admin templates: %w", err)
+		}
+	}
+
+	return tmpl, nil
+}
+
 // Handler returns the server's HTTP handler.
 func (s *Server) Handler() http.Handler {
 	return s.mux
@@ -137,6 +178,12 @@ func (s *Server) setupRoutes() {
 
 	s.mux.HandleFunc("POST /comments", s.handleCommentSubmit)
 	s.mux.HandleFunc("POST /comments/", s.handleCommentSubmit)
+
+	// Admin routes — login is public, everything else requires auth
+	s.mux.HandleFunc("GET /wp-admin/login", s.handleLogin)
+	s.mux.HandleFunc("POST /wp-admin/login", s.handleLoginSubmit)
+	s.mux.HandleFunc("GET /wp-admin/logout", s.handleLogout)
+	s.mux.Handle("GET /wp-admin/", s.auth.RequireAuth(http.HandlerFunc(s.handleAdminDashboard)))
 
 	s.mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		// ?p=<id> — query-string post lookup
@@ -165,6 +212,13 @@ func (s *Server) setupRoutes() {
 		}
 		s.handleHome(w, r)
 	})
+}
+
+// httpError writes an error response. For HTML requests it sends a plain
+// text error. The message should be safe for end users. Internal details
+// are logged, not sent.
+func (s *Server) httpError(w http.ResponseWriter, r *http.Request, message string, status int) {
+	http.Error(w, message, status)
 }
 
 // render executes a template and writes it to the response.
@@ -215,13 +269,17 @@ func (s *Server) blogInfo(ctx context.Context) (name, description string) {
 // siteData builds the shared SiteData available on every page.
 // Sidebar data (categories, archives, pages) and auth state will be
 // populated here once the queries are wired up.
-func (s *Server) siteData(ctx context.Context) SiteData {
-	name, desc := s.blogInfo(ctx)
-	return SiteData{
+func (s *Server) siteData(r *http.Request) SiteData {
+	name, desc := s.blogInfo(r.Context())
+	data := SiteData{
 		BlogName:        name,
 		BlogDescription: desc,
-		LoginURL:        "/wp-login.php",
+		LoginURL:        "/wp-admin/login",
+		LogoutURL:       "/wp-admin/logout",
+		AdminURL:        "/wp-admin/",
+		IsLoggedIn:      s.auth.Authenticate(r) != nil,
 	}
+	return data
 }
 
 func (s *Server) authorName(ctx context.Context, userID int64) string {
