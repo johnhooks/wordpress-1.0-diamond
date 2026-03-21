@@ -1,0 +1,39 @@
+{{define "admin-posts"}}
+{{template "admin-header" .}}
+
+<p><a href="/wp-admin/post/new">Write New Post</a></p>
+
+{{if .Drafts}}
+<p><strong>Your Drafts:</strong>
+    {{range .Drafts}}
+    <a href="/wp-admin/post/{{.ID}}/edit">{{.Title}}</a>
+    {{end}}
+</p>
+{{end}}
+
+{{if .Posts}}
+{{range .Posts}}
+<div style="margin-bottom: 1.5em;">
+    <strong>{{.Date}}</strong>
+    [<a href="/wp-admin/post/{{.ID}}/edit">Edit</a>
+    | <a href="{{.ViewURL}}">View</a>
+    | {{.CommentCount}} comments]
+    {{if eq .Status "private"}} — <strong>Private</strong>{{end}}
+    {{if eq .Status "draft"}} — <em>Draft</em>{{end}}
+    <br>
+    <strong><a href="{{.ViewURL}}">{{.Title}}</a></strong>
+    — <em>{{.AuthorName}}, in {{.Categories}}</em>
+</div>
+{{end}}
+
+<p>
+    {{if .HasPrev}}<a href="{{.PrevURL}}">&laquo; Newer</a>{{end}}
+    {{if and .HasPrev .HasNext}} | {{end}}
+    {{if .HasNext}}<a href="{{.NextURL}}">Older &raquo;</a>{{end}}
+</p>
+{{else}}
+<p><strong>No posts found.</strong></p>
+{{end}}
+
+{{template "admin-footer" .}}
+{{end}}

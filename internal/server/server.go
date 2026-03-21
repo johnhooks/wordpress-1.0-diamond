@@ -183,6 +183,13 @@ func (s *Server) setupRoutes() {
 	s.mux.HandleFunc("GET /wp-admin/login", s.handleLogin)
 	s.mux.HandleFunc("POST /wp-admin/login", s.handleLoginSubmit)
 	s.mux.HandleFunc("GET /wp-admin/logout", s.handleLogout)
+
+	s.mux.Handle("GET /wp-admin/post/new", s.auth.RequireAuth(http.HandlerFunc(s.handleWritePost)))
+	s.mux.Handle("POST /wp-admin/post/new", s.auth.RequireAuth(http.HandlerFunc(s.handleWritePostSubmit)))
+	s.mux.Handle("GET /wp-admin/post/{id}/edit", s.auth.RequireAuth(http.HandlerFunc(s.handleEditPost)))
+	s.mux.Handle("POST /wp-admin/post/{id}/edit", s.auth.RequireAuth(http.HandlerFunc(s.handleEditPostSubmit)))
+	s.mux.Handle("GET /wp-admin/post/{id}/delete", s.auth.RequireAuth(http.HandlerFunc(s.handleDeletePost)))
+	s.mux.Handle("GET /wp-admin/posts", s.auth.RequireAuth(http.HandlerFunc(s.handleManagePosts)))
 	s.mux.Handle("GET /wp-admin/", s.auth.RequireAuth(http.HandlerFunc(s.handleAdminDashboard)))
 
 	s.mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {

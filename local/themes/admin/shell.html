@@ -1,0 +1,34 @@
+{{define "admin-header"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{.Shell.SiteName}} &rsaquo; {{.Shell.PageTitle}}</title>
+</head>
+<body style="max-width: 50em; margin: 0 auto; padding: 0 1em;">
+
+<h1><a href="/">{{.Shell.SiteName}}</a></h1>
+
+<nav>
+    <ul style="list-style: none; padding: 0; display: flex; gap: 1em; flex-wrap: wrap;">
+        {{range .Shell.MenuItems}}
+        <li>{{if .IsCurrent}}<strong>{{.Label}}</strong>{{else}}<a href="{{.URL}}">{{.Label}}</a>{{end}}</li>
+        {{end}}
+        <li><a href="/wp-admin/profile">{{.Shell.CurrentUser.DisplayName}}</a></li>
+        <li><a href="/">View Site</a></li>
+        <li><a href="/wp-admin/logout">Logout</a></li>
+    </ul>
+</nav>
+
+<hr>
+
+<h2>{{.Shell.PageTitle}}</h2>
+{{end}}
+
+{{define "admin-footer"}}
+<hr>
+<p><small>Press {{.Shell.Version}}</small></p>
+</body>
+</html>
+{{end}}

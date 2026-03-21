@@ -1,0 +1,56 @@
+{{define "admin-edit"}}
+{{template "admin-header" .}}
+
+<form name="post" action="/wp-admin/post/{{.Post.ID}}/edit" method="post" id="post">
+    {{.CSRF.For "edit-post"}}
+
+    <p>
+        <label for="title"><strong>Title</strong></label><br>
+        <input type="text" name="post_title" id="title" value="{{.Post.Title}}" style="width: 100%; box-sizing: border-box;" autofocus>
+    </p>
+
+    <p>
+        <label for="content"><strong>Post</strong></label><br>
+        <textarea name="content" id="content" rows="15" style="width: 100%; box-sizing: border-box;">{{.Post.Content}}</textarea>
+    </p>
+
+    <p>
+        <label for="excerpt"><strong>Excerpt</strong> (optional)</label><br>
+        <textarea name="excerpt" id="excerpt" rows="3" style="width: 100%; box-sizing: border-box;">{{.Post.Excerpt}}</textarea>
+    </p>
+
+    <fieldset>
+        <legend><strong>Categories</strong></legend>
+        {{range .Categories}}
+        <label>
+            <input type="checkbox" name="post_category" value="{{.ID}}"{{if .Selected}} checked{{end}}> {{.Name}}
+        </label><br>
+        {{end}}
+    </fieldset>
+
+    <fieldset>
+        <legend><strong>Status</strong></legend>
+        <label><input type="radio" name="post_status" value="publish"{{if eq .Post.Status "publish"}} checked{{end}}> Publish</label>
+        <label><input type="radio" name="post_status" value="draft"{{if eq .Post.Status "draft"}} checked{{end}}> Draft</label>
+        <label><input type="radio" name="post_status" value="private"{{if eq .Post.Status "private"}} checked{{end}}> Private</label>
+    </fieldset>
+
+    <fieldset>
+        <legend><strong>Comments</strong></legend>
+        <label><input type="radio" name="comment_status" value="open"{{if eq .Post.CommentStatus "open"}} checked{{end}}> Open</label>
+        <label><input type="radio" name="comment_status" value="closed"{{if eq .Post.CommentStatus "closed"}} checked{{end}}> Closed</label>
+    </fieldset>
+
+    <p>
+        <input type="submit" name="save" value="Save" style="font-weight: bold;">
+    </p>
+</form>
+
+{{if .CanDelete}}
+<p><a href="/wp-admin/post/{{.Post.ID}}/delete" onclick="return confirm('Are you sure you want to delete this post?')">Delete this post</a></p>
+{{end}}
+
+<p><a href="{{.Post.Permalink}}">View post</a></p>
+
+{{template "admin-footer" .}}
+{{end}}
