@@ -1,0 +1,20 @@
+(document
+  (element "html"
+    (element "head")
+    (element "body"
+      (element "div"
+        (element "a" (href (. (ident "post") "Permalink"))
+          (text "static text")
+        )
+        (element "a" (href "/search?q=" (ident "Query") "&page=" (ident "Page"))
+          (text "mixed")
+        )
+        (element "img" (src "/images/logo.png") (alt "static only"))
+        (element "comment-form" (post-id (. (ident "post") "ID")))
+        (element "div" (class "prose") (id "content")
+          (text "body")
+        )
+      )
+    )
+  )
+)

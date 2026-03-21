@@ -1,0 +1,18 @@
+(document
+  (element "html"
+    (element "head")
+    (element "body"
+      (element "div"
+        (snippet "field" :params "props"
+          (element "p"
+            (element "label"
+              (expr (. (ident "props") "Label"))
+              (element "br")
+              (element "input" (type (. (ident "props") "Type")) (name (. (ident "props") "Name")))
+            )
+          )
+        )
+      )
+    )
+  )
+)

@@ -6,10 +6,10 @@ named components by walking and modifying the tree, and serializes
 the final tree to HTML. The engine owns behavior. The theme owns
 presentation. They meet at named tags.
 
-The template syntax is inspired by Svelte. Single-brace expressions,
-block control flow, snippet definitions, scoped styles, and component
-scripts. We take the patterns that serve server-rendered HTML and
-leave the client-side reactivity behind.
+The template syntax uses single braces for all dynamic content.
+Plain keyword control flow, no sigils. Expressions, conditionals,
+loops, and snippets. We take the patterns that serve server-rendered
+HTML and leave client-side reactivity behind.
 
 ---
 
@@ -71,79 +71,156 @@ tag. `<div>` is HTML. The vocabulary is the namespace.
 ## Template Syntax
 
 The template language uses single braces for all dynamic content.
-This is Svelte's syntax adapted for server rendering. No reactivity,
-no event bindings, no async. Just expressions, conditionals, loops,
-snippets, and raw HTML.
+Keywords are plain English words. No sigils, no prefixes, no
+punctuation. The syntax was inspired by Svelte but simplified for
+server rendering. We are not building a Svelte compiler. We took
+the parts that make sense for HTML templates and left the rest.
 
 ### Expressions
 
 ```html
 <h1>{blogName}</h1>
-<a href={post.Permalink}>{post.TheTitle}</a>
+<a href="{post.Permalink}">{post.TheTitle}</a>
 <time>{post.TheDate}</time>
 ```
 
-Single braces interpolate a value. Inside attributes, braces replace
-the attribute value. In text content, braces insert the value at that
-position. Values are auto-escaped for HTML safety.
+Single braces interpolate a value. Inside attributes, braces appear
+within the attribute value string and are resolved at render time.
+In text content, braces insert the value at that position. Values
+are auto-escaped for HTML safety.
 
 ### Conditionals
 
 ```html
-{#if commentsOpen}
+{if commentsOpen}
   <comment-form />
-{:else}
+{else}
   <p>Comments are closed.</p>
 {/if}
 
-{#if post.EditURL}
-  <a href={post.EditURL}>Edit</a>
+{if post.EditURL}
+  <a href="{post.EditURL}">Edit</a>
 {/if}
 ```
 
-`{#if}` opens a conditional block. `{:else}` provides the alternate
+`{if}` opens a conditional block. `{else}` provides the alternate
 branch. `{/if}` closes it. Blocks can nest.
+
+Conditions use truthiness. A value is truthy unless it is the empty
+string, zero, false, nil, or an empty slice or map. No helper
+functions are needed for common checks:
+
+- `{if post.Comments}` means "if there are comments"
+- `{if post.EditURL}` means "if there is an edit URL"
+- `{if not post.EditURL}` means "if there is no edit URL"
 
 ### Iteration
 
 ```html
-{#each posts as post}
-  <post-row title={post.TheTitle} permalink={post.Permalink} />
-{:else}
+{each posts as post}
+  <post />
+{else}
   <p>No posts found.</p>
 {/each}
 
-{#each comments as comment, index}
-  <comment author={comment.TheAuthor} index={index} />
+{each comments as comment, index}
+  <comment author="{comment.TheAuthor}" index="{index}" />
 {/each}
 ```
 
-`{#each}` iterates over a list. The `as` clause binds each element.
-An optional second binding provides the index. `{:else}` renders when
-the list is empty.
+`{each}` iterates over a list. The `as` clause binds each element.
+An optional second binding provides the index. `{else}` renders
+when the list is empty.
 
-### Raw HTML
-
-```html
-<div class="entry">{@html post.TheContent}</div>
-```
-
-`{@html}` inserts pre-rendered HTML without escaping. Used for post
-content that has already been rendered from ProseMirror JSON to HTML
-on the server.
-
-### Local Constants
+### Snippets
 
 ```html
-{#each posts as post}
-  {@const hasComments = post.CommentCount > 0}
-  {#if hasComments}
-    <span>{post.CommentCount} comments</span>
-  {/if}
-{/each}
+{snippet field(props)}
+  <p>
+    <label>{props.Label}<br>
+      {if props.Type == "textarea"}
+        <textarea name="{props.Name}" rows="4">{props.Value}</textarea>
+      {else}
+        <input type="{props.Type}" name="{props.Name}" value="{props.Value}">
+      {/if}
+    </label>
+  </p>
+{/snippet}
 ```
 
-`{@const}` declares a value scoped to its containing block.
+Snippets are the theme's fragment definitions. A snippet is a named,
+reusable template that receives props and renders HTML. The engine
+calls them at the right point during its own rendering.
+
+---
+
+## Expression Language
+
+The expression language is deliberately minimal. It is not a
+programming language. It handles value lookup, truthiness checks,
+simple comparisons, and logical combination. Nothing more.
+
+### Value access
+
+```
+post.Title              member access (dot path)
+post.Author.Name        deep member access
+blogName                bare identifier
+```
+
+### Operators
+
+```
+not post.EditURL        negation (also accepts !)
+count > 0              comparison (==, !=, <, >, <=, >=)
+loggedIn and open      logical and (also accepts &&)
+a or b                 logical or (also accepts ||)
+```
+
+The keyword forms (`and`, `or`, `not`) are preferred in templates.
+The symbol forms (`&&`, `||`, `!`) are accepted for familiarity but
+normalize to keywords in the AST. Both parse identically.
+
+### Literals
+
+```
+"hello"                string literal
+42                     integer
+3.14                   float
+true / false           boolean
+```
+
+### Truthiness
+
+Conditionals evaluate expressions as truthy or falsy. The rules are:
+
+| Value             | Truthy? |
+|-------------------|---------|
+| `""` empty string | false   |
+| `0`               | false   |
+| `false`           | false   |
+| `nil`             | false   |
+| empty slice/map   | false   |
+| everything else   | true    |
+
+This means `{if post.Comments}` works without a helper function.
+The engine defines these rules once in the renderer. The parser does
+not know about truthiness. It builds the AST. The renderer interprets
+it.
+
+### Reserved words
+
+`if`, `else`, `each`, `snippet`, `const`, `true`, `false`,
+`and`, `or`, `not` are reserved and cannot be used as variable names
+in expressions.
+
+### What the expression language does not have
+
+No function calls. No arithmetic. No ternary operator. No array
+indexing. No object literals. No assignment (outside `{const}`).
+No grouped expressions with parentheses. If a template needs complex
+logic, that logic belongs in the engine's Go code, exposed as a
+simple value the template can check.
 
 ---
 
@@ -154,17 +231,17 @@ passes to the component.
 
 ```html
 <!-- Engine tag with attributes -->
-<comment-form post-id={postID} />
+<comment-form post-id="{postID}" />
 
 <!-- Theme fragment with attributes -->
 <field name="author" label="Name" type="text" required />
 ```
 
-String literals use quotes. Dynamic values use braces. Boolean
-attributes (like `required`) are true when present. The engine
-defines which attributes each tag accepts, their types, and whether
-they are required or optional. An unrecognized attribute is an error.
-A missing required attribute is an error.
+String literals use quotes. Dynamic values use braces within quotes.
+Boolean attributes (like `required`) are true when present. The
+engine defines which attributes each tag accepts, their types, and
+whether they are required or optional. An unrecognized attribute is
+an error. A missing required attribute is an error.
 
 ---
 
@@ -241,21 +318,20 @@ The engine never writes a `<label>`. The theme never writes an
 
 ## Snippets
 
-Snippets are the theme's fragment definitions. They are inspired by
-Svelte 5's snippet syntax. A snippet is a named, reusable template
-that receives props and renders HTML.
+Snippets are the theme's fragment definitions. A snippet is a named,
+reusable template that receives props and renders HTML.
 
 ### Defining snippets
 
 ```html
 <!-- molecules/field.html -->
-{#snippet field(props)}
+{snippet field(props)}
   <p>
     <label>{props.Label}<br>
-      {#if props.Type == "textarea"}
-        <textarea name={props.Name} rows="4" {props.Attributes}>{props.Value}</textarea>
-      {:else}
-        <input type={props.Type} name={props.Name} value={props.Value} {props.Attributes}>
+      {if props.Type == "textarea"}
+        <textarea name="{props.Name}" rows="4">{props.Value}</textarea>
+      {else}
+        <input type="{props.Type}" name="{props.Name}" value="{props.Value}">
       {/if}
     </label>
   </p>
@@ -264,20 +340,20 @@ that receives props and renders HTML.
 
 ```html
 <!-- molecules/submit.html -->
-{#snippet submit(props)}
+{snippet submit(props)}
   <p><button type="submit">{props.Label}</button></p>
 {/snippet}
 ```
 
 ```html
 <!-- molecules/comment.html -->
-{#snippet comment(props)}
+{snippet comment(props)}
   <li id="comment-{props.ID}">
-    <p>{@html props.TheContent}</p>
+    <p>{props.TheContent}</p>
     <p><small>
-      {#if props.URL}
-        <a href={props.URL}>{props.TheAuthor}</a>
-      {:else}
+      {if props.URL}
+        <a href="{props.URL}">{props.TheAuthor}</a>
+      {else}
         {props.TheAuthor}
       {/if}
       — {props.TheDate}
@@ -301,91 +377,19 @@ completely different HTML.
 
 ---
 
-## Styles
+## Styles and Scripts
 
-Each component file can include a `<style>` block. Styles are scoped
-to the component by default, following Svelte's scoping model.
+Style and script handling are not priorities for the initial
+implementation. The theme's `style.css` file provides global styles.
+Component-level `<style>` scoping and `<script>` collection are
+future work that will be designed when the core rendering pipeline
+is stable.
 
-```html
-<!-- molecules/field.html -->
-{#snippet field(props)}
-  <p class="field">
-    <label>{props.Label}<br>
-      <input type={props.Type} name={props.Name} value={props.Value}>
-    </label>
-  </p>
-{/snippet}
-
-<style>
-  .field {
-    margin-bottom: 1em;
-  }
-
-  .field label {
-    font-weight: bold;
-  }
-
-  .field input {
-    width: 100%;
-    padding: 0.25em;
-  }
-</style>
-```
-
-The engine scopes styles by adding a generated attribute to the
-component's elements and rewriting the selectors to match. The
-theme's `.field` selector only applies to `.field` elements rendered
-by this snippet, not to any other `.field` in the page.
-
-The engine collects all component styles and serves them as a single
-stylesheet for the surface. No per-request CSS generation. The
-stylesheet is built at parse time from the component files and cached.
-
-A theme can also include a top-level `style.css` for global styles
-that are not scoped to any component. This is the theme's baseline
-typography, colors, and layout.
-
----
-
-## Scripts
-
-Each component file can include a `<script>` block for client-side
-behavior that goes beyond what htmx provides.
-
-```html
-<!-- organisms/site-header.html -->
-{#snippet site-header(props)}
-  <header>
-    <h1><a href="/">{props.SiteName}</a></h1>
-    <p>{props.SiteDescription}</p>
-    <button class="nav-toggle">Menu</button>
-    <nav class="main-nav">
-      <!-- navigation content -->
-    </nav>
-  </header>
-{/snippet}
-
-<script>
-  const toggle = document.querySelector('.nav-toggle');
-  const nav = document.querySelector('.main-nav');
-  toggle?.addEventListener('click', () => {
-    nav.classList.toggle('open');
-  });
-</script>
-```
-
-Theme scripts are for progressive enhancement: toggling a mobile
-menu, animating a search reveal, initializing a third-party widget.
-They do not handle form submissions, data loading, or page
-transitions. That is the engine's job through htmx.
-
-The engine collects all component scripts and includes them in the
-page. Scripts run once on page load. Scripts that need to respond to
-htmx swaps should listen for `htmx:afterSwap` on the document.
-
-Scripts are optional. Most components will not need one. The engine
-provides all interactivity through htmx attributes on the elements
-it renders. A theme that uses zero JavaScript is a valid theme.
+For now, `<style>` and `<script>` tags in theme template files are
+rejected by the parser. They belong in separate files, not inline
+in templates. This keeps the template files focused on structure and
+makes it clear that the engine does not process JavaScript or CSS
+during rendering.
 
 ---
 
@@ -402,10 +406,10 @@ It is HTML with engine tags placed where the theme wants them.
   <main>
     <post />
     <post-navigation />
-    {#if commentsOpen}
+    {if commentsOpen}
       <comment-list />
       <comment-form />
-    {:else}
+    {else}
       <p>Comments are closed.</p>
     {/if}
   </main>
@@ -467,11 +471,10 @@ Tree manipulation instead of string manipulation means:
 
 ## Parser Implementation
 
-The parser is a fork of Go's `golang.org/x/net/html` package. We
-copy `token.go` (the tokenizer) and `parse.go` (the tree builder)
-into our own package and modify them. The rest of the html package
-(node types, attributes, entity decoding, escaping, rendering) is
-imported directly.
+The parser is a fork of Go's `golang.org/x/net/html` package
+(v0.52.0). We copy the entire package into
+`internal/template/parse/` and apply minimal, marked patches to the
+upstream files. Custom logic lives in separate files.
 
 ### Why fork
 
@@ -485,39 +488,59 @@ The stdlib HTML5 parser has two behaviors we need to override:
    engine vocabulary tags need the same treatment.
 
 2. **No template expression awareness.** The tokenizer does not
-   recognize `{` as a delimiter. Template expressions in text and
-   attribute values need to be tokenized as distinct units so the
-   parser can build expression nodes in the AST.
+   recognize `{` as a delimiter. Template expressions in text content
+   need to be tokenized as distinct units so the parser can build
+   expression nodes in the AST.
 
-### What we modify
+### Why copy the whole package
 
-**`token.go`** (~1300 lines): Add recognition of `{` as a template
-delimiter. When the tokenizer encounters `{` in text context, it
-reads until the matching `}` and emits a template token. Same for
-`{` in attribute values. Expressions (`{value}`), blocks
-(`{#if}`, `{:else}`, `{/if}`, `{#each}`, `{/each}`), directives
-(`{@html}`, `{@const}`), and snippet definitions
-(`{#snippet}`, `{/snippet}`) each produce typed tokens.
+The upstream `html` package has unexported symbols that are used
+across files. `parse.go` depends on `nodeStack`, `scopeMarkerNode`,
+`insertionModeStack` from `node.go`. `token.go` depends on
+`escape()`, `unescape()`, `convertNewlines()` from `escape.go` and
+`entity.go`. Partial import is not possible. We copy everything and
+change the package name to `parse`.
 
-**`parse.go`** (~2500 lines): Respect the self-closing flag for
-elements in our known vocabulary. When the tree builder processes a
-start tag for a vocabulary element that has the self-closing flag,
-treat it like a void element instead of looking for children. Handle
-template block tokens as structural nodes in the tree (if/else
-blocks become branching nodes, each blocks become loop nodes, snippet
-definitions become named subtrees).
+### Patch sites
 
-### What we import unchanged
+All modifications to upstream files are marked with `// PRESS PATCH:`
+comments. There are currently six patch sites across three files:
 
-- `node.go` — `Node`, `NodeType`, `Attribute`, tree manipulation
-- `entity.go` — HTML entity decoding tables
-- `escape.go` — HTML escaping
-- `render.go` — tree-to-HTML serialization
-- `const.go` — void element list, other HTML constants
+**`token.go`**: Added `TemplateToken` constant. In the `Next()` main
+loop, when `{` is encountered in text context, delegate to
+`readTemplateToken()`. In `Text()` and `Token()`, handle the
+`TemplateToken` case.
 
-We extend the node types in our package to include expression nodes,
-block nodes, and snippet definition nodes. These compose with the
-stdlib `Node` type through the same parent/child/sibling links.
+**`parse.go`**: In `parseCurrentToken()`, handle `TemplateToken` by
+inserting an `ExpressionNode`. Handle `SelfClosingTagToken` for
+vocabulary tags by treating them as void elements.
+
+**`render.go`**: In `renderNode`, handle `ExpressionNode` by
+delegating to `RenderExpression()`.
+
+### Custom files (not upstream)
+
+```
+template_token.go     readTemplateToken(), ClassifyTemplate(),
+                      ParseEachBinding(), ParseSnippetDecl(),
+                      ParseConstDecl()
+template_nodes.go     ExpressionNode, IfNode, EachNode, SnippetNode,
+                      and other template node types
+template_render.go    RenderExpression()
+expr.go               Expression AST types (Ident, MemberExpr,
+                      BinaryExpr, UnaryExpr, StringLit, NumberLit,
+                      BoolLit)
+expr_parse.go         Recursive descent expression parser
+selfclose.go          Vocabulary tag set for self-closing support
+doc.go                Fork documentation and upgrade instructions
+```
+
+### Upgrading from upstream
+
+1. Copy new source files from `golang.org/x/net/html`.
+2. Change package name from `html` to `parse`.
+3. Reapply patches marked with `// PRESS PATCH:`.
+4. Run tests.
 
 ---
 
@@ -613,9 +636,9 @@ the specification. The engine replaces them.
 
 ## Implementation Order
 
-1. Fork the parser: copy `token.go` and `parse.go` from
-   `golang.org/x/net/html`. Add self-closing support for vocabulary
-   tags. Add template expression tokenization.
+1. Fork the parser: copy `golang.org/x/net/html` into
+   `internal/template/parse/`. Add self-closing support for
+   vocabulary tags. Add template expression tokenization.
 2. Extend the AST: add expression nodes, block nodes (if/each), and
    snippet definition nodes to the tree.
 3. Build the renderer: walk the AST, resolve engine tags by inserting
@@ -626,7 +649,5 @@ the specification. The engine replaces them.
 5. Wire the remaining engine tags one at a time, starting with the
    simplest (site-header, site-footer) and ending with the most
    complex (post-list with pagination).
-6. Collect and serve component styles as a scoped stylesheet.
-7. Collect and serve component scripts.
-8. Build the language server against the same vocabulary.
-9. Build the compiler when the interpreter is stable.
+6. Build the language server against the same vocabulary.
+7. Build the compiler when the interpreter is stable.

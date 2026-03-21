@@ -176,6 +176,13 @@ type NotFoundData struct {
 // renderContent converts post content to HTML. ProseMirror JSON is
 // rendered through the serializer; plain strings are passed through
 // as-is for backward compatibility.
+//
+// Stopgap: plain text content is entity-escaped before wrapping in
+// template.HTML. This prevents XSS but means plain text posts cannot
+// contain formatting. Once all content is ProseMirror JSON, this
+// fallback branch and the template.HTML cast disappear entirely.
+// The new template engine escapes at the walker level; views will
+// hold plain strings with no template.HTML wrapper.
 func renderContent(content string, s *prosemirror.Serializer) template.HTML {
 	if len(content) > 0 && content[0] == '{' {
 		html, err := s.Render(json.RawMessage(content))
@@ -185,7 +192,7 @@ func renderContent(content string, s *prosemirror.Serializer) template.HTML {
 		}
 		return html
 	}
-	return template.HTML(content)
+	return template.HTML(template.HTMLEscapeString(content))
 }
 
 // newPostView creates a PostView from a model.Post.
@@ -213,13 +220,18 @@ func newPostView(p *model.Post, authorName string, categories []model.Category, 
 }
 
 // newCommentView creates a CommentView from a model.Comment.
+//
+// Stopgap: comment content is entity-escaped before wrapping in
+// template.HTML. Comments are plain text only until ProseMirror
+// handles comment input with a restrictive schema. The new template
+// engine will escape at the walker level; this cast disappears.
 func newCommentView(c *model.Comment) CommentView {
 	return CommentView{
 		ID:         c.CommentID,
 		TheAuthor:  c.CommentAuthor,
 		URL:        c.CommentAuthorURL,
 		TheDate:    c.CommentDate.Format("January 2, 2006 at 3:04 pm"),
-		TheContent: template.HTML(c.CommentContent),
+		TheContent: template.HTML(template.HTMLEscapeString(c.CommentContent)),
 		Type:       c.CommentType,
 	}
 }

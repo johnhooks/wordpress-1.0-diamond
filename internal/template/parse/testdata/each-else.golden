@@ -1,0 +1,21 @@
+(document
+  (element "html"
+    (element "head")
+    (element "body"
+      (element "div"
+        (each (ident "comments") :as "comment"
+          (element "p"
+            (expr (. (ident "comment") "Author"))
+            (text ": ")
+            (expr (. (ident "comment") "Text"))
+          )
+          (else
+            (element "p"
+              (text "No comments yet.")
+            )
+          )
+        )
+      )
+    )
+  )
+)

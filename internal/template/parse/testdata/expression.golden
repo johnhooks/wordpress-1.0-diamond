@@ -1,0 +1,18 @@
+(document
+  (element "html"
+    (element "head")
+    (element "body"
+      (element "div"
+        (element "h1"
+          (expr (. (ident "post") "Title"))
+        )
+        (element "p"
+          (text "By ")
+          (expr (. (ident "post") "Author"))
+          (text " on ")
+          (expr (. (ident "post") "Date"))
+        )
+      )
+    )
+  )
+)

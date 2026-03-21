@@ -1,0 +1,13 @@
+(document
+  (element "html"
+    (element "head")
+    (element "body"
+      (element "div"
+        (const "hasComments" (> (. (ident "post") "CommentCount") (number 0)))
+        (if (ident "hasComments")
+          (element "comment-list")
+        )
+      )
+    )
+  )
+)

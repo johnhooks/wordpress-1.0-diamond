@@ -1,0 +1,19 @@
+(document
+  (element "html"
+    (element "head")
+    (element "body"
+      (element "div"
+        (if (ident "commentsOpen")
+          (element "p"
+            (text "Comments are open.")
+          )
+          (else
+            (element "p"
+              (text "Comments are closed.")
+            )
+          )
+        )
+      )
+    )
+  )
+)
