@@ -1,46 +1,43 @@
 # The Theme Engine
 
-The theme engine is the runtime that connects theme templates to the
-Press server. It parses theme source files into an AST, resolves
-named components by walking and modifying the tree, and serializes
-the final tree to HTML. The engine owns behavior. The theme owns
-presentation. They meet at named tags.
+The theme engine is the runtime that connects theme templates to the Press
+server. It parses theme source files into an AST, resolves named components by
+walking and modifying the tree, and serializes the final tree to HTML. The
+engine owns behavior. The theme owns presentation. They meet at named tags.
 
-The template syntax uses single braces for all dynamic content.
-Plain keyword control flow, no sigils. Expressions, conditionals,
-loops, and snippets. We take the patterns that serve server-rendered
-HTML and leave client-side reactivity behind.
+The template syntax uses single braces for all dynamic content. Plain keyword
+control flow, no sigils. Expressions, conditionals, loops, and snippets. We take
+the patterns that serve server-rendered HTML and leave client-side reactivity
+behind.
 
 ---
 
 ## The Problem with Go Templates
 
-Go's `html/template` passes a single value (the dot) into each
-template call. Every piece of data a nested template needs must be
-threaded through that one value. This works for simple pages but falls
-apart when composition goes bidirectional: the theme places a form,
-the engine fills it with fields, each field calls back to the theme
-for its visual rendering, and the theme's rendering needs data the
-engine computed.
+Go's `html/template` passes a single value (the dot) into each template call.
+Every piece of data a nested template needs must be threaded through that one
+value. This works for simple pages but falls apart when composition goes
+bidirectional: the theme places a form, the engine fills it with fields, each
+field calls back to the theme for its visual rendering, and the theme's
+rendering needs data the engine computed.
 
-Threading all of that through dot contexts means either the view
-structs become enormous bags of everything every nested template might
-need, or the Go code pre-renders fragments into `template.HTML` and
-passes opaque blobs around. Both approaches fight the template system
-instead of working with it.
+Threading all of that through dot contexts means either the view structs become
+enormous bags of everything every nested template might need, or the Go code
+pre-renders fragments into `template.HTML` and passes opaque blobs around. Both
+approaches fight the template system instead of working with it.
 
-Press needs its own template language. Not because Go templates are
-bad, but because the ownership model requires two-way composition that
-Go templates were not designed for.
+Press needs its own template language. Not because Go templates are bad, but
+because the ownership model requires two-way composition that Go templates were
+not designed for.
 
 ---
 
 ## Named Tags
 
-Theme templates are HTML files. Engine components and theme fragments
-are represented as custom HTML element tags. The engine knows its
-complete vocabulary. Any tag name the engine recognizes is a component
-it will handle. Everything else passes through as regular HTML.
+Theme templates are HTML files. Engine components and theme fragments are
+represented as custom HTML element tags. The engine knows its complete
+vocabulary. Any tag name the engine recognizes is a component it will handle.
+Everything else passes through as regular HTML.
 
 ```html
 <!-- Theme source: single.html -->
@@ -55,26 +52,25 @@ it will handle. Everything else passes through as regular HTML.
 <site-footer />
 ```
 
-These tags never reach the browser. The engine replaces them during
-rendering with the HTML they represent. A `<comment-form />` becomes
-a `<form>` with all the right attributes, hidden fields, and CSRF
-tokens. A `<post />` becomes an `<article>` with the post content
-rendered inside.
+These tags never reach the browser. The engine replaces them during rendering
+with the HTML they represent. A `<comment-form />` becomes a `<form>` with all
+the right attributes, hidden fields, and CSRF tokens. A `<post />` becomes an
+`<article>` with the post content rendered inside.
 
-The engine's closed vocabulary is the boundary: if the engine knows
-the tag name, it handles it. If not, it is HTML. We own this system.
-There is no need for prefixes or namespaces. `<editor>` is an engine
-tag. `<div>` is HTML. The vocabulary is the namespace.
+The engine's closed vocabulary is the boundary: if the engine knows the tag
+name, it handles it. If not, it is HTML. We own this system. There is no need
+for prefixes or namespaces. `<editor>` is an engine tag. `<div>` is HTML. The
+vocabulary is the namespace.
 
 ---
 
 ## Template Syntax
 
-The template language uses single braces for all dynamic content.
-Keywords are plain English words. No sigils, no prefixes, no
-punctuation. The syntax was inspired by Svelte but simplified for
-server rendering. We are not building a Svelte compiler. We took
-the parts that make sense for HTML templates and left the rest.
+The template language uses single braces for all dynamic content. Keywords are
+plain English words. No sigils, no prefixes, no punctuation. The syntax was
+inspired by Svelte but simplified for server rendering. We are not building a
+Svelte compiler. We took the parts that make sense for HTML templates and left
+the rest.
 
 ### Expressions
 
@@ -84,10 +80,9 @@ the parts that make sense for HTML templates and left the rest.
 <time>{post.TheDate}</time>
 ```
 
-Single braces interpolate a value. Inside attributes, braces appear
-within the attribute value string and are resolved at render time.
-In text content, braces insert the value at that position. Values
-are auto-escaped for HTML safety.
+Single braces interpolate a value. Inside attributes, braces appear within the
+attribute value string and are resolved at render time. In text content, braces
+insert the value at that position. Values are auto-escaped for HTML safety.
 
 ### Conditionals
 
@@ -103,12 +98,12 @@ are auto-escaped for HTML safety.
 {/if}
 ```
 
-`{if}` opens a conditional block. `{else}` provides the alternate
-branch. `{/if}` closes it. Blocks can nest.
+`{if}` opens a conditional block. `{else}` provides the alternate branch.
+`{/if}` closes it. Blocks can nest.
 
-Conditions use truthiness. A value is truthy unless it is the empty
-string, zero, false, nil, or an empty slice or map. No helper
-functions are needed for common checks:
+Conditions use truthiness. A value is truthy unless it is the empty string,
+zero, false, nil, or an empty slice or map. No helper functions are needed for
+common checks:
 
 - `{if post.Comments}` means "if there are comments"
 - `{if post.EditURL}` means "if there is an edit URL"
@@ -128,37 +123,37 @@ functions are needed for common checks:
 {/each}
 ```
 
-`{each}` iterates over a list. The `as` clause binds each element.
-An optional second binding provides the index. `{else}` renders
-when the list is empty.
+`{each}` iterates over a list. The `as` clause binds each element. An optional
+second binding provides the index. `{else}` renders when the list is empty.
 
 ### Snippets
 
 ```html
 {snippet field(props)}
-  <p>
-    <label>{props.Label}<br>
-      {if props.Type == "textarea"}
-        <textarea name="{props.Name}" rows="4">{props.Value}</textarea>
-      {else}
-        <input type="{props.Type}" name="{props.Name}" value="{props.Value}">
-      {/if}
-    </label>
-  </p>
+<p>
+  <label
+    >{props.Label}<br />
+    {if props.Type == "textarea"}
+    <textarea name="{props.Name}" rows="4">{props.Value}</textarea>
+    {else}
+    <input type="{props.Type}" name="{props.Name}" value="{props.Value}" />
+    {/if}
+  </label>
+</p>
 {/snippet}
 ```
 
-Snippets are the theme's fragment definitions. A snippet is a named,
-reusable template that receives props and renders HTML. The engine
-calls them at the right point during its own rendering.
+Snippets are the theme's fragment definitions. A snippet is a named, reusable
+template that receives props and renders HTML. The engine calls them at the
+right point during its own rendering.
 
 ---
 
 ## Expression Language
 
-The expression language is deliberately minimal. It is not a
-programming language. It handles value lookup, truthiness checks,
-simple comparisons, and logical combination. Nothing more.
+The expression language is deliberately minimal. It is not a programming
+language. It handles value lookup, truthiness checks, simple comparisons, and
+logical combination. Nothing more.
 
 ### Value access
 
@@ -177,9 +172,9 @@ loggedIn and open      logical and (also accepts &&)
 a or b                 logical or (also accepts ||)
 ```
 
-The keyword forms (`and`, `or`, `not`) are preferred in templates.
-The symbol forms (`&&`, `||`, `!`) are accepted for familiarity but
-normalize to keywords in the AST. Both parse identically.
+The keyword forms (`and`, `or`, `not`) are preferred in templates. The symbol
+forms (`&&`, `||`, `!`) are accepted for familiarity but normalize to keywords
+in the AST. Both parse identically.
 
 ### Literals
 
@@ -195,7 +190,7 @@ true / false           boolean
 Conditionals evaluate expressions as truthy or falsy. The rules are:
 
 | Value             | Truthy? |
-|-------------------|---------|
+| ----------------- | ------- |
 | `""` empty string | false   |
 | `0`               | false   |
 | `false`           | false   |
@@ -203,31 +198,28 @@ Conditionals evaluate expressions as truthy or falsy. The rules are:
 | empty slice/map   | false   |
 | everything else   | true    |
 
-This means `{if post.Comments}` works without a helper function.
-The engine defines these rules once in the renderer. The parser does
-not know about truthiness. It builds the AST. The renderer interprets
-it.
+This means `{if post.Comments}` works without a helper function. The engine
+defines these rules once in the renderer. The parser does not know about
+truthiness. It builds the AST. The renderer interprets it.
 
 ### Reserved words
 
-`if`, `else`, `each`, `snippet`, `const`, `true`, `false`,
-`and`, `or`, `not` are reserved and cannot be used as variable names
-in expressions.
+`if`, `else`, `each`, `snippet`, `const`, `true`, `false`, `and`, `or`, `not`
+are reserved and cannot be used as variable names in expressions.
 
 ### What the expression language does not have
 
-No function calls. No arithmetic. No ternary operator. No array
-indexing. No object literals. No assignment (outside `{const}`).
-No grouped expressions with parentheses. If a template needs complex
-logic, that logic belongs in the engine's Go code, exposed as a
-simple value the template can check.
+No function calls. No arithmetic. No ternary operator. No array indexing. No
+object literals. No assignment (outside `{const}`). No grouped expressions with
+parentheses. If a template needs complex logic, that logic belongs in the
+engine's Go code, exposed as a simple value the template can check.
 
 ---
 
 ## Attributes as Props
 
-Tags carry attributes. Attributes are the props the engine or theme
-passes to the component.
+Tags carry attributes. Attributes are the props the engine or theme passes to
+the component.
 
 ```html
 <!-- Engine tag with attributes -->
@@ -237,18 +229,18 @@ passes to the component.
 <field name="author" label="Name" type="text" required />
 ```
 
-String literals use quotes. Dynamic values use braces within quotes.
-Boolean attributes (like `required`) are true when present. The
-engine defines which attributes each tag accepts, their types, and
-whether they are required or optional. An unrecognized attribute is
-an error. A missing required attribute is an error.
+String literals use quotes. Dynamic values use braces within quotes. Boolean
+attributes (like `required`) are true when present. The engine defines which
+attributes each tag accepts, their types, and whether they are required or
+optional. An unrecognized attribute is an error. A missing required attribute is
+an error.
 
 ---
 
 ## Two Kinds of Tags
 
-**Engine tags**: the engine provides the content. The theme decides
-where to place them.
+**Engine tags**: the engine provides the content. The theme decides where to
+place them.
 
 ```
 comment-form    The engine writes the <form>, CSRF, htmx, hidden fields.
@@ -265,8 +257,8 @@ sidebar         The engine writes the sidebar container.
 editor          The engine writes the ProseMirror web component.
 ```
 
-**Theme fragments**: the theme provides the content. The engine calls
-them at the right point during its own rendering.
+**Theme fragments**: the theme provides the content. The engine calls them at
+the right point during its own rendering.
 
 ```
 field           How a form field looks (label, input, error).
@@ -278,16 +270,14 @@ site-header     The page header (title, description, navigation).
 site-footer     The page footer (credits, links).
 ```
 
-The engine calls theme fragments when it needs visual rendering. The
-theme places engine tags when it needs behavior. The engine always
-initiates: it walks the theme's page template, encounters engine
-tags, fills them in, and calls theme fragments from within its own
-rendering.
+The engine calls theme fragments when it needs visual rendering. The theme
+places engine tags when it needs behavior. The engine always initiates: it walks
+the theme's page template, encounters engine tags, fills them in, and calls
+theme fragments from within its own rendering.
 
-Theme fragments are never placed in page templates directly by the
-theme author. They are defined and then called by the engine. The
-parser only sees engine tags in page templates. Fragment definitions
-live in their own files.
+Theme fragments are never placed in page templates directly by the theme author.
+They are defined and then called by the engine. The parser only sees engine tags
+in page templates. Fragment definitions live in their own files.
 
 ---
 
@@ -310,93 +300,92 @@ Theme: single.html
     Engine: writes </form>
 ```
 
-Each level writes its own HTML and delegates what it does not own.
-The engine never writes a `<label>`. The theme never writes an
-`hx-post`. Neither knows or cares about the other's implementation.
+Each level writes its own HTML and delegates what it does not own. The engine
+never writes a `<label>`. The theme never writes an `hx-post`. Neither knows or
+cares about the other's implementation.
 
 ---
 
 ## Snippets
 
-Snippets are the theme's fragment definitions. A snippet is a named,
-reusable template that receives props and renders HTML.
+Snippets are the theme's fragment definitions. A snippet is a named, reusable
+template that receives props and renders HTML.
 
 ### Defining snippets
 
 ```html
 <!-- molecules/field.html -->
 {snippet field(props)}
-  <p>
-    <label>{props.Label}<br>
-      {if props.Type == "textarea"}
-        <textarea name="{props.Name}" rows="4">{props.Value}</textarea>
-      {else}
-        <input type="{props.Type}" name="{props.Name}" value="{props.Value}">
-      {/if}
-    </label>
-  </p>
+<p>
+  <label
+    >{props.Label}<br />
+    {if props.Type == "textarea"}
+    <textarea name="{props.Name}" rows="4">{props.Value}</textarea>
+    {else}
+    <input type="{props.Type}" name="{props.Name}" value="{props.Value}" />
+    {/if}
+  </label>
+</p>
 {/snippet}
 ```
 
 ```html
 <!-- molecules/submit.html -->
 {snippet submit(props)}
-  <p><button type="submit">{props.Label}</button></p>
+<p><button type="submit">{props.Label}</button></p>
 {/snippet}
 ```
 
 ```html
 <!-- molecules/comment.html -->
 {snippet comment(props)}
-  <li id="comment-{props.ID}">
-    <p>{props.TheContent}</p>
-    <p><small>
+<li id="comment-{props.ID}">
+  <p>{props.TheContent}</p>
+  <p>
+    <small>
       {if props.URL}
         <a href="{props.URL}">{props.TheAuthor}</a>
       {else}
         {props.TheAuthor}
       {/if}
       — {props.TheDate}
-    </small></p>
-  </li>
+    </small>
+  </p>
+</li>
 {/snippet}
 ```
 
 ### Rendering snippets
 
-The engine calls snippets from Go code during tree construction. When
-the engine handles `<comment-form />`, it builds the form structure
-as AST nodes and inserts rendered snippet subtrees for each field.
-The snippet receives typed props from the engine and returns a
-subtree that gets grafted into the document.
+The engine calls snippets from Go code during tree construction. When the engine
+handles `<comment-form />`, it builds the form structure as AST nodes and
+inserts rendered snippet subtrees for each field. The snippet receives typed
+props from the engine and returns a subtree that gets grafted into the document.
 
-Snippets are the theme's creative surface. How a field looks, how a
-comment renders, how the header is structured. The engine never
-dictates visual rendering. Two themes can render the same props as
-completely different HTML.
+Snippets are the theme's creative surface. How a field looks, how a comment
+renders, how the header is structured. The engine never dictates visual
+rendering. Two themes can render the same props as completely different HTML.
 
 ---
 
 ## Styles and Scripts
 
-Style and script handling are not priorities for the initial
-implementation. The theme's `style.css` file provides global styles.
-Component-level `<style>` scoping and `<script>` collection are
-future work that will be designed when the core rendering pipeline
-is stable.
+Style and script handling are not priorities for the initial implementation. The
+theme's `style.css` file provides global styles. Component-level `<style>`
+scoping and `<script>` collection are future work that will be designed when the
+core rendering pipeline is stable.
 
-For now, `<style>` and `<script>` tags in theme template files are
-rejected by the parser. They belong in separate files, not inline
-in templates. This keeps the template files focused on structure and
-makes it clear that the engine does not process JavaScript or CSS
-during rendering.
+For now, `<style>` and `<script>` tags in theme template files are rejected by
+the parser. They belong in separate files, not inline in templates. This keeps
+the template files focused on structure and makes it clear that the engine does
+not process JavaScript or CSS during rendering.
 
 ---
 
 ## Page Templates
 
-A page template is the top-level file the engine renders for a route.
-It is HTML with engine tags placed where the theme wants them.
+A page template is the top-level file the engine renders for a route. It is HTML
+with engine tags placed where the theme wants them.
 
 ```html
 <!-- templates/single.html -->
@@ -407,10 +396,10 @@ It is HTML with engine tags placed where the theme wants them.
     <post />
     <post-navigation />
     {if commentsOpen}
-      <comment-list />
-      <comment-form />
+    <comment-list />
+    <comment-form />
     {else}
-      <p>Comments are closed.</p>
+    <p>Comments are closed.</p>
     {/if}
   </main>
   <aside>
@@ -421,21 +410,19 @@ It is HTML with engine tags placed where the theme wants them.
 <site-footer />
 ```
 
-The theme controls the page structure: `<div>`, `<main>`, `<aside>`,
-class names, wrapper elements, and conditionals around engine tags.
-The engine fills in the named tags. A different theme might put the
-sidebar before the content, wrap everything in a grid, or omit the
-sidebar entirely. The engine does not care about the surrounding
-structure.
+The theme controls the page structure: `<div>`, `<main>`, `<aside>`, class
+names, wrapper elements, and conditionals around engine tags. The engine fills
+in the named tags. A different theme might put the sidebar before the content,
+wrap everything in a grid, or omit the sidebar entirely. The engine does not
+care about the surrounding structure.
 
 ---
 
 ## The AST
 
-The engine works on a tree, not strings. Theme source files are
-parsed into an AST. Engine tag handlers insert, remove, and replace
-nodes in the tree. The final tree is serialized to HTML only at the
-end, when the response is written.
+The engine works on a tree, not strings. Theme source files are parsed into an
+AST. Engine tag handlers insert, remove, and replace nodes in the tree. The
+final tree is serialized to HTML only at the end, when the response is written.
 
 ```
 Parse theme source → AST
@@ -454,69 +441,64 @@ Serialize AST → HTML → response
 
 Tree manipulation instead of string manipulation means:
 
-- **htmx partials**: serialize a subtree instead of the full page.
-  Every engine tag is a valid entry point for fragment rendering.
-- **OOB swaps**: serialize the primary subtree, then serialize
-  additional subtrees with an `hx-swap-oob` attribute injected into
-  their root node. Node manipulation, not string injection.
-- **Compilation**: once the patterns are stable, the AST walk can be
-  compiled into Go functions that build the same tree structure
-  directly, without parsing or walking at render time.
+- **htmx partials**: serialize a subtree instead of the full page. Every engine
+  tag is a valid entry point for fragment rendering.
+- **OOB swaps**: serialize the primary subtree, then serialize additional
+  subtrees with an `hx-swap-oob` attribute injected into their root node. Node
+  manipulation, not string injection.
+- **Compilation**: once the patterns are stable, the AST walk can be compiled
+  into Go functions that build the same tree structure directly, without parsing
+  or walking at render time.
 - **Testing**: assert on tree structure, not string matching.
-- **Transformation**: the engine can modify any part of the tree
-  before serialization. Add attributes, wrap elements, inject IDs
-  for ARIA and htmx targeting.
+- **Transformation**: the engine can modify any part of the tree before
+  serialization. Add attributes, wrap elements, inject IDs for ARIA and htmx
+  targeting.
 
 ---
 
 ## Parser Implementation
 
-The parser is a fork of Go's `golang.org/x/net/html` package
-(v0.52.0). We copy the entire package into
-`internal/template/parse/` and apply minimal, marked patches to the
-upstream files. Custom logic lives in separate files.
+The parser is a fork of Go's `golang.org/x/net/html` package (v0.52.0). We copy
+the entire package into `internal/template/parse/` and apply minimal, marked
+patches to the upstream files. Custom logic lives in separate files.
 
 ### Why fork
 
 The stdlib HTML5 parser has two behaviors we need to override:
 
 1. **Self-closing tags on non-void elements are silently ignored.**
-   `<comment-form />` parses as `<comment-form>` (opening tag), and
-   the parser looks for a closing tag, swallowing sibling elements as
-   children. The HTML5 spec defines a fixed list of void elements
-   (`br`, `hr`, `img`, `input`, etc.) that allow self-closing. Our
-   engine vocabulary tags need the same treatment.
+   `<comment-form />` parses as `<comment-form>` (opening tag), and the parser
+   looks for a closing tag, swallowing sibling elements as children. The HTML5
+   spec defines a fixed list of void elements (`br`, `hr`, `img`, `input`, etc.)
+   that allow self-closing. Our engine vocabulary tags need the same treatment.
 
-2. **No template expression awareness.** The tokenizer does not
-   recognize `{` as a delimiter. Template expressions in text content
-   need to be tokenized as distinct units so the parser can build
-   expression nodes in the AST.
+2. **No template expression awareness.** The tokenizer does not recognize `{` as
+   a delimiter. Template expressions in text content need to be tokenized as
+   distinct units so the parser can build expression nodes in the AST.
 
 ### Why copy the whole package
 
-The upstream `html` package has unexported symbols that are used
-across files. `parse.go` depends on `nodeStack`, `scopeMarkerNode`,
-`insertionModeStack` from `node.go`. `token.go` depends on
-`escape()`, `unescape()`, `convertNewlines()` from `escape.go` and
-`entity.go`. Partial import is not possible. We copy everything and
-change the package name to `parse`.
+The upstream `html` package has unexported symbols that are used across files.
+`parse.go` depends on `nodeStack`, `scopeMarkerNode`, `insertionModeStack` from
+`node.go`. `token.go` depends on `escape()`, `unescape()`, `convertNewlines()`
+from `escape.go` and `entity.go`. Partial import is not possible. We copy
+everything and change the package name to `parse`.
 
 ### Patch sites
 
-All modifications to upstream files are marked with `// PRESS PATCH:`
-comments. There are currently six patch sites across three files:
+All modifications to upstream files are marked with `// PRESS PATCH:` comments.
+There are currently six patch sites across three files:
 
-**`token.go`**: Added `TemplateToken` constant. In the `Next()` main
-loop, when `{` is encountered in text context, delegate to
-`readTemplateToken()`. In `Text()` and `Token()`, handle the
-`TemplateToken` case.
+**`token.go`**: Added `TemplateToken` constant. In the `Next()` main loop, when
+`{` is encountered in text context, delegate to `readTemplateToken()`. In
+`Text()` and `Token()`, handle the `TemplateToken` case.
 
-**`parse.go`**: In `parseCurrentToken()`, handle `TemplateToken` by
-inserting an `ExpressionNode`. Handle `SelfClosingTagToken` for
-vocabulary tags by treating them as void elements.
+**`parse.go`**: In `parseCurrentToken()`, handle `TemplateToken` by inserting an
+`ExpressionNode`. Handle `SelfClosingTagToken` for vocabulary tags by treating
+them as void elements.
 
-**`render.go`**: In `renderNode`, handle `ExpressionNode` by
-delegating to `RenderExpression()`.
+**`render.go`**: In `renderNode`, handle `ExpressionNode` by delegating to
+`RenderExpression()`.
 
 ### Custom files (not upstream)
 
@@ -548,106 +530,97 @@ doc.go                Fork documentation and upgrade instructions
 
 Press is not a framework. The set of tags is fixed:
 
-**Engine tags** (~15):
-comment-form, comment-list, post, post-list, post-navigation,
-pagination, search-form, category-list, archive-list, page-list,
-meta-links, sidebar, archive-header, editor
+**Engine tags** (~15): comment-form, comment-list, post, post-list,
+post-navigation, pagination, search-form, category-list, archive-list,
+page-list, meta-links, sidebar, archive-header, editor
 
-**Theme fragments** (~10):
-field, submit, comment, post-row, post-meta, post-feedback,
-site-header, site-footer
+**Theme fragments** (~10): field, submit, comment, post-row, post-meta,
+post-feedback, site-header, site-footer
 
-Every tag is documented, typed, and tested. The engine knows the
-complete set. An unrecognized tag that contains a hyphen is an error
-at parse time, not a silent pass-through. Standard HTML elements pass
-through. Unknown custom elements fail validation.
+Every tag is documented, typed, and tested. The engine knows the complete set.
+An unrecognized tag that contains a hyphen is an error at parse time, not a
+silent pass-through. Standard HTML elements pass through. Unknown custom
+elements fail validation.
 
 ---
 
 ## Language Server
 
-The closed vocabulary makes a language server straightforward. The
-engine knows every valid tag, every attribute, and every attribute
-type. An LSP implementation provides:
+The closed vocabulary makes a language server straightforward. The engine knows
+every valid tag, every attribute, and every attribute type. An LSP
+implementation provides:
 
-**Autocomplete**: typing `<` in a template file offers the full tag
-vocabulary. Typing an attribute name within a tag offers valid
-attributes for that tag. Typing inside a snippet definition offers
-the props available in that context.
+**Autocomplete**: typing `<` in a template file offers the full tag vocabulary.
+Typing an attribute name within a tag offers valid attributes for that tag.
+Typing inside a snippet definition offers the props available in that context.
 
-**Diagnostics**: unknown tag names, missing required attributes,
-wrong attribute types, unclosed blocks, unclosed snippets, duplicate
-snippet definitions. All reported in real time as the theme author
-types.
+**Diagnostics**: unknown tag names, missing required attributes, wrong attribute
+types, unclosed blocks, unclosed snippets, duplicate snippet definitions. All
+reported in real time as the theme author types.
 
-**Hover**: hovering over a tag name shows its documentation and prop
-contract. Hovering over an attribute shows its type and description.
-Hovering over a prop reference inside a snippet shows where the data
-comes from.
+**Hover**: hovering over a tag name shows its documentation and prop contract.
+Hovering over an attribute shows its type and description. Hovering over a prop
+reference inside a snippet shows where the data comes from.
 
-**Go to definition**: clicking a tag name jumps to either the engine
-handler (for engine tags) or the snippet file (for theme fragments).
+**Go to definition**: clicking a tag name jumps to either the engine handler
+(for engine tags) or the snippet file (for theme fragments).
 
-The language server reads the same vocabulary definition the engine
-uses at runtime. There is one source of truth for what tags exist,
-what attributes they accept, and what props they provide. The LSP is
-not a separate system that must be kept in sync. It reads the same
-data.
+The language server reads the same vocabulary definition the engine uses at
+runtime. There is one source of truth for what tags exist, what attributes they
+accept, and what props they provide. The LSP is not a separate system that must
+be kept in sync. It reads the same data.
 
 ---
 
 ## Compilation (Future)
 
-The initial implementation interprets at runtime: parse on startup,
-walk and modify the AST on each request, serialize to HTML. This is
-fast enough for a blog and good for development because template
-changes take effect on restart.
+The initial implementation interprets at runtime: parse on startup, walk and
+modify the AST on each request, serialize to HTML. This is fast enough for a
+blog and good for development because template changes take effect on restart.
 
-When the patterns are stable, the engine can compile the AST walk
-into Go functions that build the tree directly without parsing or
-walking. Each page becomes a generated function where every tag is
-resolved, every snippet is inlined, and every expression is a Go
-expression. The compiled output produces the same AST, then
-serializes it. Or, as a further optimization, the compiler emits
-functions that write HTML directly to an `io.Writer`, skipping the
-tree entirely.
+When the patterns are stable, the engine can compile the AST walk into Go
+functions that build the tree directly without parsing or walking. Each page
+becomes a generated function where every tag is resolved, every snippet is
+inlined, and every expression is a Go expression. The compiled output produces
+the same AST, then serializes it. Or, as a further optimization, the compiler
+emits functions that write HTML directly to an `io.Writer`, skipping the tree
+entirely.
 
-The interpreter and compiler share the same parser, the same
-vocabulary, the same validation. The compiler is an optimization of
-the interpreter, not a replacement. The interpreter remains available
-for development. The compiler produces the production binary.
+The interpreter and compiler share the same parser, the same vocabulary, the
+same validation. The compiler is an optimization of the interpreter, not a
+replacement. The interpreter remains available for development. The compiler
+produces the production binary.
 
 ---
 
 ## Relationship to Current Code
 
-The current templates are hand-written Go templates that produce what
-the engine would produce. The comment form template has `hx-post`,
-CSRF inputs, and hidden fields written by the theme author. In the
-engine model, the theme author writes `<comment-form />` and the
-engine produces all of that.
+The current templates are hand-written Go templates that produce what the engine
+would produce. The comment form template has `hx-post`, CSRF inputs, and hidden
+fields written by the theme author. In the engine model, the theme author writes
+`<comment-form />` and the engine produces all of that.
 
-Every time we hand-wire an htmx attribute, hardcode a form action,
-or thread data through nested template calls, we are discovering a
-pattern the engine should automate. The hand-written templates are
-the specification. The engine replaces them.
+Every time we hand-wire an htmx attribute, hardcode a form action, or thread
+data through nested template calls, we are discovering a pattern the engine
+should automate. The hand-written templates are the specification. The engine
+replaces them.
 
 ---
 
 ## Implementation Order
 
 1. Fork the parser: copy `golang.org/x/net/html` into
-   `internal/template/parse/`. Add self-closing support for
-   vocabulary tags. Add template expression tokenization.
-2. Extend the AST: add expression nodes, block nodes (if/each), and
-   snippet definition nodes to the tree.
-3. Build the renderer: walk the AST, resolve engine tags by inserting
-   subtrees, resolve snippets by grafting fragment subtrees,
-   serialize the final tree to HTML.
-4. Wire the comment form: first engine tag handler, first snippet
-   call, first bidirectional composition.
-5. Wire the remaining engine tags one at a time, starting with the
-   simplest (site-header, site-footer) and ending with the most
-   complex (post-list with pagination).
+   `internal/template/parse/`. Add self-closing support for vocabulary tags. Add
+   template expression tokenization.
+2. Extend the AST: add expression nodes, block nodes (if/each), and snippet
+   definition nodes to the tree.
+3. Build the renderer: walk the AST, resolve engine tags by inserting subtrees,
+   resolve snippets by grafting fragment subtrees, serialize the final tree to
+   HTML.
+4. Wire the comment form: first engine tag handler, first snippet call, first
+   bidirectional composition.
+5. Wire the remaining engine tags one at a time, starting with the simplest
+   (site-header, site-footer) and ending with the most complex (post-list with
+   pagination).
 6. Build the language server against the same vocabulary.
 7. Build the compiler when the interpreter is stable.
