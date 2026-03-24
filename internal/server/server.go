@@ -1,11 +1,9 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"html/template"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -27,7 +25,6 @@ type Server struct {
 	cfg        *config.Config
 	db         *sqlx.DB
 	mux        *http.ServeMux
-	tmpl       *template.Template
 	adminTmpl  *template.Template
 	linker     *permalink.Linker
 	router     *permalink.Router
@@ -47,11 +44,6 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 		"categories": categoriesString,
 		"add":        func(a, b int) int { return a + b },
 		"sub":        func(a, b int) int { return a - b },
-	}
-
-	tmpl, err := loadThemeTemplates(cfg.ThemeDir, funcMap)
-	if err != nil {
-		return nil, fmt.Errorf("failed to load theme templates: %w", err)
 	}
 
 	opts := repository.NewOptionsRepository(db)
@@ -82,7 +74,6 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 		cfg:       cfg,
 		db:        db,
 		mux:       http.NewServeMux(),
-		tmpl:      tmpl,
 		adminTmpl: adminTmpl,
 		linker: &permalink.Linker{
 			SiteURL:   siteURL,
@@ -103,42 +94,13 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 	return s, nil
 }
 
-// loadThemeTemplates loads site templates from the theme directory.
-// Shared molecules load first, then site organisms, then site templates.
-func loadThemeTemplates(themeDir string, funcMap template.FuncMap) (*template.Template, error) {
-	tmpl := template.New("").Funcs(funcMap)
-
-	dirs := []string{
-		filepath.Join(themeDir, "molecules"),
-		filepath.Join(themeDir, "site", "organisms"),
-		filepath.Join(themeDir, "site", "templates"),
-	}
-
-	for _, dir := range dirs {
-		pattern := filepath.Join(dir, "*.html")
-		matches, err := filepath.Glob(pattern)
-		if err != nil {
-			return nil, fmt.Errorf("failed to glob %s: %w", pattern, err)
-		}
-		if len(matches) == 0 {
-			continue
-		}
-		tmpl, err = tmpl.ParseFiles(matches...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse templates in %s: %w", dir, err)
-		}
-	}
-
-	return tmpl, nil
-}
-
 // loadAdminTemplates loads admin templates from the theme directory.
-// Shared molecules load first, then admin organisms, then admin templates.
+// Admin molecules, organisms, then templates.
 func loadAdminTemplates(themeDir string, funcMap template.FuncMap) (*template.Template, error) {
 	tmpl := template.New("").Funcs(funcMap)
 
 	dirs := []string{
-		filepath.Join(themeDir, "molecules"),
+		filepath.Join(themeDir, "admin", "molecules"),
 		filepath.Join(themeDir, "admin", "organisms"),
 		filepath.Join(themeDir, "admin", "templates"),
 	}
@@ -231,36 +193,6 @@ func (s *Server) setupRoutes() {
 // are logged, not sent.
 func (s *Server) httpError(w http.ResponseWriter, r *http.Request, message string, status int) {
 	http.Error(w, message, status)
-}
-
-// render executes a template and writes it to the response.
-func (s *Server) render(w http.ResponseWriter, r *http.Request, name string, data any) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := s.tmpl.ExecuteTemplate(w, name, data); err != nil {
-		log.Printf("template error: %v", err)
-	}
-}
-
-// renderOOB renders a named template and injects hx-swap-oob="true"
-// into the first element's opening tag. This is a stopgap to prove
-// the OOB swap pattern between engine and theme. The real solution
-// is the theme compiler, which would produce both inline and OOB
-// variants of any swappable component from the same source template.
-// This exists to discover what the compiler needs to do.
-func (s *Server) renderOOB(w io.Writer, name string, data any) {
-	var buf bytes.Buffer
-	if err := s.tmpl.ExecuteTemplate(&buf, name, data); err != nil {
-		log.Printf("template error (oob): %v", err)
-		return
-	}
-	html := buf.Bytes()
-	if i := bytes.IndexByte(html, '>'); i > 0 {
-		w.Write(html[:i])
-		w.Write([]byte(` hx-swap-oob="true"`))
-		w.Write(html[i:])
-	} else {
-		w.Write(html)
-	}
 }
 
 func (s *Server) blogInfo(ctx context.Context) (name, description string) {

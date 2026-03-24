@@ -49,5 +49,7 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		TotalPages:  result.TotalPages,
 	}
 
-	s.render(w, r, "home.html", data)
+	// TODO: render via template engine
+	_ = data
+	http.Error(w, "Template engine not yet wired", http.StatusInternalServerError)
 }

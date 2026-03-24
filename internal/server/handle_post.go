@@ -92,5 +92,7 @@ func (s *Server) renderPost(w http.ResponseWriter, r *http.Request, post *postRe
 		CommentsOpen: post.CommentStatus == "open",
 	}
 
-	s.render(w, r, "single.html", data)
+	// TODO: render via template engine
+	_ = data
+	http.Error(w, "Template engine not yet wired", http.StatusInternalServerError)
 }

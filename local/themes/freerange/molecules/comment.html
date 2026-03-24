@@ -1,9 +1,0 @@
-{{define "comment"}}
-<li id="comment-{{.ID}}">
-    <p>{{.TheContent}}</p>
-    <p><small>
-        {{if .URL}}<a href="{{.URL}}">{{.TheAuthor}}</a>{{else}}{{.TheAuthor}}{{end}}
-        — {{.TheDate}}
-    </small></p>
-</li>
-{{end}}

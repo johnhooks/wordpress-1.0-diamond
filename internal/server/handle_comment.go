@@ -49,23 +49,10 @@ func (s *Server) handleCommentSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// htmx: return the comment fragment + OOB comment count update.
-	// This hand-wired OOB pattern is scaffolding to prove the flow
-	// between primary swap and secondary updates. It informs what
-	// the theme compiler needs to automate.
-	if r.Header.Get("HX-Request") != "" {
-		s.render(w, r, "comment", newCommentView(comment))
+	// TODO: htmx comment fragment rendering via template engine.
+	// For now, always redirect.
 
-		post, err := s.posts.GetByID(r.Context(), postID)
-		if err != nil {
-			log.Printf("failed to load post for comment count: %v", err)
-		} else {
-			s.renderOOB(w, "comment-count", post.CommentCount)
-		}
-		return
-	}
-
-	// No-JS fallback: redirect back to the post
+	// Redirect back to the post
 	post, err := s.posts.GetByID(r.Context(), postID)
 	if err != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
