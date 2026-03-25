@@ -36,13 +36,14 @@ type StringLit struct {
 func (*StringLit) exprNode() {}
 func (e *StringLit) String() string { return fmt.Sprintf("%q", e.Value) }
 
-// NumberLit is a numeric literal: 0, 42, 3.14.
+// NumberLit is a numeric literal. Value is int64 for integers (0, 42)
+// or float64 for decimals (3.14).
 type NumberLit struct {
-	Value float64
+	Value any // int64 or float64
 }
 
 func (*NumberLit) exprNode() {}
-func (e *NumberLit) String() string { return fmt.Sprintf("%g", e.Value) }
+func (e *NumberLit) String() string { return fmt.Sprintf("%v", e.Value) }
 
 // BoolLit is true or false.
 type BoolLit struct {

@@ -15,7 +15,7 @@ func (s *Server) handleCommentSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postIDStr := r.FormValue("comment_post_ID")
+	postIDStr := r.FormValue("comment_post_id")
 	postID, err := strconv.ParseInt(postIDStr, 10, 64)
 	if err != nil || postID == 0 {
 		s.httpError(w, r, "Bad request", http.StatusBadRequest)

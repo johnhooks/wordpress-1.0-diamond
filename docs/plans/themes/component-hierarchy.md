@@ -53,24 +53,24 @@ value.
 Atoms exist in the documentation so theme authors know what data is
 available. They are not in the compiler.
 
-| Atom | Prop | Description |
-|---|---|---|
-| Site name | `SiteName` | Blog title |
-| Site description | `SiteDescription` | Blog tagline |
-| Site URL | `SiteURL` | Home URL |
-| Post title | `Title` | Post/page title |
-| Post date | `Date` | Formatted publication date |
-| Post time | `Time` | Formatted publication time |
-| Post content | `Content` | Rendered HTML body |
-| Post excerpt | `Excerpt` | Plain text excerpt |
-| Permalink | `Permalink` | Canonical post URL |
-| Author name | `AuthorName` | Display name |
-| Author URL | `AuthorURL?` | Author archive link |
-| Comment count | `CommentCount` | Number of approved comments |
-| Edit URL | `EditURL?` | Admin edit link (auth-gated) |
-| Category name | `Category.Name` | Display name |
-| Category URL | `Category.URL` | Category archive link |
-| Feed URL | `FeedURL` | RSS/Atom feed link |
+| Atom             | Prop              | Description                  |
+| ---------------- | ----------------- | ---------------------------- |
+| Site name        | `SiteName`        | Blog title                   |
+| Site description | `SiteDescription` | Blog tagline                 |
+| Site URL         | `SiteURL`         | Home URL                     |
+| Post title       | `Title`           | Post/page title              |
+| Post date        | `Date`            | Formatted publication date   |
+| Post time        | `Time`            | Formatted publication time   |
+| Post content     | `Content`         | Rendered HTML body           |
+| Post excerpt     | `Excerpt`         | Plain text excerpt           |
+| Permalink        | `Permalink`       | Canonical post URL           |
+| Author name      | `AuthorName`      | Display name                 |
+| Author URL       | `AuthorURL?`      | Author archive link          |
+| Comment count    | `CommentCount`    | Number of approved comments  |
+| Edit URL         | `EditURL?`        | Admin edit link (auth-gated) |
+| Category name    | `Category.Name`   | Display name                 |
+| Category URL     | `Category.URL`    | Category archive link        |
+| Feed URL         | `FeedURL`         | RSS/Atom feed link           |
 
 ---
 
@@ -108,8 +108,8 @@ appends/prepends it.
 
 **Regions:**
 
-| Region | Description |
-|---|---|
+| Region         | Description                                    |
+| -------------- | ---------------------------------------------- |
 | `comment-{ID}` | Individual comment, targetable for edit/update |
 
 ### SearchForm
@@ -155,8 +155,8 @@ functions. Title, content, and excerpt are atoms rendered inline.
 
 **Regions:**
 
-| Region | Description |
-|---|---|
+| Region      | Description                             |
+| ----------- | --------------------------------------- |
 | `post-{ID}` | The entire post, targetable for refresh |
 
 ### CommentList
@@ -169,8 +169,8 @@ The comment section. Calls the `Comment` molecule in a loop.
 
 **Regions:**
 
-| Region | Description |
-|---|---|
+| Region         | Description                                       |
+| -------------- | ------------------------------------------------- |
 | `comment-list` | The list container — swap target for new comments |
 
 ### CommentForm
@@ -194,8 +194,8 @@ Container for sidebar widgets. Calls widget organisms/molecules.
 
 **Regions:**
 
-| Region | Description |
-|---|---|
+| Region    | Description                          |
+| --------- | ------------------------------------ |
 | `sidebar` | Full sidebar, targetable for refresh |
 
 ### CategoryList
@@ -256,8 +256,8 @@ Title and content atoms rendered inline.
 
 **Regions:**
 
-| Region | Description |
-|---|---|
+| Region      | Description                             |
+| ----------- | --------------------------------------- |
 | `page-{ID}` | The entire page, targetable for refresh |
 
 ### SiteFooter
@@ -382,13 +382,13 @@ Total:      ~26 compiled functions
 
 This is where atomic hierarchy meets htmx.
 
-| User Action | Engine Response | Function Called |
-|---|---|---|
-| Full page load | Complete HTML document | Template |
-| htmx navigation | Content area swap | Template content (organisms) |
-| Submit comment | Single comment appended | `Comment` molecule |
-| Search | Content area swap | Post loop + Pagination organisms |
-| Refresh sidebar | Sidebar HTML | `Sidebar` organism |
+| User Action     | Engine Response         | Function Called                  |
+| --------------- | ----------------------- | -------------------------------- |
+| Full page load  | Complete HTML document  | Template                         |
+| htmx navigation | Content area swap       | Template content (organisms)     |
+| Submit comment  | Single comment appended | `Comment` molecule               |
+| Search          | Content area swap       | Post loop + Pagination organisms |
+| Refresh sidebar | Sidebar HTML            | `Sidebar` organism               |
 
 The theme author doesn't think about fragments. They write templates
 that compose organisms that compose molecules that compose atoms. The

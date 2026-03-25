@@ -58,17 +58,17 @@ provide syntax highlighting and structure validation.
 ```html
 <!-- The theme's home page template -->
 <Layout>
-  <Header />
-  <Main>
+  <header />
+  <main>
     <slot:post-list />
     <slot:pagination />
-  </Main>
+  </main>
   <Sidebar>
     <slot:search />
     <slot:categories />
     <slot:archives />
   </Sidebar>
-  <Footer />
+  <footer />
 </Layout>
 ```
 
@@ -76,17 +76,26 @@ provide syntax highlighting and structure validation.
 
 ```html
 <!-- The engine's comment form (theme author never writes this) -->
-<form method="post" action="/comments"
-      hx-post="/comments"
-      hx-target="#comment-list"
-      hx-swap="beforeend">
-  <input type="hidden" name="_csrf" value="...">
-  <input type="hidden" name="comment_post_ID" value="...">
+<form
+  method="post"
+  action="/comments"
+  hx-post="/comments"
+  hx-target="#comment-list"
+  hx-swap="beforeend"
+>
+  <input type="hidden" name="_csrf" value="..." />
+  <input type="hidden" name="comment_post_ID" value="..." />
 
   <slot:field name="author" label="Name" required />
   <slot:field name="email" label="Email" required />
   <slot:field name="url" label="Website" />
-  <slot:field name="comment" label="Comment" type="editor" features="basic" required />
+  <slot:field
+    name="comment"
+    label="Comment"
+    type="editor"
+    features="basic"
+    required
+  />
 
   <slot:submit label="Post Comment" />
 </form>
@@ -174,6 +183,7 @@ the struct and renders it.
 Press is not a framework. The set of components is known and fixed:
 
 **Engine slots** (things the engine fills):
+
 - Post (single post content)
 - Post list (loop over posts)
 - Comment list (loop over comments)
@@ -187,6 +197,7 @@ Press is not a framework. The set of components is known and fixed:
 - Meta links (login/logout/feed)
 
 **Theme slots** (things the theme fills):
+
 - Field (text input rendering)
 - Textarea (textarea rendering)
 - Editor (ProseMirror wrapper rendering)

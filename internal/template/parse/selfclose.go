@@ -10,6 +10,7 @@ package parse
 // the vocabulary defined in the vocab package once that exists.
 var vocabularyTags = map[string]bool{
 	// Engine tags — the theme places these, the engine fills them.
+	"comment":         true,
 	"comment-form":    true,
 	"comment-list":    true,
 	"post":            true,

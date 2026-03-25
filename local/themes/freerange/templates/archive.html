@@ -1,0 +1,26 @@
+<div id="wrapper">
+
+<div id="header">
+    <h1><a href="/">{blog_name}</a></h1>
+    <p class="description">{blog_description}</p>
+</div>
+
+<div id="content">
+    <h2>{archive_title}</h2>
+    {if archive_description}
+        <p class="archive-description">{archive_description}</p>
+    {/if}
+
+    {if posts}
+        {each posts as post}
+            <post />
+        {/each}
+        <pagination />
+    {else}
+        <p>No posts found.</p>
+    {/if}
+</div>
+
+<sidebar />
+
+</div>

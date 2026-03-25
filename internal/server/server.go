@@ -26,6 +26,7 @@ type Server struct {
 	db         *sqlx.DB
 	mux        *http.ServeMux
 	adminTmpl  *template.Template
+	theme      *Theme
 	linker     *permalink.Linker
 	router     *permalink.Router
 	posts      *repository.PostsRepository
@@ -59,11 +60,15 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 	}
 
 	// Load admin templates from the built-in admin theme.
-	// For now, admin templates live alongside the site theme in an
-	// admin/ subdirectory. This will become a separate theme surface.
 	adminTmpl, err := loadAdminTemplates(cfg.ThemeDir, funcMap)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load admin templates: %w", err)
+	}
+
+	// Load the site theme (Press template engine).
+	theme, err := LoadTheme(cfg.ThemeDir, cfg.IsDevelopment())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load site theme: %w", err)
 	}
 
 	users := repository.NewUsersRepository(db)
@@ -75,6 +80,7 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 		db:        db,
 		mux:       http.NewServeMux(),
 		adminTmpl: adminTmpl,
+		theme:     theme,
 		linker: &permalink.Linker{
 			SiteURL:   siteURL,
 			Structure: structure,
@@ -90,8 +96,36 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 		auth:       auth.NewService(users, sessions, secure, cfg.SessionMaxAge),
 	}
 
+	s.registerTagHandlers()
 	s.setupRoutes()
 	return s, nil
+}
+
+func (s *Server) registerTagHandlers() {
+	// Molecules
+	s.theme.RegisterHandler("post", s.tagPost)
+	s.theme.RegisterHandler("comment", s.tagComment)
+	s.theme.RegisterHandler("pagination", s.tagPagination)
+	s.theme.RegisterHandler("post-navigation", s.tagPostNavigation)
+	s.theme.RegisterHandler("comment-form", s.tagCommentForm)
+	s.theme.RegisterHandler("search-form", s.tagSearchForm)
+	s.theme.RegisterHandler("category-list", s.tagCategoryList)
+	s.theme.RegisterHandler("archive-list", s.tagArchiveList)
+	s.theme.RegisterHandler("page-list", s.tagPageList)
+	s.theme.RegisterHandler("meta-links", s.tagMetaLinks)
+	s.theme.RegisterHandler("archive-header", s.tagArchiveHeader)
+
+	// Organisms
+	s.theme.RegisterHandler("sidebar", s.tagSidebar)
+	s.theme.RegisterHandler("comment-list", s.tagCommentList)
+}
+
+// renderSite renders a site template with the given data.
+func (s *Server) renderSite(w http.ResponseWriter, name string, data any) {
+	if err := s.theme.Render(w, name, data); err != nil {
+		log.Printf("template render error: %v", err)
+		http.Error(w, "An internal error occurred.", http.StatusInternalServerError)
+	}
 }
 
 // loadAdminTemplates loads admin templates from the theme directory.

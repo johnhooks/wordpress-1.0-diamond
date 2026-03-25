@@ -8,21 +8,21 @@ this.
 
 Posts live in `wp_posts` with `post_type = 'post'`.
 
-| Field           | Usage                                          |
-|-----------------|------------------------------------------------|
-| post_type       | `'post'`                                       |
-| post_title      | The title                                      |
-| post_content    | The body — ProseMirror JSON document            |
-| post_excerpt    | Optional summary                               |
-| post_name       | URL slug — `hello-world`                       |
-| post_status     | `'publish'`, `'draft'`, `'private'`            |
-| post_author     | User ID of the author                          |
-| post_date       | Publication date                               |
-| post_modified   | Last edit date                                 |
-| post_password   | Optional password protection                   |
-| comment_status  | `'open'` or `'closed'`                         |
-| comment_count   | Denormalized comment count                     |
-| guid            | Permanent identifier, used in feeds            |
+| Field          | Usage                                |
+| -------------- | ------------------------------------ |
+| post_type      | `'post'`                             |
+| post_title     | The title                            |
+| post_content   | The body — ProseMirror JSON document |
+| post_excerpt   | Optional summary                     |
+| post_name      | URL slug — `hello-world`             |
+| post_status    | `'publish'`, `'draft'`, `'private'`  |
+| post_author    | User ID of the author                |
+| post_date      | Publication date                     |
+| post_modified  | Last edit date                       |
+| post_password  | Optional password protection         |
+| comment_status | `'open'` or `'closed'`               |
+| comment_count  | Denormalized comment count           |
+| guid           | Permanent identifier, used in feeds  |
 
 Posts have categories via `wp_term_relationships`. A post belongs to at least
 one category (defaults to "Uncategorized"). Custom fields via `wp_postmeta`.
@@ -31,10 +31,10 @@ one category (defaults to "Uncategorized"). Custom fields via `wp_postmeta`.
 
 Post URLs are defined by the permalink structure. See `docs/permalinks.md`.
 
-| Form       | Example                          |
-|------------|----------------------------------|
-| Pretty     | `/2004/01/03/hello-world/`       |
-| Query      | `/?p=42`                         |
+| Form   | Example                    |
+| ------ | -------------------------- |
+| Pretty | `/2004/01/03/hello-world/` |
+| Query  | `/?p=42`                   |
 
 With pretty permalinks, `?p=42` redirects (301) to the canonical URL.
 

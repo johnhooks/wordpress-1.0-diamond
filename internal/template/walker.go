@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"net/http"
 	"reflect"
 
+	"press/internal/errors"
 	"press/internal/template/parse"
 )
 
@@ -42,6 +44,18 @@ func Walk(w io.Writer, doc *parse.Node, data any, handlers map[string]TagHandler
 		scope:    NewScope(data),
 		handlers: handlers,
 		snippets: snippets,
+	}
+	return walker.walkChildren(doc)
+}
+
+// WalkWithScope renders a parsed template AST using an existing scope.
+// Used by vocabulary tag handlers to render sub-templates while
+// preserving the current scope chain (e.g. {each} bindings).
+func WalkWithScope(w io.Writer, doc *parse.Node, scope *Scope, handlers map[string]TagHandler) error {
+	walker := &Walker{
+		w:        w,
+		scope:    scope,
+		handlers: handlers,
 	}
 	return walker.walkChildren(doc)
 }
@@ -84,7 +98,7 @@ func (wk *Walker) walkNode(n *parse.Node) error {
 		return err
 
 	default:
-		return fmt.Errorf("unknown node type %d", n.Type)
+		return renderErr("unknown node type %d", n.Type)
 	}
 }
 
@@ -112,7 +126,7 @@ func (wk *Walker) walkElement(n *parse.Node) error {
 	for _, attr := range n.Attr {
 		val, err := wk.resolveAttr(attr)
 		if err != nil {
-			return fmt.Errorf("resolving attribute %q: %w", attr.Key, err)
+			return renderWrap(err, "resolving attribute %q", attr.Key)
 		}
 		if _, err := fmt.Fprintf(wk.w, ` %s="%s"`, attr.Key, val); err != nil {
 			return err
@@ -145,7 +159,7 @@ func (wk *Walker) walkVocabularyTag(n *parse.Node, handler TagHandler) error {
 	for _, attr := range n.Attr {
 		val, err := wk.resolveAttr(attr)
 		if err != nil {
-			return fmt.Errorf("resolving attribute %q on <%s>: %w", attr.Key, n.Data, err)
+			return renderWrap(err, "resolving attribute %q on <%s>", attr.Key, n.Data)
 		}
 		attrs[attr.Key] = val
 	}
@@ -158,7 +172,7 @@ func (wk *Walker) walkVocabularyTag(n *parse.Node, handler TagHandler) error {
 
 	result, err := handler(ctx)
 	if err != nil {
-		return fmt.Errorf("handler for <%s>: %w", n.Data, err)
+		return renderWrap(err, "handler for <%s>", n.Data)
 	}
 
 	_, err = io.WriteString(wk.w, result)
@@ -168,27 +182,33 @@ func (wk *Walker) walkVocabularyTag(n *parse.Node, handler TagHandler) error {
 func (wk *Walker) walkExpression(n *parse.Node) error {
 	expr := wk.getExpr(n)
 	if expr == nil {
-		return fmt.Errorf("expression {%s} not compiled", n.Data)
+		return renderErr("expression {%s} not compiled", n.Data)
 	}
 
-	val, err := EvalString(expr, wk.scopeContext())
+	val, err := Eval(expr, wk.scopeContext())
 	if err != nil {
-		return fmt.Errorf("evaluating {%s}: %w", n.Data, err)
+		return renderWrap(err, "evaluating {%s}", n.Data)
 	}
 
-	_, err = io.WriteString(wk.w, html.EscapeString(val))
+	// RawHTML values are pre-rendered and written without escaping.
+	if raw, ok := val.(RawHTML); ok {
+		_, err = io.WriteString(wk.w, string(raw))
+		return err
+	}
+
+	_, err = io.WriteString(wk.w, html.EscapeString(formatValue(val)))
 	return err
 }
 
 func (wk *Walker) walkIf(n *parse.Node) error {
 	expr := wk.getExpr(n)
 	if expr == nil {
-		return fmt.Errorf("if condition {%s} not compiled", n.Data)
+		return renderErr("if condition {%s} not compiled", n.Data)
 	}
 
 	truthy, err := EvalTruthy(expr, wk.scopeContext())
 	if err != nil {
-		return fmt.Errorf("evaluating if condition {%s}: %w", n.Data, err)
+		return renderWrap(err, "evaluating if condition {%s}", n.Data)
 	}
 
 	if truthy {
@@ -214,17 +234,17 @@ func (wk *Walker) walkIf(n *parse.Node) error {
 
 func (wk *Walker) walkEach(n *parse.Node) error {
 	if n.TemplateData == nil {
-		return fmt.Errorf("each node missing template data")
+		return renderErr("each node missing template data")
 	}
 
 	expr := wk.getExpr(n)
 	if expr == nil {
-		return fmt.Errorf("each list {%s} not compiled", n.Data)
+		return renderErr("each list {%s} not compiled", n.Data)
 	}
 
 	listVal, err := Eval(expr, wk.scopeContext())
 	if err != nil {
-		return fmt.Errorf("evaluating each list {%s}: %w", n.Data, err)
+		return renderWrap(err, "evaluating each list {%s}", n.Data)
 	}
 
 	// Check if list is iterable.
@@ -274,17 +294,17 @@ func (wk *Walker) walkEach(n *parse.Node) error {
 
 func (wk *Walker) walkConst(n *parse.Node) error {
 	if n.TemplateData == nil {
-		return fmt.Errorf("const node missing template data")
+		return renderErr("const node missing template data")
 	}
 
 	expr := wk.getExpr(n)
 	if expr == nil {
-		return fmt.Errorf("const expression {%s} not compiled", n.Data)
+		return renderErr("const expression {%s} not compiled", n.Data)
 	}
 
 	val, err := Eval(expr, wk.scopeContext())
 	if err != nil {
-		return fmt.Errorf("evaluating const {%s}: %w", n.Data, err)
+		return renderWrap(err, "evaluating const {%s}", n.Data)
 	}
 
 	wk.scope.Set(n.TemplateData.ConstName, val)
@@ -326,4 +346,14 @@ var voidElements = map[string]bool{
 
 func isVoidElement(tag string) bool {
 	return voidElements[tag]
+}
+
+// renderErr creates an *errors.Error with the template_render code.
+func renderErr(format string, args ...any) *errors.Error {
+	return errors.New(errors.ErrTemplateRender, fmt.Sprintf(format, args...), http.StatusInternalServerError)
+}
+
+// renderWrap wraps an existing error with the template_render code.
+func renderWrap(err error, format string, args ...any) *errors.Error {
+	return errors.Wrap(err, errors.ErrTemplateRender, fmt.Sprintf(format, args...), http.StatusInternalServerError)
 }

@@ -139,7 +139,7 @@ func sprintExpr(sb *strings.Builder, expr Expr) {
 	case *StringLit:
 		fmt.Fprintf(sb, "(string %q)", e.Value)
 	case *NumberLit:
-		fmt.Fprintf(sb, "(number %g)", e.Value)
+		fmt.Fprintf(sb, "(number %v)", e.Value)
 	case *BoolLit:
 		fmt.Fprintf(sb, "(bool %v)", e.Value)
 	case *BinaryExpr:

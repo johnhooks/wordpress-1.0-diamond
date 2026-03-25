@@ -1,6 +1,7 @@
 package template
 
 import (
+	"math"
 	"strings"
 	"testing"
 
@@ -132,7 +133,7 @@ func TestEval_Literals(t *testing.T) {
 		want any
 	}{
 		{`"hello"`, "hello"},
-		{"42", float64(42)},
+		{"42", int64(42)},
 		{"3.14", float64(3.14)},
 		{"true", true},
 		{"false", false},
@@ -410,5 +411,84 @@ func TestEval_MissingField(t *testing.T) {
 	_, err := Eval(parseExpr(t, "Nonexistent"), data)
 	if err == nil {
 		t.Fatal("expected error for missing field")
+	}
+}
+
+func TestToInt(t *testing.T) {
+	// int64 passes through.
+	if n, ok := toInt(int64(42)); !ok || n != 42 {
+		t.Errorf("toInt(int64(42)) = %d, %v", n, ok)
+	}
+
+	// uint64 within int64 range converts.
+	if n, ok := toInt(uint64(100)); !ok || n != 100 {
+		t.Errorf("toInt(uint64(100)) = %d, %v", n, ok)
+	}
+
+	// uint64 above MaxInt64 refuses.
+	huge := uint64(math.MaxInt64) + 1
+	if _, ok := toInt(huge); ok {
+		t.Error("toInt should refuse uint64 above MaxInt64")
+	}
+
+	// float64 is not an integer.
+	if _, ok := toInt(3.14); ok {
+		t.Error("toInt should refuse float64")
+	}
+}
+
+func TestToFloat(t *testing.T) {
+	// float64 passes through.
+	if f, ok := toFloat(3.14); !ok || f != 3.14 {
+		t.Errorf("toFloat(3.14) = %f, %v", f, ok)
+	}
+
+	// Integers are not floats.
+	if _, ok := toFloat(int64(42)); ok {
+		t.Error("toFloat should refuse int64")
+	}
+}
+
+func TestIsEqual_Integers(t *testing.T) {
+	// Same value, same type.
+	if !isEqual(int64(42), int64(42)) {
+		t.Error("isEqual(42, 42) should be true")
+	}
+
+	// Large integers compare correctly without float conversion.
+	a := int64(1<<53 + 1)
+	b := int64(1<<53 + 1)
+	if !isEqual(a, b) {
+		t.Errorf("isEqual(%d, %d) should be true", a, b)
+	}
+
+	// Adjacent large integers are not equal.
+	c := int64(1<<53 + 2)
+	if isEqual(a, c) {
+		t.Errorf("isEqual(%d, %d) should be false", a, c)
+	}
+
+	// int vs uint of same value (both convert to int64).
+	if !isEqual(int(5), uint(5)) {
+		t.Error("isEqual(int(5), uint(5)) should be true")
+	}
+}
+
+func TestCompareOrdered_Integers(t *testing.T) {
+	// Integers compare as integers, no float conversion.
+	result, err := compareOrdered(int64(1<<53+1), int64(1<<53+2), "<")
+	if err != nil {
+		t.Fatalf("compareOrdered large int64: %v", err)
+	}
+	if !result {
+		t.Error("large int64 comparison should work directly")
+	}
+}
+
+func TestCompareOrdered_IntVsFloat(t *testing.T) {
+	// int vs float is a type mismatch.
+	_, err := compareOrdered(int64(5), float64(5.0), "<")
+	if err == nil {
+		t.Error("comparing int to float should error")
 	}
 }

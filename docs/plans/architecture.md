@@ -92,17 +92,17 @@ Every request follows the same path:
 These are the query-string fallbacks when pretty permalinks are off, and
 they work as overrides on any route:
 
-| Parameter | Purpose |
-|-----------|---------|
-| `p` | Post ID |
-| `page_id` | Page ID |
-| `name` | Post slug |
-| `cat` | Category ID |
-| `author` | Author ID |
-| `s` | Search term |
-| `m` | Date in YYYYMM or YYYYMMDD format |
-| `year`, `monthnum`, `day` | Date components |
-| `paged` | Pagination offset |
+| Parameter                 | Purpose                           |
+| ------------------------- | --------------------------------- |
+| `p`                       | Post ID                           |
+| `page_id`                 | Page ID                           |
+| `name`                    | Post slug                         |
+| `cat`                     | Category ID                       |
+| `author`                  | Author ID                         |
+| `s`                       | Search term                       |
+| `m`                       | Date in YYYYMM or YYYYMMDD format |
+| `year`, `monthnum`, `day` | Date components                   |
+| `paged`                   | Pagination offset                 |
 
 ## Cache System
 
@@ -113,15 +113,15 @@ long-lived process with its own memory. No workarounds needed.
 
 ### Layers
 
-| Layer | Contents | Invalidation |
-|-------|----------|--------------|
-| Options cache | All autoloaded options in memory | Write-through on update |
-| Notoptions cache | Known non-existent option keys | Cleared on relevant write |
-| Tuple cache | Full permission set in memory | Rebuild on any tuple change |
-| Term cache | Full taxonomy tree in memory | Rebuild on term writes |
-| Object cache | Individual posts, comments, users (LRU) | Evict on update/delete |
-| Query cache | Full query results by WHERE clause | Invalidate on table writes |
-| Template cache | Parsed Go templates | Rebuild on theme change |
+| Layer            | Contents                                | Invalidation                |
+| ---------------- | --------------------------------------- | --------------------------- |
+| Options cache    | All autoloaded options in memory        | Write-through on update     |
+| Notoptions cache | Known non-existent option keys          | Cleared on relevant write   |
+| Tuple cache      | Full permission set in memory           | Rebuild on any tuple change |
+| Term cache       | Full taxonomy tree in memory            | Rebuild on term writes      |
+| Object cache     | Individual posts, comments, users (LRU) | Evict on update/delete      |
+| Query cache      | Full query results by WHERE clause      | Invalidate on table writes  |
+| Template cache   | Parsed Go templates                     | Rebuild on theme change     |
 
 Every cache is in-process. Map lookups, not network calls. Sub-microsecond
 reads versus sub-millisecond with Redis. For a blog serving the same posts

@@ -23,14 +23,14 @@ A labeled text input with an optional error message.
 
 **Props:**
 
-| Prop | Type | Description |
-|---|---|---|
-| `ID` | string | Input id and label for attribute |
-| `Name` | string | Form field name |
-| `Label` | string | Display label |
-| `Value` | string | Current value (empty for new) |
-| `Error` | string | Validation error (empty if none) |
-| `Autofocus` | bool | Whether to autofocus this field |
+| Prop        | Type   | Description                      |
+| ----------- | ------ | -------------------------------- |
+| `ID`        | string | Input id and label for attribute |
+| `Name`      | string | Form field name                  |
+| `Label`     | string | Display label                    |
+| `Value`     | string | Current value (empty for new)    |
+| `Error`     | string | Validation error (empty if none) |
+| `Autofocus` | bool   | Whether to autofocus this field  |
 
 ### TextareaField
 
@@ -40,15 +40,15 @@ A labeled textarea with configurable rows and an optional error.
 
 **Props:**
 
-| Prop | Type | Description |
-|---|---|---|
-| `ID` | string | Textarea id and label for attribute |
-| `Name` | string | Form field name |
-| `Label` | string | Display label |
-| `Value` | string | Current value |
-| `Rows` | int | Number of visible rows |
-| `Error` | string | Validation error (empty if none) |
-| `HelpText` | string | Optional hint text below the field |
+| Prop       | Type   | Description                         |
+| ---------- | ------ | ----------------------------------- |
+| `ID`       | string | Textarea id and label for attribute |
+| `Name`     | string | Form field name                     |
+| `Label`    | string | Display label                       |
+| `Value`    | string | Current value                       |
+| `Rows`     | int    | Number of visible rows              |
+| `Error`    | string | Validation error (empty if none)    |
+| `HelpText` | string | Optional hint text below the field  |
 
 ### RadioGroup
 
@@ -58,19 +58,19 @@ A fieldset of radio buttons.
 
 **Props:**
 
-| Prop | Type | Description |
-|---|---|---|
-| `Name` | string | Form field name |
-| `Legend` | string | Fieldset legend text |
-| `Options` | []RadioOption | Available choices |
+| Prop      | Type          | Description          |
+| --------- | ------------- | -------------------- |
+| `Name`    | string        | Form field name      |
+| `Legend`  | string        | Fieldset legend text |
+| `Options` | []RadioOption | Available choices    |
 
 Where `RadioOption` is:
 
-| Field | Type | Description |
-|---|---|---|
-| `Value` | string | Option value |
-| `Label` | string | Display label |
-| `Selected` | bool | Whether this option is selected |
+| Field      | Type   | Description                     |
+| ---------- | ------ | ------------------------------- |
+| `Value`    | string | Option value                    |
+| `Label`    | string | Display label                   |
+| `Selected` | bool   | Whether this option is selected |
 
 ### CheckboxGroup
 
@@ -80,19 +80,19 @@ A fieldset of checkboxes from dynamic data.
 
 **Props:**
 
-| Prop | Type | Description |
-|---|---|---|
-| `Name` | string | Form field name |
-| `Legend` | string | Fieldset legend text |
-| `Options` | []CheckboxOption | Available choices |
+| Prop      | Type             | Description          |
+| --------- | ---------------- | -------------------- |
+| `Name`    | string           | Form field name      |
+| `Legend`  | string           | Fieldset legend text |
+| `Options` | []CheckboxOption | Available choices    |
 
 Where `CheckboxOption` is:
 
-| Field | Type | Description |
-|---|---|---|
-| `Value` | string | Option value (usually an ID) |
-| `Label` | string | Display label |
-| `Checked` | bool | Whether this option is checked |
+| Field     | Type   | Description                    |
+| --------- | ------ | ------------------------------ |
+| `Value`   | string | Option value (usually an ID)   |
+| `Label`   | string | Display label                  |
+| `Checked` | bool   | Whether this option is checked |
 
 ### Pagination
 
@@ -102,12 +102,12 @@ Previous/next navigation for paged lists.
 
 **Props:**
 
-| Prop | Type | Description |
-|---|---|---|
-| `HasPrev` | bool | Whether a newer page exists |
-| `HasNext` | bool | Whether an older page exists |
-| `PrevURL` | string | URL for newer entries |
-| `NextURL` | string | URL for older entries |
+| Prop      | Type   | Description                  |
+| --------- | ------ | ---------------------------- |
+| `HasPrev` | bool   | Whether a newer page exists  |
+| `HasNext` | bool   | Whether an older page exists |
+| `PrevURL` | string | URL for newer entries        |
+| `NextURL` | string | URL for older entries        |
 
 ### ActionLinks
 
@@ -118,11 +118,11 @@ The template renders whatever links are non-empty.
 
 **Props:**
 
-| Prop | Type | Description |
-|---|---|---|
-| `EditURL` | string | Edit link (empty to hide) |
-| `ViewURL` | string | View link (empty to hide) |
-| `DeleteURL` | string | Delete link (empty to hide) |
+| Prop         | Type   | Description                  |
+| ------------ | ------ | ---------------------------- |
+| `EditURL`    | string | Edit link (empty to hide)    |
+| `ViewURL`    | string | View link (empty to hide)    |
+| `DeleteURL`  | string | Delete link (empty to hide)  |
 | `ApproveURL` | string | Approve link (empty to hide) |
 
 ### FormErrors
@@ -133,8 +133,8 @@ Form-level error messages displayed at the top of a form.
 
 **Props:**
 
-| Prop | Type | Description |
-|---|---|---|
+| Prop     | Type     | Description            |
+| -------- | -------- | ---------------------- |
 | `Errors` | []string | General error messages |
 
 ---
@@ -154,20 +154,20 @@ means edit.
 
 **Props:**
 
-| Prop | Type | Description |
-|---|---|---|
-| `Action` | string | Form action URL |
-| `CSRFAction` | string | CSRF action name |
-| `CSRF` | CSRFHelper | CSRF token generator |
-| `Post` | AdminPostEdit | Post data (empty for new) |
-| `Categories` | []CheckboxOption | Category checkboxes |
-| `StatusOptions` | []RadioOption | Post status radios |
-| `CommentOptions` | []RadioOption | Comment status radios |
-| `Errors` | FormErrors | Validation errors |
-| `IsEdit` | bool | Whether this is an edit (shows save vs publish) |
-| `CanDelete` | bool | Whether to show delete link |
-| `DeleteURL` | string | Delete action URL |
-| `Permalink` | string | Public URL (edit only) |
+| Prop             | Type             | Description                                     |
+| ---------------- | ---------------- | ----------------------------------------------- |
+| `Action`         | string           | Form action URL                                 |
+| `CSRFAction`     | string           | CSRF action name                                |
+| `CSRF`           | CSRFHelper       | CSRF token generator                            |
+| `Post`           | AdminPostEdit    | Post data (empty for new)                       |
+| `Categories`     | []CheckboxOption | Category checkboxes                             |
+| `StatusOptions`  | []RadioOption    | Post status radios                              |
+| `CommentOptions` | []RadioOption    | Comment status radios                           |
+| `Errors`         | FormErrors       | Validation errors                               |
+| `IsEdit`         | bool             | Whether this is an edit (shows save vs publish) |
+| `CanDelete`      | bool             | Whether to show delete link                     |
+| `DeleteURL`      | string           | Delete action URL                               |
+| `Permalink`      | string           | Public URL (edit only)                          |
 
 ### PostRow
 
@@ -177,18 +177,18 @@ A single post in the manage posts list.
 
 **Props:**
 
-| Prop | Type | Description |
-|---|---|---|
-| `ID` | int | Post ID |
-| `Title` | string | Post title |
-| `Status` | string | Post status |
-| `Date` | string | Formatted date |
-| `AuthorName` | string | Author display name |
-| `Categories` | string | Comma-separated category names |
-| `CommentCount` | int | Number of comments |
-| `EditURL` | string | Edit page URL |
-| `ViewURL` | string | Frontend permalink |
-| `DeleteURL` | string | Delete action URL |
+| Prop           | Type   | Description                    |
+| -------------- | ------ | ------------------------------ |
+| `ID`           | int    | Post ID                        |
+| `Title`        | string | Post title                     |
+| `Status`       | string | Post status                    |
+| `Date`         | string | Formatted date                 |
+| `AuthorName`   | string | Author display name            |
+| `Categories`   | string | Comma-separated category names |
+| `CommentCount` | int    | Number of comments             |
+| `EditURL`      | string | Edit page URL                  |
+| `ViewURL`      | string | Frontend permalink             |
+| `DeleteURL`    | string | Delete action URL              |
 
 ### AdminHeader
 
@@ -216,18 +216,18 @@ for its content area.
 
 ### Required Templates
 
-| Template | Engine calls | Description |
-|---|---|---|
-| `admin-login` | `GET/POST /wp-admin/login` | Login form (no shell) |
-| `admin-write` | `GET /wp-admin/post/new` | New post form |
-| `admin-edit` | `GET /wp-admin/post/{id}/edit` | Edit post form |
-| `admin-posts` | `GET /wp-admin/posts` | Post listing |
-| `admin-comments` | `GET /wp-admin/comments` | Comment listing |
-| `admin-moderate` | `GET /wp-admin/moderate` | Moderation queue |
-| `admin-categories` | `GET /wp-admin/categories` | Category management |
-| `admin-users` | `GET /wp-admin/users` | User management |
-| `admin-options` | `GET /wp-admin/options` | Site settings |
-| `admin-profile` | `GET /wp-admin/profile` | User profile |
+| Template           | Engine calls                   | Description           |
+| ------------------ | ------------------------------ | --------------------- |
+| `admin-login`      | `GET/POST /wp-admin/login`     | Login form (no shell) |
+| `admin-write`      | `GET /wp-admin/post/new`       | New post form         |
+| `admin-edit`       | `GET /wp-admin/post/{id}/edit` | Edit post form        |
+| `admin-posts`      | `GET /wp-admin/posts`          | Post listing          |
+| `admin-comments`   | `GET /wp-admin/comments`       | Comment listing       |
+| `admin-moderate`   | `GET /wp-admin/moderate`       | Moderation queue      |
+| `admin-categories` | `GET /wp-admin/categories`     | Category management   |
+| `admin-users`      | `GET /wp-admin/users`          | User management       |
+| `admin-options`    | `GET /wp-admin/options`        | Site settings         |
+| `admin-profile`    | `GET /wp-admin/profile`        | User profile          |
 
 ### Template Composition
 
@@ -313,26 +313,26 @@ Both approaches use the same error slot in the molecule.
 
 ## What Exists Today vs What Is Needed
 
-| Component | Status |
-|---|---|
-| admin-header | Implemented (inline in shell.html) |
-| admin-footer | Implemented (inline in shell.html) |
-| admin-login | Implemented |
-| admin-write | Implemented (monolithic, needs decomposition) |
-| admin-edit | Implemented (monolithic, needs decomposition) |
-| admin-posts | Implemented (monolithic, needs decomposition) |
-| admin-post-form | Not extracted yet |
-| admin-post-row | Not extracted yet |
-| admin-text-field | Not extracted yet |
-| admin-textarea-field | Not extracted yet |
-| admin-radio-group | Not extracted yet |
-| admin-checkbox-group | Not extracted yet |
-| admin-pagination | Not extracted yet |
-| admin-action-links | Not extracted yet |
-| admin-form-errors | Not extracted yet |
-| admin-comments | Not implemented |
-| admin-moderate | Not implemented |
-| admin-categories | Not implemented |
-| admin-users | Not implemented |
-| admin-options | Not implemented |
-| admin-profile | Not implemented |
+| Component            | Status                                        |
+| -------------------- | --------------------------------------------- |
+| admin-header         | Implemented (inline in shell.html)            |
+| admin-footer         | Implemented (inline in shell.html)            |
+| admin-login          | Implemented                                   |
+| admin-write          | Implemented (monolithic, needs decomposition) |
+| admin-edit           | Implemented (monolithic, needs decomposition) |
+| admin-posts          | Implemented (monolithic, needs decomposition) |
+| admin-post-form      | Not extracted yet                             |
+| admin-post-row       | Not extracted yet                             |
+| admin-text-field     | Not extracted yet                             |
+| admin-textarea-field | Not extracted yet                             |
+| admin-radio-group    | Not extracted yet                             |
+| admin-checkbox-group | Not extracted yet                             |
+| admin-pagination     | Not extracted yet                             |
+| admin-action-links   | Not extracted yet                             |
+| admin-form-errors    | Not extracted yet                             |
+| admin-comments       | Not implemented                               |
+| admin-moderate       | Not implemented                               |
+| admin-categories     | Not implemented                               |
+| admin-users          | Not implemented                               |
+| admin-options        | Not implemented                               |
+| admin-profile        | Not implemented                               |

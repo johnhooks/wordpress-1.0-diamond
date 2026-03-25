@@ -149,10 +149,10 @@ internally. Callers just call `Can()` — they don't know caching exists.
 
 ### What to cache
 
-| Data | Key | TTL | Invalidate on |
-|------|-----|-----|---------------|
-| User's groups | `perm:groups:{userID}` | 5m | Membership tuple create/delete |
-| Group grants for object | `perm:grants:{objectType}:{objectID}` | 5m | Group grant tuple create/delete |
+| Data                    | Key                                   | TTL | Invalidate on                   |
+| ----------------------- | ------------------------------------- | --- | ------------------------------- |
+| User's groups           | `perm:groups:{userID}`                | 5m  | Membership tuple create/delete  |
+| Group grants for object | `perm:grants:{objectType}:{objectID}` | 5m  | Group grant tuple create/delete |
 
 The full `Can()` result is not cached initially. Caching the two
 underlying queries cuts DB hits substantially without complex

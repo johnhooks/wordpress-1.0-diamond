@@ -16,16 +16,16 @@ The admin exists to get out of the way so you can write.
 
 ### Color Palette
 
-| Color | Hex | Usage |
-|---|---|---|
-| White | `#fff` | Page background, input backgrounds |
-| Light gray | `#eee` | Alternating table rows (.alternate) |
-| Medium gray | `#ccc` | Borders, dividers |
-| Dark gray | `#666` | Secondary text |
-| Black | `#000` | Primary text |
-| Navy blue | `#00019b` | Links — institutional, not playful |
-| Red | `#c00` | Delete hover state — danger signal |
-| White on red | `#fff` on `#c00` | Delete button hover text |
+| Color        | Hex              | Usage                               |
+| ------------ | ---------------- | ----------------------------------- |
+| White        | `#fff`           | Page background, input backgrounds  |
+| Light gray   | `#eee`           | Alternating table rows (.alternate) |
+| Medium gray  | `#ccc`           | Borders, dividers                   |
+| Dark gray    | `#666`           | Secondary text                      |
+| Black        | `#000`           | Primary text                        |
+| Navy blue    | `#00019b`        | Links — institutional, not playful  |
+| Red          | `#c00`           | Delete hover state — danger signal  |
+| White on red | `#fff` on `#c00` | Delete button hover text            |
 
 No accent color. No brand color. The admin is deliberately colorless.
 The only color moments are navy for links and red for destructive

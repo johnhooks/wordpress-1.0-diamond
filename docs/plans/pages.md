@@ -10,15 +10,15 @@ Pages use the same `wp_posts` table with `post_type = 'page'`.
 
 Relevant fields:
 
-| Field        | Usage                                      |
-|--------------|--------------------------------------------|
-| post_type    | `'page'`                                   |
-| post_name    | URL slug — `/about/`, `/contact/`          |
+| Field        | Usage                                       |
+| ------------ | ------------------------------------------- |
+| post_type    | `'page'`                                    |
+| post_name    | URL slug — `/about/`, `/contact/`           |
 | post_parent  | Parent page ID. One level deep, not a tree. |
-| menu_order   | Sort order for page listings               |
-| post_status  | `'publish'` or `'draft'`                   |
-| post_title   | Page title                                 |
-| post_content | Page body                                  |
+| menu_order   | Sort order for page listings                |
+| post_status  | `'publish'` or `'draft'`                    |
+| post_title   | Page title                                  |
+| post_content | Page body                                   |
 
 Fields that don't apply to pages: `post_excerpt`, categories, tags. A page is
 a title and a body at a URL.
@@ -27,9 +27,9 @@ a title and a body at a URL.
 
 Pages have simple slug-based URLs:
 
-| Form       | Example          |
-|------------|------------------|
-| Pretty     | `/about/`        |
+| Form       | Example            |
+| ---------- | ------------------ |
+| Pretty     | `/about/`          |
 | Child page | `/about/colophon/` |
 
 The Router needs a page rule. Since page slugs can collide with post slugs

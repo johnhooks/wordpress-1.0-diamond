@@ -55,6 +55,7 @@ The new post form. The most important page in the admin.
 **Props:** (empty form defaults)
 
 **Fields:**
+
 - Title (text input)
 - Content (ProseMirror editor web component)
 - Excerpt (textarea)
@@ -65,6 +66,7 @@ The new post form. The most important page in the admin.
 **Actions:** save-draft, publish
 
 **Regions:**
+
 - `editor` — the ProseMirror web component mount point
 - `categories` — category list, refreshable after adding a new one
 
@@ -92,6 +94,7 @@ Comments (count), Actions (Edit, Delete)
 **Actions:** bulk-delete, filter, search
 
 **Regions:**
+
 - `post-list` — the table body, swappable for filtering/pagination
 
 ### ManageComments
@@ -106,6 +109,7 @@ Status, Actions (Edit, Delete, Approve/Unapprove)
 **Actions:** bulk-approve, bulk-delete
 
 **Regions:**
+
 - `comment-list` — swappable for filtering
 
 ### ModerateComments
@@ -129,6 +133,7 @@ EditingCategory?
 **Actions:** create, edit, delete
 
 **Regions:**
+
 - `category-list` — refreshable after create/delete
 - `category-form` — swaps between create and edit mode
 
@@ -145,6 +150,7 @@ Posts (count)
 **Actions:** create, promote, demote, delete
 
 **Regions:**
+
 - `user-list` — refreshable after changes
 
 ### OptionsPage
@@ -185,26 +191,26 @@ model as the frontend: the engine calls them by name via
 
 ### Full Page Templates
 
-| Template Name | Handler | Description |
-|---|---|---|
-| `admin-login` | `GET /wp-admin/login` | Login form |
-| `admin-write` | `GET /wp-admin/post/new` | New post form |
-| `admin-edit` | `GET /wp-admin/post/{id}` | Edit post form |
-| `admin-posts` | `GET /wp-admin/posts` | Post listing |
-| `admin-comments` | `GET /wp-admin/comments` | Comment listing |
-| `admin-moderate` | `GET /wp-admin/moderate` | Moderation queue |
+| Template Name      | Handler                    | Description         |
+| ------------------ | -------------------------- | ------------------- |
+| `admin-login`      | `GET /wp-admin/login`      | Login form          |
+| `admin-write`      | `GET /wp-admin/post/new`   | New post form       |
+| `admin-edit`       | `GET /wp-admin/post/{id}`  | Edit post form      |
+| `admin-posts`      | `GET /wp-admin/posts`      | Post listing        |
+| `admin-comments`   | `GET /wp-admin/comments`   | Comment listing     |
+| `admin-moderate`   | `GET /wp-admin/moderate`   | Moderation queue    |
 | `admin-categories` | `GET /wp-admin/categories` | Category management |
-| `admin-users` | `GET /wp-admin/users` | User management |
-| `admin-options` | `GET /wp-admin/options` | Site settings |
-| `admin-profile` | `GET /wp-admin/profile` | User profile |
+| `admin-users`      | `GET /wp-admin/users`      | User management     |
+| `admin-options`    | `GET /wp-admin/options`    | Site settings       |
+| `admin-profile`    | `GET /wp-admin/profile`    | User profile        |
 
 ### Fragment Templates
 
-| Template Name | Handler | Description |
-|---|---|---|
-| `admin-post-row` | various | One row in the post list |
-| `admin-comment-row` | various | One row in the comment list |
-| `admin-category-row` | various | One row in the category list |
+| Template Name         | Handler                     | Description                      |
+| --------------------- | --------------------------- | -------------------------------- |
+| `admin-post-row`      | various                     | One row in the post list         |
+| `admin-comment-row`   | various                     | One row in the comment list      |
+| `admin-category-row`  | various                     | One row in the category list     |
 | `admin-category-form` | `POST /wp-admin/categories` | Category form (create/edit swap) |
 
 ### Total: ~14 Required Templates

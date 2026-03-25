@@ -132,13 +132,17 @@ primary    = ident ("." ident)* | string_lit | number_lit | bool_lit | "(" expr 
 
 Precedence from lowest to highest:
 
-| Level | Operators                    | Associativity |
-| ----- | ---------------------------- | ------------- |
-| 1     | `or` (also `\|\|`)           | left          |
-| 2     | `and` (also `&&`)            | left          |
+| Level | Operators                   | Associativity |
+| ----- | --------------------------- | ------------- |
+| 1     | `or` (also `\|\|`)          | left          |
+| 2     | `and` (also `&&`)           | left          |
 | 3     | `==` `!=` `<` `>` `<=` `>=` | none          |
-| 4     | `not` (also `!`)             | right (unary) |
-| 5     | `.` member access            | left          |
+| 4     | `not` (also `!`)            | right (unary) |
+| 5     | `.` member access           | left          |
+| 6     | `(` `)` grouping            | n/a           |
+
+Parentheses override precedence. `{if (a or b) and c}` evaluates the `or` first.
+The parser enforces a maximum nesting depth of 32 to prevent stack overflow.
 
 Comparisons do not chain. `a < b < c` is a parse error because after parsing
 `a < b` as a `BinaryExpr`, the parser returns to `parseAnd` which does not
@@ -149,15 +153,15 @@ Keywords (`and`, `or`, `not`) are matched with boundary checking via
 
 ### AST node types
 
-| Type         | Fields                | Example         |
-| ------------ | --------------------- | --------------- |
-| `Ident`      | `Name`                | `blogName`      |
-| `MemberExpr` | `Object`, `Field`     | `post.Title`    |
-| `StringLit`  | `Value`               | `"hello"`       |
-| `NumberLit`  | `Value` (float64)     | `42`, `3.14`    |
-| `BoolLit`    | `Value`               | `true`, `false` |
-| `BinaryExpr` | `Left`, `Op`, `Right` | `a == b`        |
-| `UnaryExpr`  | `Op`, `Operand`       | `not x`         |
+| Type         | Fields                     | Example         |
+| ------------ | -------------------------- | --------------- |
+| `Ident`      | `Name`                     | `blogName`      |
+| `MemberExpr` | `Object`, `Field`          | `post.Title`    |
+| `StringLit`  | `Value`                    | `"hello"`       |
+| `NumberLit`  | `Value` (int64 or float64) | `42`, `3.14`    |
+| `BoolLit`    | `Value`                    | `true`, `false` |
+| `BinaryExpr` | `Left`, `Op`, `Right`      | `a == b`        |
+| `UnaryExpr`  | `Op`, `Operand`            | `not x`         |
 
 All operator symbol forms (`&&`, `||`, `!`) normalize to keyword form (`and`,
 `or`, `not`) in the AST.
@@ -232,10 +236,15 @@ pointers are all truthy.
 
 ### Comparison
 
-`==` and `!=` use `reflect.DeepEqual` with numeric promotion (int and float with
-the same value are equal). Ordered comparisons (`<`, `>`, `<=`, `>=`) try
-numeric comparison first, then string comparison. Comparing incompatible types
-is an error.
+Integer literals (`0`, `42`) are `int64`. Decimal literals (`3.14`) are
+`float64`. Integers and floats do not mix: comparing an int to a float is a type
+error, not a silent coercion. This prevents precision loss for large int64 values
+(post IDs, timestamps) that cannot be represented exactly as float64.
+
+`==` and `!=` try integer comparison first (`toInt`), then float comparison
+(`toFloat`), then fall back to `reflect.DeepEqual`. Ordered comparisons (`<`,
+`>`, `<=`, `>=`) follow the same order: integers, then floats, then strings.
+Comparing incompatible types is an error.
 
 ---
 

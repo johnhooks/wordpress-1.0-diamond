@@ -88,11 +88,10 @@ func (s *Server) renderPost(w http.ResponseWriter, r *http.Request, post *postRe
 	data := SingleData{
 		SiteData:     siteData,
 		Post:         post.View,
+		PostID:       post.ID,
 		Comments:     commentViews,
 		CommentsOpen: post.CommentStatus == "open",
 	}
 
-	// TODO: render via template engine
-	_ = data
-	http.Error(w, "Template engine not yet wired", http.StatusInternalServerError)
+	s.renderSite(w, "single", data)
 }

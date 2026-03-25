@@ -16,11 +16,11 @@ full-stack application.
 
 Press separates three things WordPress conflated:
 
-| Concern | Owner | Language |
-|---|---|---|
-| Document content | ProseMirror + server | JSON → HTML |
-| Page composition | Theme templates | Go `html/template` |
-| Visual presentation | CSS custom properties | CSS |
+| Concern             | Owner                 | Language           |
+| ------------------- | --------------------- | ------------------ |
+| Document content    | ProseMirror + server  | JSON → HTML        |
+| Page composition    | Theme templates       | Go `html/template` |
+| Visual presentation | CSS custom properties | CSS                |
 
 These three layers never reach into each other. The theme never touches the
 document model. The document model never touches the CSS. The server renders
@@ -76,14 +76,11 @@ HTML that includes parts — header, sidebar, footer — just like WordPress:
 ```html
 <!-- layout.html -->
 <body class="{{ .BodyClass }}">
-<div id="wrap">
-  {{ template "header" . }}
-  <div id="content">
-    {{ block "main" . }}{{ end }}
+  <div id="wrap">
+    {{ template "header" . }}
+    <div id="content">{{ block "main" . }}{{ end }}</div>
+    {{ template "sidebar" . }} {{ template "footer" . }}
   </div>
-  {{ template "sidebar" . }}
-  {{ template "footer" . }}
-</div>
 </body>
 ```
 
@@ -95,8 +92,8 @@ A page template overrides the `main` block:
 <article class="post" id="post-{{ .Post.ID }}">
   <h2>{{ .Post.TheTitle }}</h2>
   <p class="post-meta">
-    <time>{{ .Post.TheDate }}</time> —
-    {{ .Post.TheAuthor }} — {{ .Post.TheCategory }}
+    <time>{{ .Post.TheDate }}</time> — {{ .Post.TheAuthor }} — {{
+    .Post.TheCategory }}
   </p>
   <div class="entry">{{ .Post.TheContent }}</div>
   {{ template "comments" . }}
@@ -156,10 +153,13 @@ renders HTML. The only question is how much HTML.
 All internal links are htmx-enabled:
 
 ```html
-<a href="/2004/01/03/hello-world/"
-   hx-get="/2004/01/03/hello-world/"
-   hx-target="#content"
-   hx-push-url="true">Hello World</a>
+<a
+  href="/2004/01/03/hello-world/"
+  hx-get="/2004/01/03/hello-world/"
+  hx-target="#content"
+  hx-push-url="true"
+  >Hello World</a
+>
 ```
 
 - `href` is the real URL (works without JS, works for crawlers)
@@ -197,13 +197,13 @@ Press ships a small set of focused vanilla JS scripts for interactions that
 require client-side logic. Themes opt in via `theme.toml`. No theme author
 writes JavaScript to get standard blog interactivity.
 
-| Script | Purpose | WP equivalent |
-|---|---|---|
-| `quicktags.js` | Tag insertion in post editor | `quicktags.js` |
-| `slug-preview.js` | Live permalink preview | custom |
-| `char-counter.js` | Excerpt character count | custom |
-| `confirm.js` | Delete confirmation dialogs | inline onclick |
-| `popup.js` | Comment popup window | `wp-comments-popup.js` |
+| Script            | Purpose                      | WP equivalent          |
+| ----------------- | ---------------------------- | ---------------------- |
+| `quicktags.js`    | Tag insertion in post editor | `quicktags.js`         |
+| `slug-preview.js` | Live permalink preview       | custom                 |
+| `char-counter.js` | Excerpt character count      | custom                 |
+| `confirm.js`      | Delete confirmation dialogs  | inline onclick         |
+| `popup.js`        | Comment popup window         | `wp-comments-popup.js` |
 
 ProseMirror lives in the admin write-post page as a first-class JS
 application. It talks to the server via a clean JSON API. It knows nothing
@@ -247,12 +247,36 @@ and admin display names:
 
 ```json
 {
-  "--press-body-font":      { "default": "Georgia, serif",      "type": "font",   "label": "Body Font" },
-  "--press-heading-font":   { "default": "Arial, sans-serif",   "type": "font",   "label": "Heading Font" },
-  "--press-text-color":     { "default": "#333333",             "type": "color",  "label": "Text Color" },
-  "--press-bg-color":       { "default": "#ffffff",             "type": "color",  "label": "Background" },
-  "--press-content-width":  { "default": "680px",               "type": "length", "label": "Content Width" },
-  "--press-line-height":    { "default": "1.7",                 "type": "number", "label": "Line Height" }
+  "--press-body-font": {
+    "default": "Georgia, serif",
+    "type": "font",
+    "label": "Body Font"
+  },
+  "--press-heading-font": {
+    "default": "Arial, sans-serif",
+    "type": "font",
+    "label": "Heading Font"
+  },
+  "--press-text-color": {
+    "default": "#333333",
+    "type": "color",
+    "label": "Text Color"
+  },
+  "--press-bg-color": {
+    "default": "#ffffff",
+    "type": "color",
+    "label": "Background"
+  },
+  "--press-content-width": {
+    "default": "680px",
+    "type": "length",
+    "label": "Content Width"
+  },
+  "--press-line-height": {
+    "default": "1.7",
+    "type": "number",
+    "label": "Line Height"
+  }
 }
 ```
 

@@ -15,7 +15,7 @@ Templates describe what the page looks like. The engine fills in the data.
 
 Single braces interpolate a value into the page.
 
-```html
+```
 <h1>{blogName}</h1>
 <a href="{post.Permalink}">{post.TheTitle}</a>
 <time>{post.TheDate}</time>
@@ -84,7 +84,7 @@ value the template can check.
 
 ### Comparison
 
-```html
+```
 {if post.CommentCount > 0}
 {if post.Type == "post"}
 {if post.CommentCount != 5}
@@ -92,13 +92,14 @@ value the template can check.
 ```
 
 Operators: `==`, `!=`, `<`, `>`, `<=`, `>=`. Comparisons always return a
-boolean. Numbers are compared numerically (an integer and a float with the same
-value are equal). Strings are compared lexicographically. Comparing incompatible
-types is an error.
+boolean. Integer literals (`0`, `42`) and float literals (`3.14`) are
+separate types. Integers compare with integers. Floats compare with floats.
+Strings compare lexicographically. Comparing incompatible types (like an
+integer to a float) is an error.
 
 ### Negation
 
-```html
+```
 {if not post.EditURL}
 {if not commentsOpen}
 ```
@@ -109,7 +110,7 @@ templates for readability.
 
 ### Logical combination
 
-```html
+```
 {if commentsOpen and post.CommentCount > 0}
 {if post.EditURL or post.TrashURL}
 {if loggedIn and commentsOpen and post.CommentCount > 0}
@@ -137,7 +138,7 @@ naturally.
 
 Parentheses override precedence when needed.
 
-```html
+```
 {if (a or b) and c}
 ```
 
@@ -148,14 +149,14 @@ Without the parentheses, `and` binds tighter than `or`, so `a or b and c` means
 
 From lowest to highest:
 
-| Priority | Operator                     | Behavior                     |
-| -------- | ---------------------------- | ---------------------------- |
-| 1        | `or` (also `\|\|`)           | short-circuit, returns value |
-| 2        | `and` (also `&&`)            | short-circuit, returns value |
+| Priority | Operator                    | Behavior                     |
+| -------- | --------------------------- | ---------------------------- |
+| 1        | `or` (also `\|\|`)          | short-circuit, returns value |
+| 2        | `and` (also `&&`)           | short-circuit, returns value |
 | 3        | `==` `!=` `<` `>` `<=` `>=` | always returns boolean       |
-| 4        | `not` (also `!`)             | always returns boolean       |
-| 5        | `.` member access            | returns the field value      |
-| 6        | literals, `()`               | values and grouping          |
+| 4        | `not` (also `!`)            | always returns boolean       |
+| 5        | `.` member access           | returns the field value      |
+| 6        | literals, `()`              | values and grouping          |
 
 In `a or b and c`, the `and` binds first: `a or (b and c)`. In `not a == b`, the
 `not` binds first: `(not a) == b`. If you want to negate a comparison, use
@@ -176,7 +177,7 @@ and cannot be used as identifiers in expressions.
 `{if}` opens a conditional block. `{else}` provides the alternate branch.
 `{/if}` closes it.
 
-```html
+```
 {if commentsOpen}
 <comment-form />
 {else}
@@ -186,7 +187,7 @@ and cannot be used as identifiers in expressions.
 
 The else branch is optional.
 
-```html
+```
 {if post.EditURL}
 <a href="{post.EditURL}">Edit</a>
 {/if}
@@ -198,7 +199,7 @@ combination.
 
 Blocks nest freely.
 
-```html
+```
 {if commentsOpen}
   {if post.Comments}
     <comment-list />
@@ -214,13 +215,13 @@ Blocks nest freely.
 `{each}` iterates over a list. The `as` clause binds each element to a name. An
 optional second name provides the zero-based index.
 
-```html
+```
 {each posts as post}
 <h2><a href="{post.Permalink}">{post.TheTitle}</a></h2>
 {/each}
 ```
 
-```html
+```
 {each comments as comment, index}
 <li>{comment.TheAuthor}: {comment.TheContent}</li>
 {/each}
@@ -230,7 +231,7 @@ optional second name provides the zero-based index.
 
 `{else}` inside an `{each}` block renders when the list is empty.
 
-```html
+```
 {each posts as post}
 <h2>{post.TheTitle}</h2>
 {else}
@@ -254,7 +255,7 @@ closes.
 `{const}` binds a name to a computed value within the current block. The value
 is evaluated once, when the `{const}` is reached.
 
-```html
+```
 {const hasComments = post.CommentCount > 0}
 {if hasComments}
   <p>{post.CommentCount} comments</p>
@@ -271,7 +272,7 @@ does not leak to the outer scope.
 All expression output is HTML-escaped. There are no exceptions and no opt-out
 mechanism in the template language.
 
-```html
+```
 <!-- If post.TheTitle is: A <bold> claim -->
 <h1>{post.TheTitle}</h1>
 <!-- Renders: <h1>A &lt;bold&gt; claim</h1> -->
@@ -279,7 +280,7 @@ mechanism in the template language.
 
 Attribute values are also escaped.
 
-```html
+```
 <!-- If post.TheTitle is: Say "hello" -->
 <meta name="title" content="{post.TheTitle}" />
 <!-- Renders: <meta name="title" content="Say &#34;hello&#34;"> -->
@@ -306,7 +307,7 @@ Theme templates use named tags to place engine-provided content. These tags look
 like HTML custom elements but never reach the browser. The engine replaces them
 during rendering.
 
-```html
+```
 <site-header />
 <post />
 <comment-list />
@@ -321,7 +322,7 @@ content. The theme author places the tag. The engine decides what it contains.
 
 Tags can carry attributes that configure their behavior.
 
-```html
+```
 <comment-form post-id="{postID}" />
 ```
 

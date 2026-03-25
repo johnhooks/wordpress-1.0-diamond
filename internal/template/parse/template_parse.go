@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+
+	"golang.org/x/net/html/atom"
 )
 
 // ParseTemplate parses HTML with template syntax and restructures
@@ -14,6 +16,34 @@ func ParseTemplate(r io.Reader) (*Node, error) {
 	if err != nil {
 		return nil, err
 	}
+	return templatePasses(doc)
+}
+
+// ParseTemplateFragment parses an HTML fragment (no <html>, <head>,
+// <body> scaffolding) with template syntax. Used for molecules and
+// organisms that are rendered as sub-templates within a page.
+func ParseTemplateFragment(r io.Reader) (*Node, error) {
+	context := &Node{
+		Type:     ElementNode,
+		DataAtom: atom.Lookup([]byte("body")),
+		Data:     "body",
+	}
+	nodes, err := ParseFragment(r, context)
+	if err != nil {
+		return nil, err
+	}
+
+	// Wrap the fragment nodes in a DocumentNode so the walker
+	// can treat it the same as a full template.
+	doc := &Node{Type: DocumentNode}
+	for _, n := range nodes {
+		doc.AppendChild(n)
+	}
+
+	return templatePasses(doc)
+}
+
+func templatePasses(doc *Node) (*Node, error) {
 	if err := splitRawTextExprs(doc); err != nil {
 		return nil, err
 	}
@@ -69,9 +99,7 @@ func parseAttrParts(val string) ([]AttrPart, error) {
 		}
 		close := strings.IndexByte(val[i+open:], '}')
 		if close < 0 {
-			// Unclosed brace, treat rest as static text.
-			parts = append(parts, AttrPart{Text: val[i+open:]})
-			break
+			return nil, fmt.Errorf("unclosed expression in attribute value: %s", val[i+open:])
 		}
 		exprStr := val[i+open+1 : i+open+close]
 		expr, err := ParseExpr(exprStr)
@@ -159,9 +187,7 @@ func splitTextIntoExprs(text string) ([]*Node, error) {
 
 		close := strings.IndexByte(text[i+open:], '}')
 		if close < 0 {
-			// Unclosed brace, treat rest as text.
-			nodes = append(nodes, &Node{Type: TextNode, Data: text[i+open:]})
-			break
+			return nil, fmt.Errorf("unclosed expression in text: %s", text[i+open:])
 		}
 
 		exprStr := text[i+open+1 : i+open+close]

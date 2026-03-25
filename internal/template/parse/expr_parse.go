@@ -320,9 +320,17 @@ func (p *exprParser) parseNumber() (Expr, error) {
 		}
 		p.pos += size
 	}
-	val, err := strconv.ParseFloat(p.input[start:p.pos], 64)
+	raw := p.input[start:p.pos]
+	if seenDot {
+		val, err := strconv.ParseFloat(raw, 64)
+		if err != nil {
+			return nil, fmt.Errorf("invalid number %q: %w", raw, err)
+		}
+		return &NumberLit{Value: val}, nil
+	}
+	val, err := strconv.ParseInt(raw, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("invalid number %q: %w", p.input[start:p.pos], err)
+		return nil, fmt.Errorf("invalid number %q: %w", raw, err)
 	}
 	return &NumberLit{Value: val}, nil
 }

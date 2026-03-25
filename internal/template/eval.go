@@ -3,9 +3,13 @@ package template
 import (
 	"fmt"
 	"html"
+	"math"
+	"net/http"
 	"reflect"
 	"strings"
+	"sync"
 
+	"press/internal/errors"
 	"press/internal/template/parse"
 )
 
@@ -33,7 +37,7 @@ func Eval(expr parse.Expr, ctx any) (any, error) {
 	case *parse.UnaryExpr:
 		return evalUnary(e, ctx)
 	default:
-		return nil, fmt.Errorf("unknown expression type %T", expr)
+		return nil, evalErr("unknown expression type %T", expr)
 	}
 }
 
@@ -113,8 +117,16 @@ func lookupIdent(ctx any, name string) (any, error) {
 		if found {
 			return val, nil
 		}
-		return nil, fmt.Errorf("undefined variable %q", name)
+		return nil, evalErr("undefined variable %q", name)
 	}
+	return lookupField(ctx, name)
+}
+
+// LookupField resolves a field name on a value using reflection.
+// Exported for use by the theme engine to extract view-tagged fields
+// from page data structs (e.g. blog_name, page_title for the document
+// shell). Templates use this implicitly through expression evaluation.
+func LookupField(ctx any, name string) (any, error) {
 	return lookupField(ctx, name)
 }
 
@@ -124,7 +136,7 @@ func lookupIdent(ctx any, name string) (any, error) {
 // it belongs in the view struct as a field.
 func lookupField(ctx any, name string) (any, error) {
 	if ctx == nil {
-		return nil, fmt.Errorf("cannot access %q on nil", name)
+		return nil, evalErr("cannot access %q on nil", name)
 	}
 
 	v := reflect.ValueOf(ctx)
@@ -139,11 +151,26 @@ func lookupField(ctx any, name string) (any, error) {
 
 	switch v.Kind() {
 	case reflect.Struct:
+		fields := viewFields(v.Type())
+		if len(fields) > 0 {
+			// Tagged struct: only resolve through view tags.
+			if info, ok := fields[name]; ok {
+				val := v.FieldByIndex(info.Index).Interface()
+				if info.Raw {
+					if s, ok := val.(string); ok {
+						return RawHTML(s), nil
+					}
+				}
+				return val, nil
+			}
+			return nil, evalErr("no field %q on %T", name, ctx)
+		}
+		// Untagged struct: exact field name match.
 		field := v.FieldByName(name)
 		if field.IsValid() {
 			return field.Interface(), nil
 		}
-		return nil, fmt.Errorf("no field %q on %T", name, ctx)
+		return nil, evalErr("no field %q on %T", name, ctx)
 
 	case reflect.Map:
 		if v.Type().Key().Kind() == reflect.String {
@@ -153,10 +180,10 @@ func lookupField(ctx any, name string) (any, error) {
 			}
 			return nil, nil
 		}
-		return nil, fmt.Errorf("map key type is %s, not string", v.Type().Key())
+		return nil, evalErr("map key type is %s, not string", v.Type().Key())
 
 	default:
-		return nil, fmt.Errorf("cannot access %q on %s", name, v.Kind())
+		return nil, evalErr("cannot access %q on %s", name, v.Kind())
 	}
 }
 
@@ -205,7 +232,7 @@ func evalBinary(e *parse.BinaryExpr, ctx any) (any, error) {
 	case "<", ">", "<=", ">=":
 		return compareOrdered(left, right, e.Op)
 	default:
-		return nil, fmt.Errorf("unknown operator %q", e.Op)
+		return nil, evalErr("unknown operator %q", e.Op)
 	}
 }
 
@@ -218,63 +245,94 @@ func evalUnary(e *parse.UnaryExpr, ctx any) (any, error) {
 	case "not":
 		return !IsTruthy(val), nil
 	default:
-		return nil, fmt.Errorf("unknown unary operator %q", e.Op)
+		return nil, evalErr("unknown unary operator %q", e.Op)
 	}
 }
 
 func isEqual(left, right any) bool {
-	// Try numeric comparison first to handle int vs float64.
+	li, lok := toInt(left)
+	ri, rok := toInt(right)
+	if lok && rok {
+		return li == ri
+	}
+
 	lf, lok := toFloat(left)
 	rf, rok := toFloat(right)
 	if lok && rok {
 		return lf == rf
 	}
+
 	return reflect.DeepEqual(left, right)
 }
 
 func compareOrdered(left, right any, op string) (bool, error) {
-	// Try numeric comparison.
-	lf, lok := toFloat(left)
-	rf, rok := toFloat(right)
-	if lok && rok {
-		switch op {
-		case "<":
-			return lf < rf, nil
-		case ">":
-			return lf > rf, nil
-		case "<=":
-			return lf <= rf, nil
-		case ">=":
-			return lf >= rf, nil
+	if li, lok := toInt(left); lok {
+		if ri, rok := toInt(right); rok {
+			switch op {
+			case "<":
+				return li < ri, nil
+			case ">":
+				return li > ri, nil
+			case "<=":
+				return li <= ri, nil
+			case ">=":
+				return li >= ri, nil
+			}
 		}
 	}
 
-	// Try string comparison.
-	ls, lok := left.(string)
-	rs, rok := right.(string)
-	if lok && rok {
-		switch op {
-		case "<":
-			return ls < rs, nil
-		case ">":
-			return ls > rs, nil
-		case "<=":
-			return ls <= rs, nil
-		case ">=":
-			return ls >= rs, nil
+	if lf, lok := toFloat(left); lok {
+		if rf, rok := toFloat(right); rok {
+			switch op {
+			case "<":
+				return lf < rf, nil
+			case ">":
+				return lf > rf, nil
+			case "<=":
+				return lf <= rf, nil
+			case ">=":
+				return lf >= rf, nil
+			}
 		}
 	}
 
-	return false, fmt.Errorf("cannot compare %T %s %T", left, op, right)
+	if ls, lok := left.(string); lok {
+		if rs, rok := right.(string); rok {
+			switch op {
+			case "<":
+				return ls < rs, nil
+			case ">":
+				return ls > rs, nil
+			case "<=":
+				return ls <= rs, nil
+			case ">=":
+				return ls >= rs, nil
+			}
+		}
+	}
+
+	return false, evalErr("cannot compare %T %s %T", left, op, right)
+}
+
+func toInt(v any) (int64, bool) {
+	rv := reflect.ValueOf(v)
+	switch rv.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return rv.Int(), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		n := rv.Uint()
+		if n > math.MaxInt64 {
+			return 0, false
+		}
+		return int64(n), true
+	default:
+		return 0, false
+	}
 }
 
 func toFloat(v any) (float64, bool) {
 	rv := reflect.ValueOf(v)
 	switch rv.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return float64(rv.Int()), true
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return float64(rv.Uint()), true
 	case reflect.Float32, reflect.Float64:
 		return rv.Float(), true
 	default:
@@ -287,4 +345,62 @@ func formatValue(val any) string {
 		return ""
 	}
 	return fmt.Sprintf("%v", val)
+}
+
+// RawHTML is a string that the walker writes without escaping.
+// The eval layer wraps a value in RawHTML when the struct field
+// is tagged `view:"name,raw"`, indicating pre-rendered HTML.
+type RawHTML string
+
+// viewFieldInfo holds the index path and metadata for a struct
+// field resolved through a `view` tag.
+type viewFieldInfo struct {
+	Index []int
+	Raw   bool
+}
+
+var viewFieldCache sync.Map // reflect.Type → map[string]viewFieldInfo
+
+func viewFields(t reflect.Type) map[string]viewFieldInfo {
+	if cached, ok := viewFieldCache.Load(t); ok {
+		return cached.(map[string]viewFieldInfo)
+	}
+	m := make(map[string]viewFieldInfo)
+	collectViewFields(t, nil, m)
+	viewFieldCache.Store(t, m)
+	return m
+}
+
+func collectViewFields(t reflect.Type, index []int, m map[string]viewFieldInfo) {
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		idx := make([]int, len(index)+1)
+		copy(idx, index)
+		idx[len(index)] = i
+
+		if f.Anonymous && f.Type.Kind() == reflect.Struct {
+			collectViewFields(f.Type, idx, m)
+			continue
+		}
+		tag := f.Tag.Get("view")
+		if tag == "" {
+			continue
+		}
+		name, raw := parseViewTag(tag)
+		m[name] = viewFieldInfo{Index: idx, Raw: raw}
+	}
+}
+
+// parseViewTag splits a view tag like "the_content,raw" into
+// the field name and whether it is marked raw.
+func parseViewTag(tag string) (name string, raw bool) {
+	if i := strings.Index(tag, ","); i != -1 {
+		return tag[:i], tag[i+1:] == "raw"
+	}
+	return tag, false
+}
+
+// evalErr creates an *errors.Error with the template_eval code.
+func evalErr(format string, args ...any) *errors.Error {
+	return errors.New(errors.ErrTemplateEval, fmt.Sprintf(format, args...), http.StatusInternalServerError)
 }

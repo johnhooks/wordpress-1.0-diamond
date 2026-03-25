@@ -1,0 +1,10 @@
+<article class="post">
+    <h2><a href="{permalink}">{the_title}</a></h2>
+    <p class="post-meta">
+        {the_date} by {the_author}
+        {if the_categories}
+            in {each the_categories as cat, i}{if i}, {/if}<a href="{cat.url}">{cat.name}</a>{/each}
+        {/if}
+    </p>
+    <div class="entry">{the_content}</div>
+</article>

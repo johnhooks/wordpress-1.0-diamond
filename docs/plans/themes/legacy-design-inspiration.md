@@ -30,18 +30,18 @@ a place for writing. We'll get out of the way."
 The entire design is built on a warm, muted palette with sage green as
 the single accent color.
 
-| Color | Hex | Usage |
-|---|---|---|
-| Sage green | `#90a090` | Header bar, footer bar — the brand color |
-| Lighter sage | `#aba` | Border accents on header/footer |
-| Dark olive | `#565` | Body border, header accent |
-| Brown | `#675` | Links — warm, not aggressive |
-| Dark brown | `#342` | Visited links — nearly black |
-| Light sage | `#9a8` | Hover links — gentle feedback |
-| Gray | `#808080` | Metadata text — de-emphasized |
-| Light gray | `#ccc` | Borders, dividers — subtle structure |
-| White | `#fff` | Background |
-| Black | `#000` | Body text |
+| Color        | Hex       | Usage                                    |
+| ------------ | --------- | ---------------------------------------- |
+| Sage green   | `#90a090` | Header bar, footer bar — the brand color |
+| Lighter sage | `#aba`    | Border accents on header/footer          |
+| Dark olive   | `#565`    | Body border, header accent               |
+| Brown        | `#675`    | Links — warm, not aggressive             |
+| Dark brown   | `#342`    | Visited links — nearly black             |
+| Light sage   | `#9a8`    | Hover links — gentle feedback            |
+| Gray         | `#808080` | Metadata text — de-emphasized            |
+| Light gray   | `#ccc`    | Borders, dividers — subtle structure     |
+| White        | `#fff`    | Background                               |
+| Black        | `#000`    | Body text                                |
 
 No blues, no reds, no corporate colors. The palette comes from nature —
 muted forest tones. Links are brown, not the web-default blue. This is
@@ -162,19 +162,19 @@ whitespace — this was Web 2.0 minimalism before the term existed.
 Kubrick is far more restrained than WP 1.0 — it's essentially
 monochrome with a single accent color.
 
-| Color | Hex | Usage |
-|---|---|---|
-| Dusty blue | `#73a0c5` | Header background — the brand color |
-| Near-black | `#333` | Body text, headings |
-| Bright blue | `#06c` | Links — standard web blue |
-| Dark blue | `#147` | Link hover |
-| Dusty rose | `#b85b5a` | Visited links — warm contrast |
-| Medium gray | `#777` | Secondary text (sidebar, metadata) |
-| Light gray | `#eee` | Footer background |
-| Off-white | `#f8f8f8` | Alternating comment rows |
-| Border gray | `#959596` | Page border |
+| Color           | Hex       | Usage                                    |
+| --------------- | --------- | ---------------------------------------- |
+| Dusty blue      | `#73a0c5` | Header background — the brand color      |
+| Near-black      | `#333`    | Body text, headings                      |
+| Bright blue     | `#06c`    | Links — standard web blue                |
+| Dark blue       | `#147`    | Link hover                               |
+| Dusty rose      | `#b85b5a` | Visited links — warm contrast            |
+| Medium gray     | `#777`    | Secondary text (sidebar, metadata)       |
+| Light gray      | `#eee`    | Footer background                        |
+| Off-white       | `#f8f8f8` | Alternating comment rows                 |
+| Border gray     | `#959596` | Page border                              |
 | Background gray | `#d5d6d7` | Body background (visible as page margin) |
-| White | `#fff` | Page background |
+| White           | `#fff`    | Page background                          |
 
 Where WP 1.0 used warm earth tones, Kubrick uses cool blue-grays. The
 only warmth is the visited link color (#b85b5a, dusty rose) — everything
@@ -277,19 +277,19 @@ more informational than WP 1.0's minimal credit bar.
 
 ### What Changed
 
-| Aspect | WP 1.0 Platinum | WP 1.5 Kubrick |
-|---|---|---|
-| Layout | Fluid width, positioned sidebar | Fixed 760px centered card |
-| Color identity | Sage green, earth tones | Dusty blue, cool grays |
-| Typography | Serif headings, sans body | All sans-serif |
-| Header | One-line green bar | 200px banner with image |
-| Sidebar | Absolute positioned, always present | Float-based, conditionally hidden |
-| Background | White, edge-to-edge | Gray surround, white card |
-| Design assets | Pure CSS | Background images for effects |
-| Personality | Personal notebook | Professional publication |
-| Borders | Dotted lines, 3D bevels | Thin solid lines, flat |
-| Title size | 230% italic serif | 400% bold sans-serif |
-| Customization | "Tweak this and make it your own" | Drop in personalheader.jpg |
+| Aspect         | WP 1.0 Platinum                     | WP 1.5 Kubrick                    |
+| -------------- | ----------------------------------- | --------------------------------- |
+| Layout         | Fluid width, positioned sidebar     | Fixed 760px centered card         |
+| Color identity | Sage green, earth tones             | Dusty blue, cool grays            |
+| Typography     | Serif headings, sans body           | All sans-serif                    |
+| Header         | One-line green bar                  | 200px banner with image           |
+| Sidebar        | Absolute positioned, always present | Float-based, conditionally hidden |
+| Background     | White, edge-to-edge                 | Gray surround, white card         |
+| Design assets  | Pure CSS                            | Background images for effects     |
+| Personality    | Personal notebook                   | Professional publication          |
+| Borders        | Dotted lines, 3D bevels             | Thin solid lines, flat            |
+| Title size     | 230% italic serif                   | 400% bold sans-serif              |
+| Customization  | "Tweak this and make it your own"   | Drop in personalheader.jpg        |
 
 ### What Stayed the Same
 

@@ -21,16 +21,16 @@ query-string parameters on `/` — the WP 1.0 default.
 
 These tags can appear in the permalink structure string:
 
-| Tag          | Matches             | Linker Output |
-|--------------|---------------------|---------------|
-| `%year%`     | 4-digit year        | Zero-padded   |
-| `%monthnum%` | 1-2 digit month     | Zero-padded   |
-| `%day%`      | 1-2 digit day       | Zero-padded   |
-| `%hour%`     | 1-2 digit hour      | Zero-padded   |
-| `%minute%`   | 1-2 digit minute    | Zero-padded   |
-| `%second%`   | 1-2 digit second    | Zero-padded   |
-| `%postname%` | Post slug           | As-is         |
-| `%post_id%`  | Numeric post ID     | As-is         |
+| Tag          | Matches          | Linker Output |
+| ------------ | ---------------- | ------------- |
+| `%year%`     | 4-digit year     | Zero-padded   |
+| `%monthnum%` | 1-2 digit month  | Zero-padded   |
+| `%day%`      | 1-2 digit day    | Zero-padded   |
+| `%hour%`     | 1-2 digit hour   | Zero-padded   |
+| `%minute%`   | 1-2 digit minute | Zero-padded   |
+| `%second%`   | 1-2 digit second | Zero-padded   |
+| `%postname%` | Post slug        | As-is         |
+| `%post_id%`  | Numeric post ID  | As-is         |
 
 Common structures:
 
@@ -50,10 +50,10 @@ form (rewrite rules) and a query-string fallback.
 
 The core route. Displays one published post with its comments.
 
-| Form       | Example                          |
-|------------|----------------------------------|
-| Pretty     | `/2004/01/03/hello-world/`       |
-| Query      | `/?p=42`                         |
+| Form   | Example                    |
+| ------ | -------------------------- |
+| Pretty | `/2004/01/03/hello-world/` |
+| Query  | `/?p=42`                   |
 
 When pretty permalinks are on, `?p=42` redirects (301) to the canonical URL.
 
@@ -64,10 +64,10 @@ validated against the post's actual date — a stale URL with a reused slug 404s
 
 Posts filtered by category, paginated.
 
-| Form       | Example                          |
-|------------|----------------------------------|
-| Pretty     | `/category/tech/`                |
-| Query      | `/?cat=5`                        |
+| Form   | Example           |
+| ------ | ----------------- |
+| Pretty | `/category/tech/` |
+| Query  | `/?cat=5`         |
 
 The pretty URL uses the "front" of the permalink structure (everything before
 the first `%tag%`) plus `category/<slug>/`. So `/blog/%postname%/` produces
@@ -80,24 +80,24 @@ permalink structure at each date tag.
 
 **Day archive:**
 
-| Form       | Example                          |
-|------------|----------------------------------|
-| Pretty     | `/2004/01/03/`                   |
-| Query      | `/?m=20040103`                   |
+| Form   | Example        |
+| ------ | -------------- |
+| Pretty | `/2004/01/03/` |
+| Query  | `/?m=20040103` |
 
 **Month archive:**
 
-| Form       | Example                          |
-|------------|----------------------------------|
-| Pretty     | `/2004/01/`                      |
-| Query      | `/?m=200401`                     |
+| Form   | Example      |
+| ------ | ------------ |
+| Pretty | `/2004/01/`  |
+| Query  | `/?m=200401` |
 
 **Year archive:**
 
-| Form       | Example                          |
-|------------|----------------------------------|
-| Pretty     | `/2004/`                         |
-| Query      | `/?m=2004`                       |
+| Form   | Example    |
+| ------ | ---------- |
+| Pretty | `/2004/`   |
+| Query  | `/?m=2004` |
 
 Only generated when the structure contains the relevant date tags. A
 `/%postname%/` structure produces no date archive rules.
@@ -109,9 +109,9 @@ or `YYYYMMDD`.
 
 Posts matching a search query, paginated.
 
-| Form       | Example                          |
-|------------|----------------------------------|
-| Query      | `/?s=hello`                      |
+| Form  | Example     |
+| ----- | ----------- |
+| Query | `/?s=hello` |
 
 No pretty URL. Search is always query-string based.
 
@@ -119,19 +119,19 @@ No pretty URL. Search is always query-string based.
 
 Posts by a single author, paginated.
 
-| Form       | Example                          |
-|------------|----------------------------------|
-| Pretty     | `/author/<nicename>/`            |
-| Query      | `/?author=2`                     |
+| Form   | Example               |
+| ------ | --------------------- |
+| Pretty | `/author/<nicename>/` |
+| Query  | `/?author=2`          |
 
 ### Feed
 
 RSS/Atom feeds for the blog and for individual post comments.
 
-| Form       | Example                          |
-|------------|----------------------------------|
-| Blog feed  | `/feed/`                         |
-| Post feed  | `/2004/01/03/hello-world/feed/`  |
+| Form      | Example                         |
+| --------- | ------------------------------- |
+| Blog feed | `/feed/`                        |
+| Post feed | `/2004/01/03/hello-world/feed/` |
 
 WP 1.0 used separate PHP files (`wp-rss2.php`, `wp-atom.php`). We use `/feed/`
 with content negotiation or a format parameter.
@@ -141,11 +141,11 @@ with content negotiation or a format parameter.
 These don't derive from the permalink structure. They're static paths registered
 directly on the HTTP mux.
 
-| Path                     | Purpose                   |
-|--------------------------|---------------------------|
-| `/static/`               | CSS, JS, images           |
-| `/wp-login.php`          | Login                     |
-| `/wp-comments-post.php`  | Comment submission (POST) |
+| Path                    | Purpose                   |
+| ----------------------- | ------------------------- |
+| `/static/`              | CSS, JS, images           |
+| `/wp-login.php`         | Login                     |
+| `/wp-comments-post.php` | Comment submission (POST) |
 
 ## Pagination
 

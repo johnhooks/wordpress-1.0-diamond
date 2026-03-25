@@ -39,7 +39,7 @@ represented as custom HTML element tags. The engine knows its complete
 vocabulary. Any tag name the engine recognizes is a component it will handle.
 Everything else passes through as regular HTML.
 
-```html
+```
 <!-- Theme source: single.html -->
 <site-header />
 
@@ -74,7 +74,7 @@ the rest.
 
 ### Expressions
 
-```html
+```
 <h1>{blogName}</h1>
 <a href="{post.Permalink}">{post.TheTitle}</a>
 <time>{post.TheDate}</time>
@@ -86,15 +86,15 @@ insert the value at that position. Values are auto-escaped for HTML safety.
 
 ### Conditionals
 
-```html
+```
 {if commentsOpen}
-  <comment-form />
+<comment-form />
 {else}
-  <p>Comments are closed.</p>
+<p>Comments are closed.</p>
 {/if}
 
 {if post.EditURL}
-  <a href="{post.EditURL}">Edit</a>
+<a href="{post.EditURL}">Edit</a>
 {/if}
 ```
 
@@ -111,15 +111,15 @@ common checks:
 
 ### Iteration
 
-```html
+```
 {each posts as post}
-  <post />
+<post />
 {else}
-  <p>No posts found.</p>
+<p>No posts found.</p>
 {/each}
 
 {each comments as comment, index}
-  <comment author="{comment.TheAuthor}" index="{index}" />
+<comment author="{comment.TheAuthor}" index="{index}" />
 {/each}
 ```
 
@@ -128,11 +128,10 @@ second binding provides the index. `{else}` renders when the list is empty.
 
 ### Snippets
 
-```html
+```
 {snippet field(props)}
 <p>
-  <label
-    >{props.Label}<br />
+  <label>{props.Label}<br />
     {if props.Type == "textarea"}
     <textarea name="{props.Name}" rows="4">{props.Value}</textarea>
     {else}
@@ -221,7 +220,7 @@ engine's Go code, exposed as a simple value the template can check.
 Tags carry attributes. Attributes are the props the engine or theme passes to
 the component.
 
-```html
+```
 <!-- Engine tag with attributes -->
 <comment-form post-id="{postID}" />
 
@@ -313,12 +312,11 @@ template that receives props and renders HTML.
 
 ### Defining snippets
 
-```html
+```
 <!-- molecules/field.html -->
 {snippet field(props)}
 <p>
-  <label
-    >{props.Label}<br />
+  <label>{props.Label}<br />
     {if props.Type == "textarea"}
     <textarea name="{props.Name}" rows="4">{props.Value}</textarea>
     {else}
@@ -329,14 +327,14 @@ template that receives props and renders HTML.
 {/snippet}
 ```
 
-```html
+```
 <!-- molecules/submit.html -->
 {snippet submit(props)}
 <p><button type="submit">{props.Label}</button></p>
 {/snippet}
 ```
 
-```html
+```
 <!-- molecules/comment.html -->
 {snippet comment(props)}
 <li id="comment-{props.ID}">
@@ -344,11 +342,10 @@ template that receives props and renders HTML.
   <p>
     <small>
       {if props.URL}
-        <a href="{props.URL}">{props.TheAuthor}</a>
+      <a href="{props.URL}">{props.TheAuthor}</a>
       {else}
-        {props.TheAuthor}
-      {/if}
-      — {props.TheDate}
+      {props.TheAuthor}
+      {/if} — {props.TheDate}
     </small>
   </p>
 </li>
@@ -387,7 +384,7 @@ not process JavaScript or CSS during rendering.
 A page template is the top-level file the engine renders for a route. It is HTML
 with engine tags placed where the theme wants them.
 
-```html
+```
 <!-- templates/single.html -->
 <site-header />
 
