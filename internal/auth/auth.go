@@ -64,7 +64,7 @@ func (s *Service) Login(ctx context.Context, login, password, ip, ua string) (st
 	if err != nil {
 		// Burn time to prevent timing attacks that reveal whether
 		// a username exists.
-		bcrypt.CompareHashAndPassword(dummyHash, []byte(password))
+		_ = bcrypt.CompareHashAndPassword(dummyHash, []byte(password))
 		return "", err
 	}
 
@@ -147,7 +147,7 @@ func (s *Service) Authenticate(r *http.Request) *model.User {
 	}
 
 	// Touch last_used in the background. Do not block the request.
-	go s.sessions.TouchLastUsed(context.Background(), cookie.Value)
+	go func() { _ = s.sessions.TouchLastUsed(context.Background(), cookie.Value) }()
 
 	return user
 }

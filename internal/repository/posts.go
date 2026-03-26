@@ -229,7 +229,7 @@ func (r *PostsRepository) Delete(ctx context.Context, id int64) (*model.Post, er
 	if err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if _, err := tx.ExecContext(ctx, "DELETE FROM wp_postmeta WHERE post_id = ?", id); err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)

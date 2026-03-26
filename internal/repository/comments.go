@@ -186,7 +186,7 @@ func (r *CommentsRepository) Delete(ctx context.Context, id int64) (*model.Comme
 	if err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Re-parent child comments
 	if _, err := tx.ExecContext(ctx, "UPDATE wp_comments SET comment_parent = ? WHERE comment_parent = ?", comment.CommentParent, id); err != nil {

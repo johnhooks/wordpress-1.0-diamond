@@ -21,7 +21,7 @@ func Connect(dbPath string) (*sqlx.DB, error) {
 	}
 
 	if err := db.Ping(); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
@@ -32,7 +32,7 @@ func Connect(dbPath string) (*sqlx.DB, error) {
 	}
 	for _, pragma := range pragmas {
 		if _, err := db.Exec(pragma); err != nil {
-			db.Close()
+			_ = db.Close()
 			return nil, fmt.Errorf("failed to set pragma: %w", err)
 		}
 	}

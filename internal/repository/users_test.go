@@ -121,10 +121,12 @@ func TestUsersRepository_DuplicateLogin(t *testing.T) {
 	users := repository.NewUsersRepository(database)
 	ctx := context.Background()
 
-	users.Create(ctx, &model.User{
+	if err := users.Create(ctx, &model.User{
 		UserLogin: "admin", UserPass: "x", UserNicename: "admin",
 		UserEmail: "admin@example.com", DisplayName: "Admin",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	err := users.Create(ctx, &model.User{
 		UserLogin: "admin", UserPass: "x", UserNicename: "admin2",
@@ -140,10 +142,12 @@ func TestUsersRepository_DuplicateEmail(t *testing.T) {
 	users := repository.NewUsersRepository(database)
 	ctx := context.Background()
 
-	users.Create(ctx, &model.User{
+	if err := users.Create(ctx, &model.User{
 		UserLogin: "user1", UserPass: "x", UserNicename: "user1",
 		UserEmail: "same@example.com", DisplayName: "User1",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	err := users.Create(ctx, &model.User{
 		UserLogin: "user2", UserPass: "x", UserNicename: "user2",
@@ -182,11 +186,19 @@ func TestUsersRepository_DeleteCleansUpMeta(t *testing.T) {
 	ctx := context.Background()
 
 	user := &model.User{UserLogin: "metauser", UserPass: "x", UserNicename: "metauser", UserEmail: "m@t.com", DisplayName: "m"}
-	users.Create(ctx, user)
-	meta.Set(ctx, user.ID, "wp_user_level", "10")
-	meta.Set(ctx, user.ID, "nickname", "admin")
+	if err := users.Create(ctx, user); err != nil {
+		t.Fatal(err)
+	}
+	if err := meta.Set(ctx, user.ID, "wp_user_level", "10"); err != nil {
+		t.Fatal(err)
+	}
+	if err := meta.Set(ctx, user.ID, "nickname", "admin"); err != nil {
+		t.Fatal(err)
+	}
 
-	users.Delete(ctx, user.ID, 0)
+	if _, err := users.Delete(ctx, user.ID, 0); err != nil {
+		t.Fatal(err)
+	}
 
 	all, err := meta.GetAll(ctx, user.ID)
 	if err != nil {
@@ -223,16 +235,24 @@ func TestUsersRepository_DeleteReassignsPosts(t *testing.T) {
 
 	u1 := &model.User{UserLogin: "author1", UserPass: "x", UserEmail: "a1@t.com"}
 	u2 := &model.User{UserLogin: "author2", UserPass: "x", UserEmail: "a2@t.com"}
-	users.Create(ctx, u1)
-	users.Create(ctx, u2)
+	if err := users.Create(ctx, u1); err != nil {
+		t.Fatal(err)
+	}
+	if err := users.Create(ctx, u2); err != nil {
+		t.Fatal(err)
+	}
 
 	post := &model.Post{
 		PostAuthor: u1.ID, PostTitle: "My Post", PostName: "my-post",
 		PostContent: "x", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
 
-	users.Delete(ctx, u1.ID, u2.ID)
+	if _, err := users.Delete(ctx, u1.ID, u2.ID); err != nil {
+		t.Fatal(err)
+	}
 
 	got, err := posts.GetByID(ctx, post.ID)
 	if err != nil {
@@ -250,14 +270,20 @@ func TestUsersRepository_DeleteWithoutReassign(t *testing.T) {
 	ctx := context.Background()
 
 	u := &model.User{UserLogin: "doomed", UserPass: "x", UserEmail: "d@t.com"}
-	users.Create(ctx, u)
+	if err := users.Create(ctx, u); err != nil {
+		t.Fatal(err)
+	}
 
-	posts.Create(ctx, &model.Post{
+	if err := posts.Create(ctx, &model.Post{
 		PostAuthor: u.ID, PostTitle: "Gone", PostName: "gone",
 		PostContent: "x", PostStatus: "publish", PostType: "post",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
-	users.Delete(ctx, u.ID, 0)
+	if _, err := users.Delete(ctx, u.ID, 0); err != nil {
+		t.Fatal(err)
+	}
 
 	result, _ := posts.List(ctx, query.Query{PerPage: 100})
 	if result.Total != 0 {
@@ -275,25 +301,37 @@ func TestUsersRepository_DeleteCascadesPostRelated(t *testing.T) {
 	ctx := context.Background()
 
 	u := &model.User{UserLogin: "cascade-user", UserPass: "x", UserEmail: "cu@t.com"}
-	users.Create(ctx, u)
+	if err := users.Create(ctx, u); err != nil {
+		t.Fatal(err)
+	}
 
 	post := &model.Post{
 		PostAuthor: u.ID, PostTitle: "Cascade Post", PostName: "cascade-post",
 		PostContent: "x", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
 
 	// Add comments, meta, and terms to the post
-	comments.Create(ctx, &model.Comment{
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Visitor",
 		CommentContent: "hi", CommentApproved: "1", CommentType: "comment",
-	})
-	postMeta.Set(ctx, post.ID, "custom", "value")
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := postMeta.Set(ctx, post.ID, "custom", "value"); err != nil {
+		t.Fatal(err)
+	}
 
 	cat := &model.Term{Name: "UserCat", Slug: "usercat"}
 	tt := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, cat, tt)
-	terms.AddTermToPost(ctx, post.ID, tt.TermTaxonomyID)
+	if err := terms.Create(ctx, cat, tt); err != nil {
+		t.Fatal(err)
+	}
+	if err := terms.AddTermToPost(ctx, post.ID, tt.TermTaxonomyID); err != nil {
+		t.Fatal(err)
+	}
 
 	// Delete without reassign
 	if _, err := users.Delete(ctx, u.ID, 0); err != nil {
@@ -333,16 +371,24 @@ func TestUsersRepository_DeleteReassignsLinks(t *testing.T) {
 
 	u1 := &model.User{UserLogin: "linkowner", UserPass: "x", UserEmail: "lo@t.com"}
 	u2 := &model.User{UserLogin: "linkreceiver", UserPass: "x", UserEmail: "lr@t.com"}
-	users.Create(ctx, u1)
-	users.Create(ctx, u2)
+	if err := users.Create(ctx, u1); err != nil {
+		t.Fatal(err)
+	}
+	if err := users.Create(ctx, u2); err != nil {
+		t.Fatal(err)
+	}
 
 	link := &model.Link{
 		LinkURL: "https://example.com", LinkName: "Example",
 		LinkVisible: "Y", LinkOwner: u1.ID,
 	}
-	links.Create(ctx, link)
+	if err := links.Create(ctx, link); err != nil {
+		t.Fatal(err)
+	}
 
-	users.Delete(ctx, u1.ID, u2.ID)
+	if _, err := users.Delete(ctx, u1.ID, u2.ID); err != nil {
+		t.Fatal(err)
+	}
 
 	got, err := links.GetByID(ctx, link.LinkID)
 	if err != nil {
@@ -360,14 +406,20 @@ func TestUsersRepository_DeleteWithoutReassignDeletesLinks(t *testing.T) {
 	ctx := context.Background()
 
 	u := &model.User{UserLogin: "linkdoomed", UserPass: "x", UserEmail: "ld@t.com"}
-	users.Create(ctx, u)
+	if err := users.Create(ctx, u); err != nil {
+		t.Fatal(err)
+	}
 
-	links.Create(ctx, &model.Link{
+	if err := links.Create(ctx, &model.Link{
 		LinkURL: "https://doomed.com", LinkName: "Doomed",
 		LinkVisible: "Y", LinkOwner: u.ID,
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
-	users.Delete(ctx, u.ID, 0)
+	if _, err := users.Delete(ctx, u.ID, 0); err != nil {
+		t.Fatal(err)
+	}
 
 	result, _ := links.List(ctx, query.Query{PerPage: 100})
 	if result.Total != 0 {
@@ -381,7 +433,9 @@ func TestUsersRepository_UsernameExists(t *testing.T) {
 	ctx := context.Background()
 
 	u := &model.User{UserLogin: "checker", UserPass: "x", UserEmail: "c@t.com"}
-	users.Create(ctx, u)
+	if err := users.Create(ctx, u); err != nil {
+		t.Fatal(err)
+	}
 
 	id, err := users.UsernameExists(ctx, "checker")
 	if err != nil {
@@ -406,7 +460,9 @@ func TestUsersRepository_EmailExists(t *testing.T) {
 	ctx := context.Background()
 
 	u := &model.User{UserLogin: "emailcheck", UserPass: "x", UserEmail: "exists@t.com"}
-	users.Create(ctx, u)
+	if err := users.Create(ctx, u); err != nil {
+		t.Fatal(err)
+	}
 
 	id, err := users.EmailExists(ctx, "exists@t.com")
 	if err != nil {
@@ -427,9 +483,15 @@ func TestUsersRepository_ListWithSearch(t *testing.T) {
 	users := repository.NewUsersRepository(database)
 	ctx := context.Background()
 
-	users.Create(ctx, &model.User{UserLogin: "alice", UserPass: "x", UserEmail: "alice@t.com", DisplayName: "Alice Smith"})
-	users.Create(ctx, &model.User{UserLogin: "bob", UserPass: "x", UserEmail: "bob@t.com", DisplayName: "Bob Jones"})
-	users.Create(ctx, &model.User{UserLogin: "charlie", UserPass: "x", UserEmail: "charlie@t.com", DisplayName: "Charlie Smith"})
+	if err := users.Create(ctx, &model.User{UserLogin: "alice", UserPass: "x", UserEmail: "alice@t.com", DisplayName: "Alice Smith"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := users.Create(ctx, &model.User{UserLogin: "bob", UserPass: "x", UserEmail: "bob@t.com", DisplayName: "Bob Jones"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := users.Create(ctx, &model.User{UserLogin: "charlie", UserPass: "x", UserEmail: "charlie@t.com", DisplayName: "Charlie Smith"}); err != nil {
+		t.Fatal(err)
+	}
 
 	// Search by name
 	result, err := users.List(ctx, query.Query{Search: "Smith", PerPage: 100})

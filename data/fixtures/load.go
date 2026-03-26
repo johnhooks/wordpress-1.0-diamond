@@ -93,7 +93,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Failed to open database: %v\n", err)
 		os.Exit(1)
 	}
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	if err := load(db); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -125,7 +125,7 @@ func load(db *sqlx.DB) error {
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Clear existing data (order matters for foreign keys)
 	for _, table := range []string{

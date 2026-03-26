@@ -76,7 +76,7 @@ var postCreateCmd = &cobra.Command{
 				if err != nil {
 					return fmt.Errorf("failed to open file: %w", err)
 				}
-				defer f.Close()
+				defer func() { _ = f.Close() }()
 				r = f
 			}
 			data, err := io.ReadAll(r)
@@ -99,7 +99,7 @@ var postCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		posts := repository.NewPostsRepository(db)
@@ -153,7 +153,7 @@ var postCreateCmd = &cobra.Command{
 
 		// Create authorship tuple
 		perms := permission.NewStore(db)
-		perms.CreateTuple(ctx, &permission.Tuple{
+		if err := perms.CreateTuple(ctx, &permission.Tuple{
 			SubjectType: "user",
 			SubjectID:   fmt.Sprintf("%d", author),
 			Relation:    "writer",
@@ -161,7 +161,9 @@ var postCreateCmd = &cobra.Command{
 			ObjectID:    fmt.Sprintf("%d", post.ID),
 			CreatedAt:   time.Now().UTC(),
 			CreatedBy:   author,
-		})
+		}); err != nil {
+			return fmt.Errorf("failed to create authorship tuple: %w", err)
+		}
 
 		if porcelain {
 			fmt.Println(post.ID)
@@ -184,7 +186,7 @@ var postGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		posts := repository.NewPostsRepository(db)
@@ -227,7 +229,7 @@ var postListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		posts := repository.NewPostsRepository(db)
@@ -286,7 +288,7 @@ var postDeleteCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		posts := repository.NewPostsRepository(db)
@@ -308,7 +310,9 @@ var postDeleteCmd = &cobra.Command{
 
 		// Clean up permission tuples
 		perms := permission.NewStore(db)
-		perms.DeleteTuplesForObject(ctx, "post", fmt.Sprintf("%d", id))
+		if _, err := perms.DeleteTuplesForObject(ctx, "post", fmt.Sprintf("%d", id)); err != nil {
+			return fmt.Errorf("failed to clean up permission tuples: %w", err)
+		}
 
 		fmt.Printf("Success: Deleted post %d.\n", id)
 		return nil

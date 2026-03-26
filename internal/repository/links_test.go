@@ -99,8 +99,12 @@ func TestLinksRepository_VisibilityFilter(t *testing.T) {
 	links := repository.NewLinksRepository(database)
 	ctx := context.Background()
 
-	links.Create(ctx, &model.Link{LinkURL: "https://visible.com", LinkName: "Visible", LinkVisible: "Y", LinkOwner: 1})
-	links.Create(ctx, &model.Link{LinkURL: "https://hidden.com", LinkName: "Hidden", LinkVisible: "N", LinkOwner: 1})
+	if err := links.Create(ctx, &model.Link{LinkURL: "https://visible.com", LinkName: "Visible", LinkVisible: "Y", LinkOwner: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if err := links.Create(ctx, &model.Link{LinkURL: "https://hidden.com", LinkName: "Hidden", LinkVisible: "N", LinkOwner: 1}); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := links.List(ctx, query.Query{
 		Filters: []query.Filter{{Field: "visible", Operator: query.Is, Value: "Y"}},
@@ -130,14 +134,20 @@ func TestLinksRepository_DeleteCascadesTermRelationships(t *testing.T) {
 
 	cat := &model.Term{Name: "Blogroll", Slug: "blogroll-cascade"}
 	catTT := &model.TermTaxonomy{Taxonomy: "link_category"}
-	terms.Create(ctx, cat, catTT)
+	if err := terms.Create(ctx, cat, catTT); err != nil {
+		t.Fatal(err)
+	}
 
 	link := &model.Link{
 		LinkURL: "https://cascade.com", LinkName: "Cascade Link",
 		LinkVisible: "Y", LinkOwner: 1,
 	}
-	links.Create(ctx, link)
-	terms.AddTermToPost(ctx, link.LinkID, catTT.TermTaxonomyID)
+	if err := links.Create(ctx, link); err != nil {
+		t.Fatal(err)
+	}
+	if err := terms.AddTermToPost(ctx, link.LinkID, catTT.TermTaxonomyID); err != nil {
+		t.Fatal(err)
+	}
 
 	// Verify relationship exists
 	postTerms, _ := terms.GetPostTerms(ctx, link.LinkID, "link_category")
@@ -163,14 +173,22 @@ func TestLinksRepository_CategoryFilter(t *testing.T) {
 
 	cat := &model.Term{Name: "Blogroll", Slug: "blogroll"}
 	catTT := &model.TermTaxonomy{Taxonomy: "link_category"}
-	terms.Create(ctx, cat, catTT)
+	if err := terms.Create(ctx, cat, catTT); err != nil {
+		t.Fatal(err)
+	}
 
 	link1 := &model.Link{LinkURL: "https://in-blogroll.com", LinkName: "In Blogroll", LinkVisible: "Y", LinkOwner: 1}
 	link2 := &model.Link{LinkURL: "https://no-category.com", LinkName: "No Category", LinkVisible: "Y", LinkOwner: 1}
-	links.Create(ctx, link1)
-	links.Create(ctx, link2)
+	if err := links.Create(ctx, link1); err != nil {
+		t.Fatal(err)
+	}
+	if err := links.Create(ctx, link2); err != nil {
+		t.Fatal(err)
+	}
 
-	terms.AddTermToPost(ctx, link1.LinkID, catTT.TermTaxonomyID)
+	if err := terms.AddTermToPost(ctx, link1.LinkID, catTT.TermTaxonomyID); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := links.List(ctx, query.Query{
 		Filters: []query.Filter{{Field: "category", Operator: query.Is, Value: cat.TermID}},

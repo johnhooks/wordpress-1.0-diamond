@@ -284,7 +284,9 @@ func (s *Server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	if cookie, err := r.Cookie(auth.CookieName); err == nil {
-		s.auth.Logout(r.Context(), cookie.Value)
+		if err := s.auth.Logout(r.Context(), cookie.Value); err != nil {
+			log.Printf("failed to destroy session: %v", err)
+		}
 	}
 	s.auth.ClearCookie(w)
 	http.Redirect(w, r, "/wp-admin/login", http.StatusFound)
@@ -362,7 +364,11 @@ func (s *Server) handleWritePostSubmit(w http.ResponseWriter, r *http.Request) {
 	catIDs := r.Form["post_category"]
 	for _, idStr := range catIDs {
 		if id, err := strconv.ParseInt(idStr, 10, 64); err == nil {
-			s.terms.AddTermToPost(ctx, post.ID, id)
+			if err := s.terms.AddTermToPost(ctx, post.ID, id); err != nil {
+				log.Printf("failed to assign category %d to post %d: %v", id, post.ID, err)
+				s.httpError(w, r, "Failed to assign categories.", http.StatusInternalServerError)
+				return
+			}
 		}
 	}
 
@@ -479,7 +485,11 @@ func (s *Server) handleEditPostSubmit(w http.ResponseWriter, r *http.Request) {
 			ttIDs = append(ttIDs, ttID)
 		}
 	}
-	s.terms.SetPostTerms(ctx, post.ID, ttIDs)
+	if err := s.terms.SetPostTerms(ctx, post.ID, ttIDs); err != nil {
+		log.Printf("failed to update categories for post %d: %v", post.ID, err)
+		s.httpError(w, r, "Failed to update categories.", http.StatusInternalServerError)
+		return
+	}
 
 	http.Redirect(w, r, "/wp-admin/post/"+strconv.FormatInt(post.ID, 10)+"/edit", http.StatusFound)
 }

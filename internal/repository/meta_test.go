@@ -68,7 +68,9 @@ func TestMetaRepository(t *testing.T) {
 					PostAuthor: 1, PostTitle: "CM", PostName: t.Name() + "-post",
 					PostContent: "x", PostStatus: "publish", PostType: "post",
 				}
-				posts.Create(ctx, post)
+				if err := posts.Create(ctx, post); err != nil {
+					t.Fatalf("create post: %v", err)
+				}
 				comment := &model.Comment{
 					CommentPostID: post.ID, CommentAuthor: "Test",
 					CommentContent: "test", CommentApproved: "1", CommentType: "comment",
@@ -116,8 +118,12 @@ func TestMetaRepository(t *testing.T) {
 			})
 
 			t.Run("Set_upsert", func(t *testing.T) {
-				meta.Set(ctx, ownerID, "upsert_key", "original")
-				meta.Set(ctx, ownerID, "upsert_key", "updated")
+				if err := meta.Set(ctx, ownerID, "upsert_key", "original"); err != nil {
+					t.Fatal(err)
+				}
+				if err := meta.Set(ctx, ownerID, "upsert_key", "updated"); err != nil {
+					t.Fatal(err)
+				}
 				m, _ := meta.Get(ctx, ownerID, "upsert_key")
 				if m.MetaValue != "updated" {
 					t.Errorf("expected 'updated', got %q", m.MetaValue)
@@ -132,8 +138,12 @@ func TestMetaRepository(t *testing.T) {
 			})
 
 			t.Run("GetAll", func(t *testing.T) {
-				meta.Set(ctx, ownerID, "all_a", "1")
-				meta.Set(ctx, ownerID, "all_b", "2")
+				if err := meta.Set(ctx, ownerID, "all_a", "1"); err != nil {
+					t.Fatal(err)
+				}
+				if err := meta.Set(ctx, ownerID, "all_b", "2"); err != nil {
+					t.Fatal(err)
+				}
 				all, err := meta.GetAll(ctx, ownerID)
 				if err != nil {
 					t.Fatalf("GetAll: %v", err)
@@ -144,7 +154,9 @@ func TestMetaRepository(t *testing.T) {
 			})
 
 			t.Run("Delete", func(t *testing.T) {
-				meta.Set(ctx, ownerID, "del_key", "val")
+				if err := meta.Set(ctx, ownerID, "del_key", "val"); err != nil {
+					t.Fatal(err)
+				}
 				if err := meta.Delete(ctx, ownerID, "del_key"); err != nil {
 					t.Fatalf("Delete: %v", err)
 				}
@@ -162,8 +174,12 @@ func TestMetaRepository(t *testing.T) {
 			})
 
 			t.Run("DeleteAll", func(t *testing.T) {
-				meta.Set(ctx, ownerID, "da_a", "1")
-				meta.Set(ctx, ownerID, "da_b", "2")
+				if err := meta.Set(ctx, ownerID, "da_a", "1"); err != nil {
+					t.Fatal(err)
+				}
+				if err := meta.Set(ctx, ownerID, "da_b", "2"); err != nil {
+					t.Fatal(err)
+				}
 				if err := meta.DeleteAll(ctx, ownerID); err != nil {
 					t.Fatalf("DeleteAll: %v", err)
 				}
@@ -184,12 +200,20 @@ func TestTermMetaCascade(t *testing.T) {
 
 	term := &model.Term{Name: "Doomed", Slug: "doomed-cascade"}
 	tt := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, term, tt)
+	if err := terms.Create(ctx, term, tt); err != nil {
+		t.Fatal(err)
+	}
 
-	meta.Set(ctx, term.TermID, "k1", "v1")
-	meta.Set(ctx, term.TermID, "k2", "v2")
+	if err := meta.Set(ctx, term.TermID, "k1", "v1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := meta.Set(ctx, term.TermID, "k2", "v2"); err != nil {
+		t.Fatal(err)
+	}
 
-	terms.Delete(ctx, term.TermID)
+	if _, err := terms.Delete(ctx, term.TermID); err != nil {
+		t.Fatal(err)
+	}
 
 	all, _ := meta.GetAll(ctx, term.TermID)
 	if len(all) != 0 {

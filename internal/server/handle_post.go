@@ -16,7 +16,8 @@ func (s *Server) handlePost(w http.ResponseWriter, r *http.Request, m *permalink
 
 	switch {
 	case m.PostID != "":
-		id, err := strconv.ParseInt(m.PostID, 10, 64)
+		var id int64
+		id, err = strconv.ParseInt(m.PostID, 10, 64)
 		if err != nil {
 			http.NotFound(w, r)
 			return

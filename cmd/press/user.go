@@ -72,7 +72,7 @@ var userCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		users := repository.NewUsersRepository(db)
@@ -135,7 +135,7 @@ var userGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		users := repository.NewUsersRepository(db)
@@ -182,7 +182,7 @@ var userListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		users := repository.NewUsersRepository(db)
@@ -253,7 +253,7 @@ var userDeleteCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		users := repository.NewUsersRepository(db)
@@ -276,7 +276,9 @@ var userDeleteCmd = &cobra.Command{
 
 		// Clean up permission tuples
 		perms := permission.NewStore(db)
-		perms.DeleteTuplesForSubject(ctx, "user", fmt.Sprintf("%d", id))
+		if _, err := perms.DeleteTuplesForSubject(ctx, "user", fmt.Sprintf("%d", id)); err != nil {
+			return fmt.Errorf("failed to clean up permission tuples: %w", err)
+		}
 
 		if reassign > 0 {
 			fmt.Printf("Success: Removed user %d. Posts reassigned to user %d.\n", id, reassign)

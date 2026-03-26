@@ -23,7 +23,7 @@ func formatList(format, idField string, columns []column, rows []map[string]any)
 	case "json":
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		enc.Encode(rows)
+		_ = enc.Encode(rows)
 
 	case "csv":
 		w := csv.NewWriter(os.Stdout)
@@ -31,13 +31,13 @@ func formatList(format, idField string, columns []column, rows []map[string]any)
 		for i, c := range columns {
 			header[i] = c.Name
 		}
-		w.Write(header)
+		_ = w.Write(header)
 		for _, row := range rows {
 			record := make([]string, len(columns))
 			for i, c := range columns {
 				record[i] = formatValue(row[c.Name])
 			}
-			w.Write(record)
+			_ = w.Write(record)
 		}
 		w.Flush()
 
@@ -87,7 +87,7 @@ func formatSingle(format string, fields []kv) {
 		}
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		enc.Encode(m)
+		_ = enc.Encode(m)
 
 	default: // table (key-value pairs)
 		maxKey := 0

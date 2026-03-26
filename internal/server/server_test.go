@@ -20,10 +20,18 @@ func setupServer(t *testing.T) (*server.Server, *repository.PostsRepository, *re
 
 	opts := repository.NewOptionsRepository(database)
 	ctx := context.Background()
-	opts.Set(ctx, "siteurl", "http://localhost:8080", "yes")
-	opts.Set(ctx, "blogname", "Test Blog", "yes")
-	opts.Set(ctx, "blogdescription", "A test blog", "yes")
-	opts.Set(ctx, "posts_per_page", "10", "yes")
+	if err := opts.Set(ctx, "siteurl", "http://localhost:8080", "yes"); err != nil {
+		t.Fatal(err)
+	}
+	if err := opts.Set(ctx, "blogname", "Test Blog", "yes"); err != nil {
+		t.Fatal(err)
+	}
+	if err := opts.Set(ctx, "blogdescription", "A test blog", "yes"); err != nil {
+		t.Fatal(err)
+	}
+	if err := opts.Set(ctx, "posts_per_page", "10", "yes"); err != nil {
+		t.Fatal(err)
+	}
 
 	publicDir := t.TempDir()
 	cfg := &config.Config{
@@ -51,10 +59,12 @@ func TestServer_HomeReturnsOK(t *testing.T) {
 	s, posts, _, _, _, _ := setupServer(t)
 	ctx := context.Background()
 
-	posts.Create(ctx, &model.Post{
+	if err := posts.Create(ctx, &model.Post{
 		PostAuthor: 1, PostTitle: "Hello World", PostName: "hello-world",
 		PostContent: "<p>Welcome!</p>", PostStatus: "publish", PostType: "post",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	req := httptest.NewRequest("GET", "/", nil)
 	w := httptest.NewRecorder()
@@ -89,7 +99,9 @@ func TestServer_PostByQueryParam(t *testing.T) {
 		PostAuthor: 1, PostTitle: "Query Post", PostName: "query-post",
 		PostContent: "<p>Found by ID</p>", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
 
 	req := httptest.NewRequest("GET", "/?p="+itoa(post.ID), nil)
 	w := httptest.NewRecorder()
@@ -135,17 +147,23 @@ func TestServer_PostWithComments(t *testing.T) {
 		PostAuthor: 1, PostTitle: "Commented Post", PostName: "commented-post",
 		PostContent: "<p>Has comments</p>", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
 
-	comments.Create(ctx, &model.Comment{
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Reader",
 		CommentContent: "Great article!", CommentApproved: "1", CommentType: "comment",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	// Unapproved comment should not show
-	comments.Create(ctx, &model.Comment{
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Spammer",
 		CommentContent: "Buy stuff", CommentApproved: "0", CommentType: "comment",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	req := httptest.NewRequest("GET", "/?p="+itoa(post.ID), nil)
 	w := httptest.NewRecorder()
@@ -166,14 +184,20 @@ func TestServer_PostWithCategories(t *testing.T) {
 
 	cat := &model.Term{Name: "Golang", Slug: "golang"}
 	tt := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, cat, tt)
+	if err := terms.Create(ctx, cat, tt); err != nil {
+		t.Fatal(err)
+	}
 
 	post := &model.Post{
 		PostAuthor: 1, PostTitle: "Go Tips", PostName: "go-tips",
 		PostContent: "<p>Tips</p>", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post)
-	terms.AddTermToPost(ctx, post.ID, tt.TermTaxonomyID)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
+	if err := terms.AddTermToPost(ctx, post.ID, tt.TermTaxonomyID); err != nil {
+		t.Fatal(err)
+	}
 
 	req := httptest.NewRequest("GET", "/?p="+itoa(post.ID), nil)
 	w := httptest.NewRecorder()
@@ -196,7 +220,9 @@ func TestServer_PostWithProseMirrorContent(t *testing.T) {
 		PostContent: `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello from "},{"type":"text","marks":[{"type":"strong"}],"text":"ProseMirror"}]}]}`,
 		PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
 
 	req := httptest.NewRequest("GET", "/?p="+itoa(post.ID), nil)
 	w := httptest.NewRecorder()
@@ -219,7 +245,9 @@ func TestServer_DraftPostReturns404(t *testing.T) {
 		PostAuthor: 1, PostTitle: "Draft", PostName: "draft",
 		PostContent: "secret", PostStatus: "draft", PostType: "post",
 	}
-	posts.Create(ctx, post)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
 
 	req := httptest.NewRequest("GET", "/?p="+itoa(post.ID), nil)
 	w := httptest.NewRecorder()
@@ -246,17 +274,21 @@ func TestServer_HomePagination(t *testing.T) {
 	s, posts, _, _, opts, _ := setupServer(t)
 	ctx := context.Background()
 
-	opts.Set(ctx, "posts_per_page", "2", "yes")
+	if err := opts.Set(ctx, "posts_per_page", "2", "yes"); err != nil {
+		t.Fatal(err)
+	}
 
 	// Need to recreate server to pick up the new option
 	// The option is read at startup, so we'll just test with the default
 	// Create 3 posts
 	for i := 0; i < 3; i++ {
-		posts.Create(ctx, &model.Post{
+		if err := posts.Create(ctx, &model.Post{
 			PostAuthor: 1, PostTitle: "Post " + itoa(int64(i)),
 			PostName: "post-" + itoa(int64(i)), PostContent: "x",
 			PostStatus: "publish", PostType: "post",
-		})
+		}); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Page 1

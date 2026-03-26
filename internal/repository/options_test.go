@@ -76,9 +76,15 @@ func TestOptionsRepository_Autoload(t *testing.T) {
 	options := repository.NewOptionsRepository(database)
 	ctx := context.Background()
 
-	options.Set(ctx, "blogname", "My Blog", "yes")
-	options.Set(ctx, "secret_key", "abc123", "no")
-	options.Set(ctx, "blogdescription", "A blog", "yes")
+	if err := options.Set(ctx, "blogname", "My Blog", "yes"); err != nil {
+		t.Fatal(err)
+	}
+	if err := options.Set(ctx, "secret_key", "abc123", "no"); err != nil {
+		t.Fatal(err)
+	}
+	if err := options.Set(ctx, "blogdescription", "A blog", "yes"); err != nil {
+		t.Fatal(err)
+	}
 
 	autoload, err := options.GetAutoloadOptions(ctx)
 	if err != nil {
@@ -161,7 +167,9 @@ func TestOptionsRepository_GetValueDefault(t *testing.T) {
 	}
 
 	// Existing returns actual value
-	options.Set(ctx, "blogname", "My Blog", "yes")
+	if err := options.Set(ctx, "blogname", "My Blog", "yes"); err != nil {
+		t.Fatal(err)
+	}
 	val, err = options.GetValueDefault(ctx, "blogname", "fallback")
 	if err != nil {
 		t.Fatalf("GetValueDefault existing: %v", err)

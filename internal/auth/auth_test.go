@@ -222,7 +222,9 @@ func TestService_Authenticate_RevokedSession(t *testing.T) {
 	svc := auth.NewService(users, sessions, false, 30)
 
 	token, _ := svc.Login(context.Background(), "admin", "password", "127.0.0.1", "test")
-	svc.Logout(context.Background(), token)
+	if err := svc.Logout(context.Background(), token); err != nil {
+		t.Fatal(err)
+	}
 
 	req := httptest.NewRequest("GET", "/wp-admin/", nil)
 	req.AddCookie(&http.Cookie{Name: auth.CookieName, Value: token})

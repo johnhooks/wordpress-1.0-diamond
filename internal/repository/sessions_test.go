@@ -44,11 +44,13 @@ func TestSessionsRepository_VerifyExpired(t *testing.T) {
 	sessions := repository.NewSessionsRepository(database)
 	ctx := context.Background()
 
-	sessions.Create(ctx, &model.Session{
+	if err := sessions.Create(ctx, &model.Session{
 		Token:     "expired-token",
 		UserID:    1,
 		ExpiresAt: time.Now().UTC().Add(-1 * time.Hour),
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	_, err := sessions.Verify(ctx, "expired-token")
 	if err == nil {
@@ -61,11 +63,13 @@ func TestSessionsRepository_VerifyRevoked(t *testing.T) {
 	sessions := repository.NewSessionsRepository(database)
 	ctx := context.Background()
 
-	sessions.Create(ctx, &model.Session{
+	if err := sessions.Create(ctx, &model.Session{
 		Token:     "revoked-token",
 		UserID:    1,
 		ExpiresAt: time.Now().UTC().Add(24 * time.Hour),
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	if err := sessions.Revoke(ctx, "revoked-token"); err != nil {
 		t.Fatalf("Revoke: %v", err)
@@ -94,9 +98,15 @@ func TestSessionsRepository_GetByUserID(t *testing.T) {
 	ctx := context.Background()
 
 	expires := time.Now().UTC().Add(24 * time.Hour)
-	sessions.Create(ctx, &model.Session{Token: "token-a", UserID: 1, ExpiresAt: expires})
-	sessions.Create(ctx, &model.Session{Token: "token-b", UserID: 1, ExpiresAt: expires})
-	sessions.Create(ctx, &model.Session{Token: "token-c", UserID: 2, ExpiresAt: expires})
+	if err := sessions.Create(ctx, &model.Session{Token: "token-a", UserID: 1, ExpiresAt: expires}); err != nil {
+		t.Fatal(err)
+	}
+	if err := sessions.Create(ctx, &model.Session{Token: "token-b", UserID: 1, ExpiresAt: expires}); err != nil {
+		t.Fatal(err)
+	}
+	if err := sessions.Create(ctx, &model.Session{Token: "token-c", UserID: 2, ExpiresAt: expires}); err != nil {
+		t.Fatal(err)
+	}
 
 	got, err := sessions.GetByUserID(ctx, 1)
 	if err != nil {
@@ -113,9 +123,15 @@ func TestSessionsRepository_RevokeAllForUser(t *testing.T) {
 	ctx := context.Background()
 
 	expires := time.Now().UTC().Add(24 * time.Hour)
-	sessions.Create(ctx, &model.Session{Token: "keep-this", UserID: 1, ExpiresAt: expires})
-	sessions.Create(ctx, &model.Session{Token: "revoke-this", UserID: 1, ExpiresAt: expires})
-	sessions.Create(ctx, &model.Session{Token: "also-revoke", UserID: 1, ExpiresAt: expires})
+	if err := sessions.Create(ctx, &model.Session{Token: "keep-this", UserID: 1, ExpiresAt: expires}); err != nil {
+		t.Fatal(err)
+	}
+	if err := sessions.Create(ctx, &model.Session{Token: "revoke-this", UserID: 1, ExpiresAt: expires}); err != nil {
+		t.Fatal(err)
+	}
+	if err := sessions.Create(ctx, &model.Session{Token: "also-revoke", UserID: 1, ExpiresAt: expires}); err != nil {
+		t.Fatal(err)
+	}
 
 	n, err := sessions.RevokeAllForUser(ctx, 1, "keep-this")
 	if err != nil {
@@ -146,16 +162,20 @@ func TestSessionsRepository_TouchLastUsed(t *testing.T) {
 	sessions := repository.NewSessionsRepository(database)
 	ctx := context.Background()
 
-	sessions.Create(ctx, &model.Session{
+	if err := sessions.Create(ctx, &model.Session{
 		Token:     "touch-me",
 		UserID:    1,
 		ExpiresAt: time.Now().UTC().Add(24 * time.Hour),
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	before, _ := sessions.GetByToken(ctx, "touch-me")
 	time.Sleep(10 * time.Millisecond)
 
-	sessions.TouchLastUsed(ctx, "touch-me")
+	if err := sessions.TouchLastUsed(ctx, "touch-me"); err != nil {
+		t.Fatal(err)
+	}
 
 	after, _ := sessions.GetByToken(ctx, "touch-me")
 	if !after.LastUsed.After(before.LastUsed) {
@@ -169,9 +189,15 @@ func TestSessionsRepository_CountActive(t *testing.T) {
 	ctx := context.Background()
 
 	expires := time.Now().UTC().Add(24 * time.Hour)
-	sessions.Create(ctx, &model.Session{Token: "active-1", UserID: 1, ExpiresAt: expires})
-	sessions.Create(ctx, &model.Session{Token: "active-2", UserID: 1, ExpiresAt: expires})
-	sessions.Create(ctx, &model.Session{Token: "expired", UserID: 1, ExpiresAt: time.Now().UTC().Add(-1 * time.Hour)})
+	if err := sessions.Create(ctx, &model.Session{Token: "active-1", UserID: 1, ExpiresAt: expires}); err != nil {
+		t.Fatal(err)
+	}
+	if err := sessions.Create(ctx, &model.Session{Token: "active-2", UserID: 1, ExpiresAt: expires}); err != nil {
+		t.Fatal(err)
+	}
+	if err := sessions.Create(ctx, &model.Session{Token: "expired", UserID: 1, ExpiresAt: time.Now().UTC().Add(-1 * time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
 
 	count, err := sessions.CountActive(ctx, 1)
 	if err != nil {
@@ -188,9 +214,13 @@ func TestSessionsRepository_DeleteExpired(t *testing.T) {
 	ctx := context.Background()
 
 	// Expired session
-	sessions.Create(ctx, &model.Session{Token: "old", UserID: 1, ExpiresAt: time.Now().UTC().Add(-1 * time.Hour)})
+	if err := sessions.Create(ctx, &model.Session{Token: "old", UserID: 1, ExpiresAt: time.Now().UTC().Add(-1 * time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
 	// Active session
-	sessions.Create(ctx, &model.Session{Token: "fresh", UserID: 1, ExpiresAt: time.Now().UTC().Add(24 * time.Hour)})
+	if err := sessions.Create(ctx, &model.Session{Token: "fresh", UserID: 1, ExpiresAt: time.Now().UTC().Add(24 * time.Hour)}); err != nil {
+		t.Fatal(err)
+	}
 
 	n, err := sessions.DeleteExpired(ctx)
 	if err != nil {

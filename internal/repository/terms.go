@@ -56,7 +56,7 @@ func (r *TermsRepository) Create(ctx context.Context, term *model.Term, taxonomy
 	if err != nil {
 		return errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	result, err := tx.NamedExec(`
 		INSERT INTO wp_terms (name, slug, term_group)
@@ -245,7 +245,7 @@ func (r *TermsRepository) Delete(ctx context.Context, id int64) (*model.Term, er
 	if err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Reassign child terms to the deleted term's parent
 	var ttRows []struct {
@@ -307,7 +307,7 @@ func (r *TermsRepository) SetPostTerms(ctx context.Context, postID int64, termTa
 	if err != nil {
 		return errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	var oldTTIDs []int64
 	if err := tx.Select(&oldTTIDs, "SELECT term_taxonomy_id FROM wp_term_relationships WHERE object_id = ?", postID); err != nil {

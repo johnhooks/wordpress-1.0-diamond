@@ -16,7 +16,7 @@ var serveCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		srv, err := server.New(appConfig, db)
 		if err != nil {
