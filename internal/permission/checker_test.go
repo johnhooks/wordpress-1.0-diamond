@@ -245,7 +245,7 @@ func TestDirectGrantPermissions(t *testing.T) {
 	// Subscriber (4) gets direct editor grant on post:42
 	if err := store.CreateTuple(ctx, &permission.Tuple{
 		SubjectType: "user", SubjectID: "4",
-		Relation:  permission.Editor,
+		Relation:   permission.Editor,
 		ObjectType: "post", ObjectID: "42",
 		CreatedAt: now,
 	}); err != nil {
@@ -301,7 +301,7 @@ func TestPerObjectGroupGrants(t *testing.T) {
 	// Give public group viewer access to specific post:99
 	if err := store.CreateTuple(ctx, &permission.Tuple{
 		SubjectType: "group", SubjectID: "public",
-		Relation:  permission.Viewer,
+		Relation:   permission.Viewer,
 		ObjectType: "post", ObjectID: "99",
 		CreatedAt: now,
 	}); err != nil {
@@ -311,7 +311,7 @@ func TestPerObjectGroupGrants(t *testing.T) {
 	// Give editors group a writer grant on specific post:200
 	if err := store.CreateTuple(ctx, &permission.Tuple{
 		SubjectType: "group", SubjectID: "editors",
-		Relation:  permission.Writer,
+		Relation:   permission.Writer,
 		ObjectType: "post", ObjectID: "200",
 		CreatedAt: now,
 	}); err != nil {
@@ -350,7 +350,7 @@ func TestMultipleGroupMembership(t *testing.T) {
 	for _, group := range []string{"editors", "authors"} {
 		if err := store.CreateTuple(ctx, &permission.Tuple{
 			SubjectType: "user", SubjectID: "10",
-			Relation:  permission.Member,
+			Relation:   permission.Member,
 			ObjectType: "group", ObjectID: group,
 			CreatedAt: now,
 		}); err != nil {
@@ -429,7 +429,7 @@ func TestMembershipTakesEffectImmediately(t *testing.T) {
 
 	if err := store.CreateTuple(ctx, &permission.Tuple{
 		SubjectType: "user", SubjectID: "5",
-		Relation:  permission.Member,
+		Relation:   permission.Member,
 		ObjectType: "group", ObjectID: "authors",
 		CreatedAt: time.Now().UTC(),
 	}); err != nil {
@@ -674,19 +674,19 @@ func TestInvalidTupleValidation(t *testing.T) {
 	}{
 		{"invalid relation", permission.Tuple{
 			SubjectType: "user", SubjectID: "1",
-			Relation:  "superadmin",
+			Relation:   "superadmin",
 			ObjectType: "site", ObjectID: "",
 			CreatedAt: now,
 		}},
 		{"invalid subject type", permission.Tuple{
 			SubjectType: "robot", SubjectID: "1",
-			Relation:  permission.Viewer,
+			Relation:   permission.Viewer,
 			ObjectType: "post", ObjectID: "1",
 			CreatedAt: now,
 		}},
 		{"invalid object type", permission.Tuple{
 			SubjectType: "user", SubjectID: "1",
-			Relation:  permission.Viewer,
+			Relation:   permission.Viewer,
 			ObjectType: "widget", ObjectID: "1",
 			CreatedAt: now,
 		}},

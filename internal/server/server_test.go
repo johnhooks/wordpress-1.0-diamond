@@ -218,7 +218,7 @@ func TestServer_PostWithProseMirrorContent(t *testing.T) {
 	post := &model.Post{
 		PostAuthor: 1, PostTitle: "JSON Post", PostName: "json-post",
 		PostContent: `{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Hello from "},{"type":"text","marks":[{"type":"strong"}],"text":"ProseMirror"}]}]}`,
-		PostStatus: "publish", PostType: "post",
+		PostStatus:  "publish", PostType: "post",
 	}
 	if err := posts.Create(ctx, post); err != nil {
 		t.Fatal(err)

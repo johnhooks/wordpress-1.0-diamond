@@ -40,10 +40,10 @@ type SessionStore interface {
 
 // Service handles authentication: login, logout, and request verification.
 type Service struct {
-	users     UserLookup
-	sessions  SessionStore
-	secure    bool          // true if cookies should be Secure (HTTPS)
-	maxAge    time.Duration // session lifetime
+	users    UserLookup
+	sessions SessionStore
+	secure   bool          // true if cookies should be Secure (HTTPS)
+	maxAge   time.Duration // session lifetime
 }
 
 // NewService creates a new auth service. maxAgeDays is the session

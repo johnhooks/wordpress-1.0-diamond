@@ -102,7 +102,7 @@ func TestHorizontalRule(t *testing.T) {
 
 func TestImage(t *testing.T) {
 	tests := []struct {
-		name string
+		name  string
 		attrs ImageAttrs
 		want  string
 	}{

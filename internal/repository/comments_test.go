@@ -505,14 +505,14 @@ func TestCommentsRepository_AuthorEmailFilter(t *testing.T) {
 	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Alice",
 		CommentAuthorEmail: "alice@example.com",
-		CommentContent: "hi", CommentApproved: "1", CommentType: "comment",
+		CommentContent:     "hi", CommentApproved: "1", CommentType: "comment",
 	}); err != nil {
 		t.Fatal(err)
 	}
 	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Bob",
 		CommentAuthorEmail: "bob@example.com",
-		CommentContent: "hey", CommentApproved: "1", CommentType: "comment",
+		CommentContent:     "hey", CommentApproved: "1", CommentType: "comment",
 	}); err != nil {
 		t.Fatal(err)
 	}

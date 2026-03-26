@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"press/internal/query"
 	"press/internal/model"
+	"press/internal/query"
 	"press/internal/repository"
 
 	"github.com/spf13/cobra"

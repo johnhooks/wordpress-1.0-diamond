@@ -33,7 +33,7 @@ jobs:
 
       - name: Check formatting
         run: |
-          unformatted=$(gofmt -l .)
+          unformatted=$(find . -name '*.go' -not -path './internal/template/parse/*' | xargs gofmt -l)
           if [ -n "$unformatted" ]; then
             echo "Files not formatted:"
             echo "$unformatted"

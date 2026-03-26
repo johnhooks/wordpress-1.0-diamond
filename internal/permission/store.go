@@ -310,4 +310,3 @@ func (s *Store) DeleteShareToken(ctx context.Context, token string) error {
 
 	return tx.Commit()
 }
-

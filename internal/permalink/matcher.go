@@ -10,11 +10,11 @@ import (
 
 // Match holds values extracted from a URL path.
 type Match struct {
-	Year, Month, Day       string
-	Hour, Minute, Second   string
-	PostName               string
-	PostID                 string
-	Category               string
+	Year, Month, Day     string
+	Hour, Minute, Second string
+	PostName             string
+	PostID               string
+	Category             string
 }
 
 // matcher parses URL paths against a compiled permalink structure.
@@ -29,9 +29,9 @@ var tagPatterns = map[string]string{
 	"%hour%":     `(?P<hour>[0-9]{1,2})`,
 	"%minute%":   `(?P<minute>[0-9]{1,2})`,
 	"%second%":   `(?P<second>[0-9]{1,2})`,
-	"%postname%":  `(?P<postname>[^/]+)`,
-	"%post_id%":   `(?P<post_id>[0-9]+)`,
-	"%category%":  `(?P<category>[^/]+)`,
+	"%postname%": `(?P<postname>[^/]+)`,
+	"%post_id%":  `(?P<post_id>[0-9]+)`,
+	"%category%": `(?P<category>[^/]+)`,
 }
 
 // newMatcher compiles a permalink structure string into a regex-based URL matcher.

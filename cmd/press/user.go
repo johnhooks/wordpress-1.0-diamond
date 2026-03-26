@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
+	"press/internal/model"
 	"press/internal/permission"
 	"press/internal/query"
-	"press/internal/model"
 	"press/internal/repository"
 
 	"github.com/spf13/cobra"

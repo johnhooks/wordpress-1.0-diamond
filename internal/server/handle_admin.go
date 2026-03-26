@@ -101,21 +101,21 @@ type PaginationData struct {
 // ── Post Form (shared by write and edit) ──────────────────────
 
 type PostFormData struct {
-	Shell          AdminShell
-	CSRF           auth.CSRFHelper
-	Action         string // form action URL
-	CSRFAction     string // CSRF action name
-	Title          TextField
-	Content        TextareaField
-	Excerpt        TextareaField
-	Categories     CheckboxGroup
-	Status         RadioGroup
-	CommentStatus  RadioGroup
-	Errors         []string
-	IsEdit         bool
-	CanDelete      bool
-	DeleteURL      string
-	Permalink      string
+	Shell         AdminShell
+	CSRF          auth.CSRFHelper
+	Action        string // form action URL
+	CSRFAction    string // CSRF action name
+	Title         TextField
+	Content       TextareaField
+	Excerpt       TextareaField
+	Categories    CheckboxGroup
+	Status        RadioGroup
+	CommentStatus RadioGroup
+	Errors        []string
+	IsEdit        bool
+	CanDelete     bool
+	DeleteURL     string
+	Permalink     string
 }
 
 // ── Manage Posts ──────────────────────────────────────────────
