@@ -1,0 +1,16 @@
+(document
+  (element "div" (class "comment")
+    (element "p" (class "comment-meta")
+      (element "strong"
+        (element "a" (href "https://alice.example.com")
+          (text "Alice")
+        )
+      )
+      (text "\n        | ")
+      (text "January 2, 2004")
+    )
+    (element "div" (class "comment-content")
+      (raw "<p>Great post!</p>")
+    )
+  )
+)

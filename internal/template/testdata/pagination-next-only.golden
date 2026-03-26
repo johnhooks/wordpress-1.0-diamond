@@ -1,0 +1,7 @@
+(document
+  (element "nav" (class "pagination")
+    (element "a" (href "/page/2") (class "next")
+      (text "Next »")
+    )
+  )
+)

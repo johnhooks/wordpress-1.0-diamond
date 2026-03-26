@@ -1,0 +1,19 @@
+(document
+  (element "div" (class "widget widget-archives")
+    (element "h2"
+      (text "Archives")
+    )
+    (element "ul"
+      (element "li"
+        (element "a" (href "/2004/01")
+          (text "January 2004")
+        )
+      )
+      (element "li"
+        (element "a" (href "/2004/02")
+          (text "February 2004")
+        )
+      )
+    )
+  )
+)

@@ -1,0 +1,17 @@
+(document
+  (element "article" (class "post")
+    (element "h2"
+      (element "a" (href "/2004/01/no-categories")
+        (text "No Categories")
+      )
+    )
+    (element "p" (class "post-meta")
+      (text "January 5, 2004")
+      (text " by ")
+      (text "admin")
+    )
+    (element "div" (class "entry")
+      (raw "<p>A post with no categories.</p>")
+    )
+  )
+)

@@ -1,0 +1,14 @@
+(document
+  (element "div" (class "widget widget-meta")
+    (element "h2"
+      (text "Meta")
+    )
+    (element "ul"
+      (element "li"
+        (element "a" (href "/wp-login.php")
+          (text "Log in")
+        )
+      )
+    )
+  )
+)

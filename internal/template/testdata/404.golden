@@ -1,0 +1,101 @@
+(document
+  (element "div" (id "wrapper")
+    (element "div" (id "header")
+      (element "h1"
+        (element "a" (href "/")
+          (text "Test Blog")
+        )
+      )
+      (element "p" (class "description")
+        (text "Just another Press blog")
+      )
+    )
+    (element "div" (id "content")
+      (element "h2"
+        (text "Not Found")
+      )
+      (element "p"
+        (text "The page you requested could not be found.")
+      )
+    )
+    (element "div" (id "sidebar")
+      (element "form" (class "search-form") (method "get") (action "/")
+        (element "label" (for "s")
+          (text "Search")
+        )
+        (element "input" (type "text") (name "s") (id "s") (value ""))
+        (element "button" (type "submit")
+          (text "Search")
+        )
+      )
+      (element "div" (class "widget widget-categories")
+        (element "h2"
+          (text "Categories")
+        )
+        (element "ul"
+          (element "li"
+            (element "a" (href "/category/uncategorized")
+              (text "Uncategorized")
+            )
+          )
+          (element "li"
+            (element "a" (href "/category/news")
+              (text "News")
+            )
+          )
+        )
+      )
+      (element "div" (class "widget widget-archives")
+        (element "h2"
+          (text "Archives")
+        )
+        (element "ul"
+          (element "li"
+            (element "a" (href "/2004/01")
+              (text "January 2004")
+            )
+          )
+          (element "li"
+            (element "a" (href "/2004/02")
+              (text "February 2004")
+            )
+          )
+        )
+      )
+      (element "div" (class "widget widget-pages")
+        (element "h2"
+          (text "Pages")
+        )
+        (element "ul"
+          (element "li"
+            (element "a" (href "/about")
+              (text "About")
+            )
+          )
+          (element "li"
+            (element "a" (href "/contact")
+              (text "Contact")
+            )
+          )
+        )
+      )
+      (element "div" (class "widget widget-meta")
+        (element "h2"
+          (text "Meta")
+        )
+        (element "ul"
+          (element "li"
+            (element "a" (href "/wp-admin/")
+              (text "Dashboard")
+            )
+          )
+          (element "li"
+            (element "a" (href "/wp-login.php?action=logout")
+              (text "Log out")
+            )
+          )
+        )
+      )
+    )
+  )
+)

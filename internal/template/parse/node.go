@@ -144,14 +144,20 @@ func reparentChildren(dst, src *Node) {
 	}
 }
 
+// CloneNode returns a new node with the same type, data and attributes.
+// The clone has no parent, no siblings and no children.
+func (n *Node) CloneNode() *Node {
+	return n.clone()
+}
+
 // clone returns a new node with the same type, data and attributes.
 // The clone has no parent, no siblings and no children.
 func (n *Node) clone() *Node {
 	m := &Node{
-		Type:         n.Type,
-		DataAtom:     n.DataAtom,
-		Data:         n.Data,
-		Attr:         make([]Attribute, len(n.Attr)),
+		Type:     n.Type,
+		DataAtom: n.DataAtom,
+		Data:     n.Data,
+		Attr:     make([]Attribute, len(n.Attr)),
 		// PRESS PATCH: shallow copy is safe because expression ASTs are
 		// immutable after parse. If clone semantics ever require mutation
 		// of TemplateData, this must become a deep copy.
