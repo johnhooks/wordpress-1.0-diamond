@@ -94,5 +94,5 @@ func (s *Server) renderPost(w http.ResponseWriter, r *http.Request, post *postRe
 		CommentsOpen: post.CommentStatus == "open",
 	}
 
-	s.renderSite(w, "single", data)
+	s.renderSite(w, r, "single", data)
 }

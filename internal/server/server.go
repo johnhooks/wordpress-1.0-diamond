@@ -120,9 +120,18 @@ func (s *Server) registerTagHandlers() {
 	s.theme.RegisterHandler("comment-list", s.tagCommentList)
 }
 
-// renderSite renders a site template with the given data.
-func (s *Server) renderSite(w http.ResponseWriter, name string, data any) {
-	if err := s.theme.Render(w, name, data); err != nil {
+// renderSite renders a site template with the given data. It ensures
+// the visitor has a session and puts a CSRF helper on the context so
+// tag handlers can generate tokens.
+func (s *Server) renderSite(w http.ResponseWriter, r *http.Request, name string, data any) {
+	sessionToken, err := s.auth.EnsureSession(w, r)
+	if err != nil {
+		log.Printf("failed to ensure session: %v", err)
+	}
+
+	ctx := auth.WithCSRF(r.Context(), auth.NewCSRFHelper(sessionToken, s.cfg.SecretKey))
+
+	if err := s.theme.Render(w, ctx, name, data); err != nil {
 		log.Printf("template render error: %v", err)
 		http.Error(w, "An internal error occurred.", http.StatusInternalServerError)
 	}

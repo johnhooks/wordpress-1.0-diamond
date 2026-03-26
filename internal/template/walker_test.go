@@ -2,6 +2,7 @@ package template
 
 import (
 	"bytes"
+	"context"
 	"strings"
 	"testing"
 
@@ -16,7 +17,7 @@ func renderTemplate(t *testing.T, input string, data any) string {
 	}
 
 	var buf bytes.Buffer
-	if err := Walk(&buf, doc, data, nil, nil); err != nil {
+	if err := Walk(&buf, context.Background(), doc, data, nil, nil); err != nil {
 		t.Fatalf("Walk error: %v", err)
 	}
 	return buf.String()
@@ -30,7 +31,7 @@ func renderWithHandlers(t *testing.T, input string, data any, handlers map[strin
 	}
 
 	var buf bytes.Buffer
-	if err := Walk(&buf, doc, data, handlers, nil); err != nil {
+	if err := Walk(&buf, context.Background(), doc, data, handlers, nil); err != nil {
 		t.Fatalf("Walk error: %v", err)
 	}
 	return buf.String()
@@ -291,8 +292,8 @@ func TestWalk_VocabularyTag(t *testing.T) {
 	}{PostID: 42}
 
 	handlers := map[string]TagHandler{
-		"comment-form": func(ctx *RenderContext) (string, error) {
-			id := ctx.Attrs["post-id"]
+		"comment-form": func(_ context.Context, _ *Scope, attrs map[string]string) (string, error) {
+			id := attrs["post-id"]
 			return `<form data-post="` + id + `"><textarea></textarea></form>`, nil
 		},
 	}

@@ -49,5 +49,5 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 		TotalPages:  result.TotalPages,
 	}
 
-	s.renderSite(w, "home", data)
+	s.renderSite(w, r, "home", data)
 }

@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -25,11 +26,35 @@ func NewCSRFHelper(sessionToken, secretKey string) CSRFHelper {
 	return CSRFHelper{sessionToken: sessionToken, secretKey: secretKey}
 }
 
+// Token returns the raw CSRF token string for an action.
+// Returns empty string if no session is bound.
+func (c CSRFHelper) Token(action string) string {
+	if c.sessionToken == "" {
+		return ""
+	}
+	return generateCSRF(c.sessionToken, action, c.secretKey)
+}
+
 // For returns a hidden input element with the CSRF token for the
-// given action. Used in templates as {{.CSRF.For "action-name"}}.
+// given action. Used in Go templates as {{.CSRF.For "action-name"}}.
 func (c CSRFHelper) For(action string) template.HTML {
-	token := generateCSRF(c.sessionToken, action, c.secretKey)
-	return template.HTML(fmt.Sprintf(`<input type="hidden" name="_csrf" value="%s">`, token))
+	return template.HTML(fmt.Sprintf(`<input type="hidden" name="_csrf" value="%s">`, c.Token(action)))
+}
+
+type csrfContextKey struct{}
+
+// WithCSRF adds a CSRFHelper to the context.
+func WithCSRF(ctx context.Context, csrf CSRFHelper) context.Context {
+	return context.WithValue(ctx, csrfContextKey{}, csrf)
+}
+
+// CSRFFromContext retrieves the CSRFHelper from the context.
+// Returns a zero helper if none is set (Token returns empty string).
+func CSRFFromContext(ctx context.Context) CSRFHelper {
+	if csrf, ok := ctx.Value(csrfContextKey{}).(CSRFHelper); ok {
+		return csrf
+	}
+	return CSRFHelper{}
 }
 
 // generateCSRF produces an action-scoped CSRF token. The token is

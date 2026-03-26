@@ -69,5 +69,5 @@ func (s *Server) handleCategory(w http.ResponseWriter, r *http.Request, m *perma
 		TotalPages:   result.TotalPages,
 	}
 
-	s.renderSite(w, "archive", data)
+	s.renderSite(w, r, "archive", data)
 }

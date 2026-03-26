@@ -1,12 +1,11 @@
 package server
 
 import (
+	"context"
+
 	"press/internal/template"
 )
 
-// tagPostNavigation renders a <post-navigation /> vocabulary tag.
-// Navigation data (prev_post, next_post) resolves from the parent
-// scope chain.
-func (s *Server) tagPostNavigation(ctx *template.RenderContext) (string, error) {
-	return s.theme.RenderTagScoped(ctx.Scope, "post-navigation", ctx.Attrs, nil, nil)
+func (s *Server) tagPostNavigation(ctx context.Context, scope *template.Scope, attrs map[string]string) (string, error) {
+	return s.theme.RenderTagScoped(ctx, scope, "post-navigation", attrs, nil, nil)
 }

@@ -1,11 +1,13 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"press/internal/auth"
 	"press/internal/model"
 )
 
@@ -19,6 +21,11 @@ func (s *Server) handleCommentSubmit(w http.ResponseWriter, r *http.Request) {
 	postID, err := strconv.ParseInt(postIDStr, 10, 64)
 	if err != nil || postID == 0 {
 		s.httpError(w, r, "Bad request", http.StatusBadRequest)
+		return
+	}
+
+	if !auth.VerifyCSRF(r, fmt.Sprintf("comment-%d", postID), s.cfg.SecretKey) {
+		s.httpError(w, r, "Invalid or expired form. Please reload and try again.", http.StatusForbidden)
 		return
 	}
 
@@ -49,8 +56,13 @@ func (s *Server) handleCommentSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: htmx comment fragment rendering via template engine.
-	// For now, always redirect.
+	// BUG: The form has hx-post with hx-swap="outerHTML", so htmx
+	// expects an HTML fragment back. But we redirect, which htmx
+	// follows and swaps the entire page into the form element.
+	// The fix: detect HX-Request header, return a fresh empty form
+	// (via the comment-form tag handler) plus an OOB swap to append
+	// the new comment to the comment list. Fall back to redirect
+	// for non-htmx requests. Fix in the AST render pipeline refactor.
 
 	// Redirect back to the post
 	post, err := s.posts.GetByID(r.Context(), postID)

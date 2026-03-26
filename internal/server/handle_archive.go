@@ -79,5 +79,5 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request, route *pe
 		TotalPages:   result.TotalPages,
 	}
 
-	s.renderSite(w, "archive", data)
+	s.renderSite(w, r, "archive", data)
 }

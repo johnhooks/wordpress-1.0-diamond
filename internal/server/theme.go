@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"io"
@@ -67,7 +68,7 @@ func (th *Theme) RegisterHandler(name string, handler template.TagHandler) {
 // Render writes the document shell and renders the named page template
 // within it. The engine owns the <head> (charset, viewport, title,
 // theme stylesheet, htmx). Page templates are body-content fragments.
-func (th *Theme) Render(w io.Writer, name string, data any) error {
+func (th *Theme) Render(w io.Writer, ctx context.Context, name string, data any) error {
 	doc, err := th.getTemplate(name)
 	if err != nil {
 		return err
@@ -97,7 +98,7 @@ func (th *Theme) Render(w io.Writer, name string, data any) error {
 	}
 
 	// Render the page template as body content.
-	if err := template.Walk(w, doc, data, th.handlers, nil); err != nil {
+	if err := template.Walk(w, ctx, doc, data, th.handlers, nil); err != nil {
 		return err
 	}
 
@@ -111,6 +112,7 @@ func (th *Theme) Render(w io.Writer, name string, data any) error {
 // attributes into the wrapper element, and renders within the shaped
 // scope. This is the primary rendering path for vocabulary tag handlers.
 func (th *Theme) RenderTagScoped(
+	ctx context.Context,
 	parentScope *template.Scope,
 	name string,
 	callerAttrs map[string]string,
@@ -142,7 +144,7 @@ func (th *Theme) RenderTagScoped(
 	child := parentScope.PushData(data)
 
 	var buf strings.Builder
-	if err := template.WalkWithScope(&buf, doc, child, th.handlers); err != nil {
+	if err := template.WalkWithScope(&buf, ctx, doc, child, th.handlers); err != nil {
 		return "", err
 	}
 	return buf.String(), nil

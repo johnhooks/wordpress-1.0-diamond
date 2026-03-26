@@ -1,12 +1,11 @@
 package server
 
 import (
+	"context"
+
 	"press/internal/template"
 )
 
-// tagPagination renders a <pagination /> vocabulary tag.
-// Pagination data (has_prev, has_next, etc.) resolves from the
-// parent scope chain.
-func (s *Server) tagPagination(ctx *template.RenderContext) (string, error) {
-	return s.theme.RenderTagScoped(ctx.Scope, "pagination", ctx.Attrs, nil, nil)
+func (s *Server) tagPagination(ctx context.Context, scope *template.Scope, attrs map[string]string) (string, error) {
+	return s.theme.RenderTagScoped(ctx, scope, "pagination", attrs, nil, nil)
 }

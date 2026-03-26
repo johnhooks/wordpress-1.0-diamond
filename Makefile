@@ -14,7 +14,7 @@ VENDOR_MAP = orderedmap:dist/index.js \
 # Usage: make dev SITE=examples/photoblog
 SITE = local
 
-.PHONY: vendor vendor-clean build test dev stop stop-all serve reset fixtures fresh press clean
+.PHONY: vendor vendor-clean build test lint fmt dev stop stop-all serve reset fixtures fresh press clean
 
 vendor: node_modules
 	@mkdir -p $(VENDOR_DIR)
@@ -70,6 +70,12 @@ press: build
 
 test:
 	go test ./...
+
+lint:
+	golangci-lint run ./...
+
+fmt:
+	find . -name '*.go' -not -path './internal/template/parse/*' | xargs gofmt -w
 
 clean:
 	rm -f press

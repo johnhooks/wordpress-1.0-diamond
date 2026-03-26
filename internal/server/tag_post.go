@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -12,8 +13,8 @@ import (
 // the current scope (typically bound by an {each posts as post} loop),
 // pushes its view fields into a child scope, and injects the post ID
 // as an engine attribute on the wrapper element.
-func (s *Server) tagPost(ctx *template.RenderContext) (string, error) {
-	postVal, ok := ctx.Scope.Lookup("post")
+func (s *Server) tagPost(ctx context.Context, scope *template.Scope, attrs map[string]string) (string, error) {
+	postVal, ok := scope.Lookup("post")
 	if !ok {
 		return "", errors.New(errors.ErrTemplateRender, "<post />: no post in scope", http.StatusInternalServerError)
 	}
@@ -26,5 +27,5 @@ func (s *Server) tagPost(ctx *template.RenderContext) (string, error) {
 		"id": fmt.Sprintf("post-%d", post.ID),
 	}
 
-	return s.theme.RenderTagScoped(ctx.Scope, "post", ctx.Attrs, engineAttrs, post)
+	return s.theme.RenderTagScoped(ctx, scope, "post", attrs, engineAttrs, post)
 }

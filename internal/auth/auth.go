@@ -95,6 +95,38 @@ func (s *Service) Login(ctx context.Context, login, password, ip, ua string) (st
 	return token, nil
 }
 
+// EnsureSession guarantees the request has a session cookie. If the
+// visitor has no session, an anonymous one is created (UserID 0).
+// Returns the session token. Each visitor gets a unique session.
+func (s *Service) EnsureSession(w http.ResponseWriter, r *http.Request) (string, error) {
+	if cookie, err := r.Cookie(CookieName); err == nil && cookie.Value != "" {
+		return cookie.Value, nil
+	}
+
+	token, err := GenerateToken()
+	if err != nil {
+		return "", err
+	}
+
+	now := time.Now().UTC()
+	session := &model.Session{
+		Token:     token,
+		UserID:    0,
+		CreatedAt: now,
+		LastUsed:  now,
+		ExpiresAt: now.Add(s.maxAge),
+		IPAddress: r.RemoteAddr,
+		UserAgent: r.UserAgent(),
+	}
+
+	if err := s.sessions.Create(r.Context(), session); err != nil {
+		return "", err
+	}
+
+	s.SetCookie(w, token)
+	return token, nil
+}
+
 // Logout revokes a session by token.
 func (s *Service) Logout(ctx context.Context, token string) error {
 	return s.sessions.Revoke(ctx, token)

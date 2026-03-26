@@ -1,6 +1,7 @@
 package template
 
 import (
+	"context"
 	"fmt"
 	"html"
 	"io"
@@ -14,21 +15,16 @@ import (
 // Walker walks a parsed template AST and renders HTML.
 type Walker struct {
 	w        io.Writer
+	ctx      context.Context
 	scope    *Scope
 	handlers map[string]TagHandler
 	snippets map[string]*Snippet
 }
 
-// TagHandler is a vocabulary tag handler. It receives a render
-// context and resolved attributes, and returns an HTML fragment.
-type TagHandler func(ctx *RenderContext) (string, error)
-
-// RenderContext is passed to vocabulary tag handlers.
-type RenderContext struct {
-	Scope *Scope
-	Attrs map[string]string
-	Node  *parse.Node
-}
+// TagHandler is a vocabulary tag handler. It receives the request
+// context, the current template scope, and resolved attributes,
+// and returns an HTML fragment.
+type TagHandler func(ctx context.Context, scope *Scope, attrs map[string]string) (string, error)
 
 // Snippet is a theme-defined reusable template fragment.
 type Snippet struct {
@@ -38,9 +34,10 @@ type Snippet struct {
 }
 
 // Walk renders a parsed template AST to the writer.
-func Walk(w io.Writer, doc *parse.Node, data any, handlers map[string]TagHandler, snippets map[string]*Snippet) error {
+func Walk(w io.Writer, ctx context.Context, doc *parse.Node, data any, handlers map[string]TagHandler, snippets map[string]*Snippet) error {
 	walker := &Walker{
 		w:        w,
+		ctx:      ctx,
 		scope:    NewScope(data),
 		handlers: handlers,
 		snippets: snippets,
@@ -51,9 +48,10 @@ func Walk(w io.Writer, doc *parse.Node, data any, handlers map[string]TagHandler
 // WalkWithScope renders a parsed template AST using an existing scope.
 // Used by vocabulary tag handlers to render sub-templates while
 // preserving the current scope chain (e.g. {each} bindings).
-func WalkWithScope(w io.Writer, doc *parse.Node, scope *Scope, handlers map[string]TagHandler) error {
+func WalkWithScope(w io.Writer, ctx context.Context, doc *parse.Node, scope *Scope, handlers map[string]TagHandler) error {
 	walker := &Walker{
 		w:        w,
+		ctx:      ctx,
 		scope:    scope,
 		handlers: handlers,
 	}
@@ -164,13 +162,7 @@ func (wk *Walker) walkVocabularyTag(n *parse.Node, handler TagHandler) error {
 		attrs[attr.Key] = val
 	}
 
-	ctx := &RenderContext{
-		Scope: wk.scope,
-		Attrs: attrs,
-		Node:  n,
-	}
-
-	result, err := handler(ctx)
+	result, err := handler(wk.ctx, wk.scope, attrs)
 	if err != nil {
 		return renderWrap(err, "handler for <%s>", n.Data)
 	}

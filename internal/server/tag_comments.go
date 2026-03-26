@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
+	"press/internal/auth"
 	"press/internal/errors"
 	"press/internal/template"
 )
@@ -12,8 +14,8 @@ import (
 // comment from the current scope (bound by {each comments as comment}),
 // pushes its view fields into a child scope, and injects the comment
 // ID as an engine attribute on the wrapper element.
-func (s *Server) tagComment(ctx *template.RenderContext) (string, error) {
-	val, ok := ctx.Scope.Lookup("comment")
+func (s *Server) tagComment(ctx context.Context, scope *template.Scope, attrs map[string]string) (string, error) {
+	val, ok := scope.Lookup("comment")
 	if !ok {
 		return "", errors.New(errors.ErrTemplateRender, "<comment />: no comment in scope", http.StatusInternalServerError)
 	}
@@ -26,18 +28,39 @@ func (s *Server) tagComment(ctx *template.RenderContext) (string, error) {
 		"id": fmt.Sprintf("comment-%d", comment.ID),
 	}
 
-	return s.theme.RenderTagScoped(ctx.Scope, "comment", ctx.Attrs, engineAttrs, comment)
+	return s.theme.RenderTagScoped(ctx, scope, "comment", attrs, engineAttrs, comment)
 }
 
 // tagCommentList renders a <comment-list /> vocabulary tag.
 // Comments are resolved from the parent scope chain.
-func (s *Server) tagCommentList(ctx *template.RenderContext) (string, error) {
-	return s.theme.RenderTagScoped(ctx.Scope, "comment-list", ctx.Attrs, nil, nil)
+func (s *Server) tagCommentList(ctx context.Context, scope *template.Scope, attrs map[string]string) (string, error) {
+	return s.theme.RenderTagScoped(ctx, scope, "comment-list", attrs, nil, nil)
 }
 
-// tagCommentForm renders a <comment-form /> vocabulary tag.
-// Form data (comments_open, post_id, saved fields) resolves from
-// the parent scope chain.
-func (s *Server) tagCommentForm(ctx *template.RenderContext) (string, error) {
-	return s.theme.RenderTagScoped(ctx.Scope, "comment-form", ctx.Attrs, nil, nil)
+// tagCommentForm renders a <comment-form /> vocabulary tag. It resolves
+// the post ID from scope and generates a CSRF token from the request
+// context, pushing both into a child scope for the molecule template.
+//
+// TODO: The form element, htmx attributes, and hidden fields are
+// currently in the molecule template. When the render pipeline moves
+// to AST → AST → render, the handler should build the <form> node
+// with engine concerns and graft the themed field layout as children.
+func (s *Server) tagCommentForm(ctx context.Context, scope *template.Scope, attrs map[string]string) (string, error) {
+	postIDVal, _ := scope.Lookup("post_id")
+	postID, _ := postIDVal.(int64)
+
+	csrf := auth.CSRFFromContext(ctx)
+
+	data := commentFormData{
+		PostID:    postID,
+		CSRFToken: csrf.Token(fmt.Sprintf("comment-%d", postID)),
+	}
+
+	return s.theme.RenderTagScoped(ctx, scope, "comment-form", attrs, nil, data)
+}
+
+// commentFormData is pushed into scope for the comment-form molecule.
+type commentFormData struct {
+	PostID    int64  `view:"post_id"`
+	CSRFToken string `view:"csrf_token"`
 }

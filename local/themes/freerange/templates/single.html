@@ -8,7 +8,14 @@
 <div id="content">
     <post />
     <comment-list />
-    <comment-form />
+    {if comments_open}
+    <div class="comment-respond">
+        <h2>Leave a comment</h2>
+        <comment-form />
+    </div>
+    {else}
+    <p class="comments-closed">Comments are closed.</p>
+    {/if}
     <post-navigation />
 </div>
 
