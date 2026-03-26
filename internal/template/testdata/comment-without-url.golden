@@ -1,0 +1,14 @@
+(document
+  (element "div" (class "comment")
+    (element "p" (class "comment-meta")
+      (element "strong"
+        (text "Charlie")
+      )
+      (text "\n        | ")
+      (text "January 4, 2004")
+    )
+    (element "div" (class "comment-content")
+      (raw "<p>No website.</p>")
+    )
+  )
+)

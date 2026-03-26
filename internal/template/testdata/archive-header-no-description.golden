@@ -1,0 +1,7 @@
+(document
+  (element "div" (class "archive-header")
+    (element "h2"
+      (text "January 2004")
+    )
+  )
+)

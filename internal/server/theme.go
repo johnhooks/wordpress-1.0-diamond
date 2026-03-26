@@ -20,7 +20,7 @@ type Theme struct {
 	dir       string
 	devMode   bool
 	templates map[string]*parse.Node
-	handlers  map[string]template.TagHandler
+	handlers  map[string]template.TagNodeHandler
 }
 
 // themeDirs is the search order for template directories.
@@ -36,7 +36,7 @@ func LoadTheme(dir string, devMode bool) (*Theme, error) {
 	th := &Theme{
 		dir:      dir,
 		devMode:  devMode,
-		handlers: make(map[string]template.TagHandler),
+		handlers: make(map[string]template.TagNodeHandler),
 	}
 
 	all := make(map[string]*parse.Node)
@@ -61,8 +61,14 @@ func LoadTheme(dir string, devMode bool) (*Theme, error) {
 }
 
 // RegisterHandler registers a vocabulary tag handler.
-func (th *Theme) RegisterHandler(name string, handler template.TagHandler) {
+func (th *Theme) RegisterHandler(name string, handler template.TagNodeHandler) {
 	th.handlers[name] = handler
+}
+
+// ResolveTag implements template.TagResolver.
+func (th *Theme) ResolveTag(name string) (template.TagNodeHandler, bool) {
+	h, ok := th.handlers[name]
+	return h, ok
 }
 
 // Render writes the document shell and renders the named page template
@@ -97,8 +103,16 @@ func (th *Theme) Render(w io.Writer, ctx context.Context, name string, data any)
 		return err
 	}
 
-	// Render the page template as body content.
-	if err := template.Walk(w, ctx, doc, data, th.handlers, nil); err != nil {
+	// Put the tag resolver on the context so the evaluator can
+	// dispatch vocabulary tags to handlers.
+	ctx = template.WithTagResolver(ctx, th)
+
+	// Evaluate the page template into a plain HTML AST, then render.
+	result, err := template.Evaluate(ctx, doc, data)
+	if err != nil {
+		return err
+	}
+	if err := parse.Render(w, result); err != nil {
 		return err
 	}
 
@@ -107,32 +121,30 @@ func (th *Theme) Render(w io.Writer, ctx context.Context, name string, data any)
 	return err
 }
 
-// RenderTagScoped loads a sub-template by name, creates a child scope
-// with data fields flattened as variables, merges engine and caller
-// attributes into the wrapper element, and renders within the shaped
-// scope. This is the primary rendering path for vocabulary tag handlers.
-func (th *Theme) RenderTagScoped(
+// EvalTagTemplate loads a sub-template by name, evaluates it with a
+// child scope from data, merges engine and caller attributes onto the
+// output wrapper element, and returns the result node tree.
+func (th *Theme) EvalTagTemplate(
 	ctx context.Context,
-	parentScope *template.Scope,
+	ev *template.Evaluator,
 	name string,
 	callerAttrs map[string]string,
 	engineAttrs map[string]string,
 	data any,
-) (string, error) {
+) (*parse.Node, error) {
 	doc, err := th.getTemplate(name)
 	if err != nil {
-		return "", errors.Wrap(err, errors.ErrTemplateRender, fmt.Sprintf("tag template %q", name), http.StatusInternalServerError)
+		return nil, errors.Wrap(err, errors.ErrTemplateRender, fmt.Sprintf("tag template %q", name), http.StatusInternalServerError)
 	}
 
-	// Find the wrapper element (first element child of the document).
-	wrapper := firstElementChild(doc)
-	if wrapper != nil {
-		// Clone the attribute slice to prevent mutation of cached ASTs.
-		cloned := make([]parse.Attribute, len(wrapper.Attr))
-		copy(cloned, wrapper.Attr)
-		wrapper.Attr = cloned
+	result, err := ev.EvaluateScoped(doc, data)
+	if err != nil {
+		return nil, err
+	}
 
-		// Engine attributes first (id, role, hx-*), then caller overrides.
+	// Merge attributes on the output tree's wrapper element.
+	wrapper := firstElementChild(result)
+	if wrapper != nil {
 		if len(engineAttrs) > 0 {
 			mergeAttrs(wrapper, engineAttrs)
 		}
@@ -141,13 +153,21 @@ func (th *Theme) RenderTagScoped(
 		}
 	}
 
-	child := parentScope.PushData(data)
+	return result, nil
+}
 
-	var buf strings.Builder
-	if err := template.WalkWithScope(&buf, ctx, doc, child, th.handlers); err != nil {
-		return "", err
+// attrsFromNode extracts a map of attribute key-value pairs from a
+// parsed element node. Used by tag handlers to pass caller attributes
+// through to sub-templates.
+func attrsFromNode(el *parse.Node) map[string]string {
+	if len(el.Attr) == 0 {
+		return nil
 	}
-	return buf.String(), nil
+	attrs := make(map[string]string, len(el.Attr))
+	for _, a := range el.Attr {
+		attrs[a.Key] = a.Val
+	}
+	return attrs
 }
 
 func (th *Theme) getTemplate(name string) (*parse.Node, error) {

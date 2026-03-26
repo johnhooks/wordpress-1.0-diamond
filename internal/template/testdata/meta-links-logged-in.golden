@@ -1,0 +1,19 @@
+(document
+  (element "div" (class "widget widget-meta")
+    (element "h2"
+      (text "Meta")
+    )
+    (element "ul"
+      (element "li"
+        (element "a" (href "/wp-admin/")
+          (text "Dashboard")
+        )
+      )
+      (element "li"
+        (element "a" (href "/wp-login.php?action=logout")
+          (text "Log out")
+        )
+      )
+    )
+  )
+)

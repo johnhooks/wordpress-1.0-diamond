@@ -1,0 +1,19 @@
+(document
+  (element "div" (class "widget widget-categories")
+    (element "h2"
+      (text "Categories")
+    )
+    (element "ul"
+      (element "li"
+        (element "a" (href "/category/uncategorized")
+          (text "Uncategorized")
+        )
+      )
+      (element "li"
+        (element "a" (href "/category/news")
+          (text "News")
+        )
+      )
+    )
+  )
+)

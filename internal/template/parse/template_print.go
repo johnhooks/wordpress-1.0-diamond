@@ -63,6 +63,10 @@ func sprintNode(sb *strings.Builder, n *Node, depth int) {
 		fmt.Fprintf(sb, "%s(doctype %q)", indent, n.Data)
 		sb.WriteByte('\n')
 		return
+	case RawNode:
+		fmt.Fprintf(sb, "%s(raw %q)", indent, n.Data)
+		sb.WriteByte('\n')
+		return
 	case ExpressionNode:
 		fmt.Fprintf(sb, "%s(expr ", indent)
 		sprintTemplateExpr(sb, n)

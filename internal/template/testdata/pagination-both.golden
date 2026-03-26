@@ -1,0 +1,10 @@
+(document
+  (element "nav" (class "pagination")
+    (element "a" (href "/page/1") (class "prev")
+      (text "« Previous")
+    )
+    (element "a" (href "/page/3") (class "next")
+      (text "Next »")
+    )
+  )
+)

@@ -1,0 +1,19 @@
+(document
+  (element "div" (class "widget widget-pages")
+    (element "h2"
+      (text "Pages")
+    )
+    (element "ul"
+      (element "li"
+        (element "a" (href "/about")
+          (text "About")
+        )
+      )
+      (element "li"
+        (element "a" (href "/contact")
+          (text "Contact")
+        )
+      )
+    )
+  )
+)

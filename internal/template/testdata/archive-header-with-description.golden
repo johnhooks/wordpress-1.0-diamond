@@ -1,0 +1,10 @@
+(document
+  (element "div" (class "archive-header")
+    (element "h2"
+      (text "January 2004")
+    )
+    (element "p" (class "archive-description")
+      (text "Posts from January.")
+    )
+  )
+)
