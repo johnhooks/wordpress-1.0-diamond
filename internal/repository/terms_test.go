@@ -129,13 +129,17 @@ func TestTermsRepository_PostTerms(t *testing.T) {
 
 	term := &model.Term{Name: "Go", Slug: "go"}
 	tt := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, term, tt)
+	if err := terms.Create(ctx, term, tt); err != nil {
+		t.Fatal(err)
+	}
 
 	post := &model.Post{
 		PostAuthor: 1, PostTitle: "Go Post", PostName: "go-post",
 		PostContent: "test", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
 
 	// AddTermToPost
 	if err := terms.AddTermToPost(ctx, post.ID, tt.TermTaxonomyID); err != nil {
@@ -160,7 +164,9 @@ func TestTermsRepository_PostTerms(t *testing.T) {
 	}
 
 	// AddTermToPost again (idempotent)
-	terms.AddTermToPost(ctx, post.ID, tt.TermTaxonomyID)
+	if err := terms.AddTermToPost(ctx, post.ID, tt.TermTaxonomyID); err != nil {
+		t.Fatal(err)
+	}
 
 	// RemoveTermFromPost
 	if err := terms.RemoveTermFromPost(ctx, post.ID, tt.TermTaxonomyID); err != nil {
@@ -191,31 +197,43 @@ func TestTermsRepository_SetPostTerms(t *testing.T) {
 
 	cat1 := &model.Term{Name: "Go", Slug: "go"}
 	tt1 := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, cat1, tt1)
+	if err := terms.Create(ctx, cat1, tt1); err != nil {
+		t.Fatal(err)
+	}
 
 	cat2 := &model.Term{Name: "Rust", Slug: "rust"}
 	tt2 := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, cat2, tt2)
+	if err := terms.Create(ctx, cat2, tt2); err != nil {
+		t.Fatal(err)
+	}
 
 	cat3 := &model.Term{Name: "Python", Slug: "python"}
 	tt3 := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, cat3, tt3)
+	if err := terms.Create(ctx, cat3, tt3); err != nil {
+		t.Fatal(err)
+	}
 
 	post := &model.Post{
 		PostAuthor: 1, PostTitle: "Multi-cat", PostName: "multi-cat",
 		PostContent: "test", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
 
 	// Set to Go and Rust
-	terms.SetPostTerms(ctx, post.ID, []int64{tt1.TermTaxonomyID, tt2.TermTaxonomyID})
+	if err := terms.SetPostTerms(ctx, post.ID, []int64{tt1.TermTaxonomyID, tt2.TermTaxonomyID}); err != nil {
+		t.Fatal(err)
+	}
 	postTerms, _ := terms.GetPostTerms(ctx, post.ID, "category")
 	if len(postTerms) != 2 {
 		t.Errorf("expected 2 terms, got %d", len(postTerms))
 	}
 
 	// Replace with just Python
-	terms.SetPostTerms(ctx, post.ID, []int64{tt3.TermTaxonomyID})
+	if err := terms.SetPostTerms(ctx, post.ID, []int64{tt3.TermTaxonomyID}); err != nil {
+		t.Fatal(err)
+	}
 	postTerms, _ = terms.GetPostTerms(ctx, post.ID, "category")
 	if len(postTerms) != 1 {
 		t.Errorf("expected 1 term after replace, got %d", len(postTerms))
@@ -241,15 +259,21 @@ func TestTermsRepository_ParentFilter(t *testing.T) {
 
 	parent := &model.Term{Name: "Programming", Slug: "programming"}
 	parentTT := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, parent, parentTT)
+	if err := terms.Create(ctx, parent, parentTT); err != nil {
+		t.Fatal(err)
+	}
 
 	child := &model.Term{Name: "Go", Slug: "go"}
 	childTT := &model.TermTaxonomy{Taxonomy: "category", Parent: parentTT.TermTaxonomyID}
-	terms.Create(ctx, child, childTT)
+	if err := terms.Create(ctx, child, childTT); err != nil {
+		t.Fatal(err)
+	}
 
 	toplevel := &model.Term{Name: "News", Slug: "news"}
 	toplevelTT := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, toplevel, toplevelTT)
+	if err := terms.Create(ctx, toplevel, toplevelTT); err != nil {
+		t.Fatal(err)
+	}
 
 	// Filter by parent=0 (top level)
 	result, err := terms.List(ctx, query.Query{
@@ -289,11 +313,15 @@ func TestTermsRepository_MultipleTaxonomies(t *testing.T) {
 
 	cat := &model.Term{Name: "Tech", Slug: "tech"}
 	catTT := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, cat, catTT)
+	if err := terms.Create(ctx, cat, catTT); err != nil {
+		t.Fatal(err)
+	}
 
 	linkCat := &model.Term{Name: "Blogroll", Slug: "blogroll"}
 	linkTT := &model.TermTaxonomy{Taxonomy: "link_category"}
-	terms.Create(ctx, linkCat, linkTT)
+	if err := terms.Create(ctx, linkCat, linkTT); err != nil {
+		t.Fatal(err)
+	}
 
 	result, _ := terms.List(ctx, query.Query{
 		Filters: []query.Filter{{Field: "taxonomy", Operator: query.Is, Value: "category"}},
@@ -349,8 +377,12 @@ func TestTermsRepository_DefaultCategoryProtection(t *testing.T) {
 
 	term := &model.Term{Name: "Default", Slug: "default"}
 	tt := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, term, tt)
-	options.Set(ctx, "default_category", fmt.Sprintf("%d", term.TermID), "yes")
+	if err := terms.Create(ctx, term, tt); err != nil {
+		t.Fatal(err)
+	}
+	if err := options.Set(ctx, "default_category", fmt.Sprintf("%d", term.TermID), "yes"); err != nil {
+		t.Fatal(err)
+	}
 
 	_, err := terms.Delete(ctx, term.TermID)
 	if !errors.IsCode(err, repository.ErrDefaultCategory) {
@@ -370,13 +402,19 @@ func TestTermsRepository_DeleteReassignsChildren(t *testing.T) {
 
 	parent := &model.Term{Name: "Parent", Slug: "parent"}
 	parentTT := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, parent, parentTT)
+	if err := terms.Create(ctx, parent, parentTT); err != nil {
+		t.Fatal(err)
+	}
 
 	child := &model.Term{Name: "Child", Slug: "child"}
 	childTT := &model.TermTaxonomy{Taxonomy: "category", Parent: parentTT.TermTaxonomyID}
-	terms.Create(ctx, child, childTT)
+	if err := terms.Create(ctx, child, childTT); err != nil {
+		t.Fatal(err)
+	}
 
-	terms.Delete(ctx, parent.TermID)
+	if _, err := terms.Delete(ctx, parent.TermID); err != nil {
+		t.Fatal(err)
+	}
 
 	childTTGot, err := terms.GetTaxonomy(ctx, child.TermID, "category")
 	if err != nil {
@@ -395,15 +433,23 @@ func TestTermsRepository_HideEmpty(t *testing.T) {
 
 	used := &model.Term{Name: "Used", Slug: "used"}
 	usedTT := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, used, usedTT)
+	if err := terms.Create(ctx, used, usedTT); err != nil {
+		t.Fatal(err)
+	}
 
 	empty := &model.Term{Name: "Empty", Slug: "empty"}
 	emptyTT := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, empty, emptyTT)
+	if err := terms.Create(ctx, empty, emptyTT); err != nil {
+		t.Fatal(err)
+	}
 
 	post := &model.Post{PostAuthor: 1, PostTitle: "P", PostName: "p", PostContent: "x", PostStatus: "publish", PostType: "post"}
-	posts.Create(ctx, post)
-	terms.AddTermToPost(ctx, post.ID, usedTT.TermTaxonomyID)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
+	if err := terms.AddTermToPost(ctx, post.ID, usedTT.TermTaxonomyID); err != nil {
+		t.Fatal(err)
+	}
 
 	// Without hide_empty
 	result, _ := terms.List(ctx, query.Query{
@@ -438,9 +484,15 @@ func TestTermsRepository_Search(t *testing.T) {
 	terms := repository.NewTermsRepository(database)
 	ctx := context.Background()
 
-	terms.Create(ctx, &model.Term{Name: "Go Programming", Slug: "go-programming"}, &model.TermTaxonomy{Taxonomy: "category"})
-	terms.Create(ctx, &model.Term{Name: "Rust Language", Slug: "rust-language"}, &model.TermTaxonomy{Taxonomy: "category"})
-	terms.Create(ctx, &model.Term{Name: "Go Modules", Slug: "go-modules"}, &model.TermTaxonomy{Taxonomy: "category"})
+	if err := terms.Create(ctx, &model.Term{Name: "Go Programming", Slug: "go-programming"}, &model.TermTaxonomy{Taxonomy: "category"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := terms.Create(ctx, &model.Term{Name: "Rust Language", Slug: "rust-language"}, &model.TermTaxonomy{Taxonomy: "category"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := terms.Create(ctx, &model.Term{Name: "Go Modules", Slug: "go-modules"}, &model.TermTaxonomy{Taxonomy: "category"}); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := terms.List(ctx, query.Query{
 		Filters: []query.Filter{{Field: "taxonomy", Operator: query.Is, Value: "category"}},
@@ -460,7 +512,9 @@ func TestTermsRepository_GetByName(t *testing.T) {
 	terms := repository.NewTermsRepository(database)
 	ctx := context.Background()
 
-	terms.Create(ctx, &model.Term{Name: "JavaScript", Slug: "javascript"}, &model.TermTaxonomy{Taxonomy: "category"})
+	if err := terms.Create(ctx, &model.Term{Name: "JavaScript", Slug: "javascript"}, &model.TermTaxonomy{Taxonomy: "category"}); err != nil {
+		t.Fatal(err)
+	}
 
 	got, err := terms.GetByName(ctx, "JavaScript", "category")
 	if err != nil {

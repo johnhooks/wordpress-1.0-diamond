@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"press/internal/query"
 	"press/internal/model"
+	"press/internal/query"
 	"press/internal/repository"
 
 	"github.com/spf13/cobra"
@@ -39,7 +39,7 @@ var commentCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		comments := repository.NewCommentsRepository(db)
@@ -85,7 +85,7 @@ var commentGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		comments := repository.NewCommentsRepository(db)
@@ -122,7 +122,7 @@ var commentListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		comments := repository.NewCommentsRepository(db)
@@ -186,7 +186,7 @@ var commentDeleteCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		comments := repository.NewCommentsRepository(db)

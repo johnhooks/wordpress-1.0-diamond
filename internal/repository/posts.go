@@ -123,14 +123,27 @@ func (r *PostsRepository) List(ctx context.Context, q query.Query) (*query.Resul
 	args := []any{}
 	wheres := []string{}
 
-	// Special: category filter adds JOINs
+	// Special filters that need JOINs or SQLite functions.
 	join := ""
 	for _, f := range q.Filters {
-		if f.Field == "category" && f.Operator == query.Is {
+		if f.Operator != query.Is {
+			continue
+		}
+		switch f.Field {
+		case "category":
 			join = `
 				JOIN wp_term_relationships tr ON p.id = tr.object_id
 				JOIN wp_term_taxonomy tt ON tr.term_taxonomy_id = tt.term_taxonomy_id`
 			wheres = append(wheres, "tt.term_id = ? AND tt.taxonomy = 'category'")
+			args = append(args, f.Value)
+		case "year":
+			wheres = append(wheres, "strftime('%Y', p.post_date) = ?")
+			args = append(args, f.Value)
+		case "month":
+			wheres = append(wheres, "strftime('%m', p.post_date) = ?")
+			args = append(args, f.Value)
+		case "day":
+			wheres = append(wheres, "strftime('%d', p.post_date) = ?")
 			args = append(args, f.Value)
 		}
 	}
@@ -216,7 +229,7 @@ func (r *PostsRepository) Delete(ctx context.Context, id int64) (*model.Post, er
 	if err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if _, err := tx.ExecContext(ctx, "DELETE FROM wp_postmeta WHERE post_id = ?", id); err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)

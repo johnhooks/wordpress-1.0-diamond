@@ -24,7 +24,7 @@ var optionGetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		options := repository.NewOptionsRepository(db)
@@ -47,7 +47,7 @@ var optionSetCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		options := repository.NewOptionsRepository(db)
@@ -68,7 +68,7 @@ var optionListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		options := repository.NewOptionsRepository(db)

@@ -143,20 +143,28 @@ func TestCommentsRepository_ListFilters(t *testing.T) {
 		PostAuthor: 1, PostTitle: "Post 2", PostName: "post-2",
 		PostContent: "test2", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post2)
+	if err := posts.Create(ctx, post2); err != nil {
+		t.Fatal(err)
+	}
 
-	comments.Create(ctx, &model.Comment{
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post1.ID, CommentAuthor: "Alice",
 		CommentContent: "First", CommentApproved: "1", CommentType: "comment",
-	})
-	comments.Create(ctx, &model.Comment{
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post1.ID, CommentAuthor: "Bob",
 		CommentContent: "Pending", CommentApproved: "0", CommentType: "comment",
-	})
-	comments.Create(ctx, &model.Comment{
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post2.ID, CommentAuthor: "Carol",
 		CommentContent: "Other post", CommentApproved: "1", CommentType: "comment",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	// Filter by post
 	result, err := comments.List(ctx, query.Query{
@@ -218,10 +226,12 @@ func TestCommentsRepository_UnapprovedCreate(t *testing.T) {
 
 	post := createTestPost(t, ctx, posts)
 
-	comments.Create(ctx, &model.Comment{
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Spammer",
 		CommentContent: "buy stuff", CommentApproved: "0", CommentType: "comment",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	updatedPost, _ := posts.GetByID(ctx, post.ID)
 	if updatedPost.CommentCount != 0 {
@@ -241,7 +251,9 @@ func TestCommentsRepository_UpdateSyncsCount(t *testing.T) {
 		CommentPostID: post.ID, CommentAuthor: "A",
 		CommentContent: "hi", CommentApproved: "1", CommentType: "comment",
 	}
-	comments.Create(ctx, c)
+	if err := comments.Create(ctx, c); err != nil {
+		t.Fatal(err)
+	}
 
 	p, _ := posts.GetByID(ctx, post.ID)
 	if p.CommentCount != 1 {
@@ -250,7 +262,9 @@ func TestCommentsRepository_UpdateSyncsCount(t *testing.T) {
 
 	// Unapprove via Update()
 	c.CommentApproved = "0"
-	comments.Update(ctx, c)
+	if _, err := comments.Update(ctx, c); err != nil {
+		t.Fatal(err)
+	}
 	p, _ = posts.GetByID(ctx, post.ID)
 	if p.CommentCount != 0 {
 		t.Errorf("expected count 0 after Update unapprove, got %d", p.CommentCount)
@@ -258,7 +272,9 @@ func TestCommentsRepository_UpdateSyncsCount(t *testing.T) {
 
 	// Re-approve via Update()
 	c.CommentApproved = "1"
-	comments.Update(ctx, c)
+	if _, err := comments.Update(ctx, c); err != nil {
+		t.Fatal(err)
+	}
 	p, _ = posts.GetByID(ctx, post.ID)
 	if p.CommentCount != 1 {
 		t.Errorf("expected count 1 after Update approve, got %d", p.CommentCount)
@@ -277,16 +293,22 @@ func TestCommentsRepository_DeleteReparentsChildren(t *testing.T) {
 		CommentPostID: post.ID, CommentAuthor: "Parent",
 		CommentContent: "parent", CommentApproved: "1", CommentType: "comment",
 	}
-	comments.Create(ctx, parent)
+	if err := comments.Create(ctx, parent); err != nil {
+		t.Fatal(err)
+	}
 
 	child := &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Child",
 		CommentContent: "child", CommentApproved: "1", CommentType: "comment",
 		CommentParent: parent.CommentID,
 	}
-	comments.Create(ctx, child)
+	if err := comments.Create(ctx, child); err != nil {
+		t.Fatal(err)
+	}
 
-	comments.Delete(ctx, parent.CommentID)
+	if _, err := comments.Delete(ctx, parent.CommentID); err != nil {
+		t.Fatal(err)
+	}
 
 	got, err := comments.GetByID(ctx, child.CommentID)
 	if err != nil {
@@ -310,10 +332,16 @@ func TestCommentsRepository_DeleteCascadesMeta(t *testing.T) {
 		CommentPostID: post.ID, CommentAuthor: "Metauser",
 		CommentContent: "with meta", CommentApproved: "1", CommentType: "comment",
 	}
-	comments.Create(ctx, comment)
+	if err := comments.Create(ctx, comment); err != nil {
+		t.Fatal(err)
+	}
 
-	meta.Set(ctx, comment.CommentID, "rating", "5")
-	meta.Set(ctx, comment.CommentID, "flagged", "false")
+	if err := meta.Set(ctx, comment.CommentID, "rating", "5"); err != nil {
+		t.Fatal(err)
+	}
+	if err := meta.Set(ctx, comment.CommentID, "flagged", "false"); err != nil {
+		t.Fatal(err)
+	}
 
 	// Verify meta exists
 	all, _ := meta.GetAll(ctx, comment.CommentID)
@@ -344,14 +372,18 @@ func TestCommentsRepository_DeleteUnapprovedSkipsCountUpdate(t *testing.T) {
 		CommentPostID: post.ID, CommentAuthor: "Good",
 		CommentContent: "approved", CommentApproved: "1", CommentType: "comment",
 	}
-	comments.Create(ctx, approved)
+	if err := comments.Create(ctx, approved); err != nil {
+		t.Fatal(err)
+	}
 
 	// Create unapproved comment
 	unapproved := &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Pending",
 		CommentContent: "pending", CommentApproved: "0", CommentType: "comment",
 	}
-	comments.Create(ctx, unapproved)
+	if err := comments.Create(ctx, unapproved); err != nil {
+		t.Fatal(err)
+	}
 
 	p, _ := posts.GetByID(ctx, post.ID)
 	if p.CommentCount != 1 {
@@ -377,14 +409,18 @@ func TestCommentsRepository_TypeFilter(t *testing.T) {
 
 	post := createTestPost(t, ctx, posts)
 
-	comments.Create(ctx, &model.Comment{
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "User",
 		CommentContent: "a comment", CommentApproved: "1", CommentType: "comment",
-	})
-	comments.Create(ctx, &model.Comment{
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Pinger",
 		CommentContent: "pingback", CommentApproved: "1", CommentType: "pingback",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := comments.List(ctx, query.Query{
 		Filters: []query.Filter{{Field: "type", Operator: query.Is, Value: "comment"}},
@@ -418,17 +454,23 @@ func TestCommentsRepository_ParentFilter(t *testing.T) {
 		CommentPostID: post.ID, CommentAuthor: "Parent",
 		CommentContent: "top level", CommentApproved: "1", CommentType: "comment",
 	}
-	comments.Create(ctx, parent)
+	if err := comments.Create(ctx, parent); err != nil {
+		t.Fatal(err)
+	}
 
-	comments.Create(ctx, &model.Comment{
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Child",
 		CommentContent: "reply", CommentApproved: "1", CommentType: "comment",
 		CommentParent: parent.CommentID,
-	})
-	comments.Create(ctx, &model.Comment{
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Other",
 		CommentContent: "top level 2", CommentApproved: "1", CommentType: "comment",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	// Top-level only
 	result, err := comments.List(ctx, query.Query{
@@ -460,16 +502,20 @@ func TestCommentsRepository_AuthorEmailFilter(t *testing.T) {
 
 	post := createTestPost(t, ctx, posts)
 
-	comments.Create(ctx, &model.Comment{
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Alice",
 		CommentAuthorEmail: "alice@example.com",
-		CommentContent: "hi", CommentApproved: "1", CommentType: "comment",
-	})
-	comments.Create(ctx, &model.Comment{
+		CommentContent:     "hi", CommentApproved: "1", CommentType: "comment",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Bob",
 		CommentAuthorEmail: "bob@example.com",
-		CommentContent: "hey", CommentApproved: "1", CommentType: "comment",
-	})
+		CommentContent:     "hey", CommentApproved: "1", CommentType: "comment",
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := comments.List(ctx, query.Query{
 		Filters: []query.Filter{{Field: "email", Operator: query.Is, Value: "alice@example.com"}},

@@ -39,12 +39,12 @@ These components appear on every page.
 
 The blog's identity. Title and description.
 
-| Prop | Type | Description |
-|---|---|---|
-| `SiteName` | string | Blog title |
+| Prop              | Type   | Description  |
+| ----------------- | ------ | ------------ |
+| `SiteName`        | string | Blog title   |
 | `SiteDescription` | string | Blog tagline |
-| `SiteURL` | string | Home URL |
-| `FeedURL` | string | RSS feed URL |
+| `SiteURL`         | string | Home URL     |
+| `FeedURL`         | string | RSS feed URL |
 
 **Actions:** None.
 **Regions:** None.
@@ -54,10 +54,10 @@ The blog's identity. Title and description.
 
 Credit line and meta.
 
-| Prop | Type | Description |
-|---|---|---|
-| `SiteName` | string | Blog title |
-| `FeedURL` | string | RSS feed URL |
+| Prop              | Type   | Description           |
+| ----------------- | ------ | --------------------- |
+| `SiteName`        | string | Blog title            |
+| `FeedURL`         | string | RSS feed URL          |
 | `CommentsFeedURL` | string | Comments RSS feed URL |
 
 **Actions:** None.
@@ -72,8 +72,8 @@ components in whatever order it chooses.
 
 **Regions:**
 
-| Region | Description |
-|---|---|
+| Region    | Description                                           |
+| --------- | ----------------------------------------------------- |
 | `sidebar` | The sidebar area, targetable for full sidebar refresh |
 
 **Context:** Every page (though a theme may choose to omit it).
@@ -87,40 +87,40 @@ sidebar in any order, or anywhere else on the page.
 
 ### SearchForm
 
-| Prop | Type | Description |
-|---|---|---|
+| Prop     | Type   | Description                                                   |
+| -------- | ------ | ------------------------------------------------------------- |
 | `Query?` | string | Current search query (pre-fills input on search results page) |
 
 **Actions:**
 
-| Action | Trigger | Description |
-|---|---|---|
+| Action   | Trigger     | Description          |
+| -------- | ----------- | -------------------- |
 | `search` | form submit | Submits search query |
 
 **Fields:**
 
-| Field | Name | Type | Description |
-|---|---|---|---|
-| `query` | `s` | text input | The search terms |
+| Field   | Name | Type       | Description      |
+| ------- | ---- | ---------- | ---------------- |
+| `query` | `s`  | text input | The search terms |
 
 **Regions:** None.
 **Context:** Every page (typically sidebar). Also embedded in search results and 404.
 
 ### CategoryList
 
-| Prop | Type | Description |
-|---|---|---|
-| `Categories` | []Category | All categories |
-| `CurrentCategory?` | string | Active category slug (on category archive pages) |
+| Prop               | Type       | Description                                      |
+| ------------------ | ---------- | ------------------------------------------------ |
+| `Categories`       | []Category | All categories                                   |
+| `CurrentCategory?` | string     | Active category slug (on category archive pages) |
 
 Where `Category` is:
 
-| Field | Type | Description |
-|---|---|---|
-| `Name` | string | Display name |
-| `Slug` | string | URL slug |
-| `URL` | string | Category archive URL |
-| `Count` | int | Number of posts |
+| Field     | Type   | Description                          |
+| --------- | ------ | ------------------------------------ |
+| `Name`    | string | Display name                         |
+| `Slug`    | string | URL slug                             |
+| `URL`     | string | Category archive URL                 |
+| `Count`   | int    | Number of posts                      |
 | `Parent?` | string | Parent category slug (for hierarchy) |
 
 **Actions:** None (plain links).
@@ -129,18 +129,18 @@ Where `Category` is:
 
 ### ArchiveList
 
-| Prop | Type | Description |
-|---|---|---|
-| `Archives` | []ArchiveMonth | Monthly archives |
-| `CurrentArchive?` | string | Active archive period (on date archive pages) |
+| Prop              | Type           | Description                                   |
+| ----------------- | -------------- | --------------------------------------------- |
+| `Archives`        | []ArchiveMonth | Monthly archives                              |
+| `CurrentArchive?` | string         | Active archive period (on date archive pages) |
 
 Where `ArchiveMonth` is:
 
-| Field | Type | Description |
-|---|---|---|
+| Field   | Type   | Description                    |
+| ------- | ------ | ------------------------------ |
 | `Label` | string | Display label ("January 2004") |
-| `URL` | string | Month archive URL |
-| `Count` | int | Number of posts |
+| `URL`   | string | Month archive URL              |
+| `Count` | int    | Number of posts                |
 
 **Actions:** None (plain links).
 **Regions:** None.
@@ -148,16 +148,16 @@ Where `ArchiveMonth` is:
 
 ### PageList
 
-| Prop | Type | Description |
-|---|---|---|
+| Prop    | Type       | Description     |
+| ------- | ---------- | --------------- |
 | `Pages` | []PageLink | Published pages |
 
 Where `PageLink` is:
 
-| Field | Type | Description |
-|---|---|---|
-| `Title` | string | Page title |
-| `URL` | string | Page URL |
+| Field   | Type   | Description |
+| ------- | ------ | ----------- |
+| `Title` | string | Page title  |
+| `URL`   | string | Page URL    |
 
 **Actions:** None (plain links).
 **Regions:** None.
@@ -165,15 +165,15 @@ Where `PageLink` is:
 
 ### MetaLinks
 
-| Prop | Type | Description |
-|---|---|---|
-| `FeedURL` | string | RSS feed URL |
-| `CommentsFeedURL` | string | Comments RSS feed URL |
-| `IsLoggedIn` | bool | Whether current user is authenticated |
-| `LoginURL` | string | Login page URL |
-| `LogoutURL?` | string | Logout URL (only when logged in) |
-| `AdminURL?` | string | Admin URL (only when logged in) |
-| `RegisterURL?` | string | Registration URL (only when logged out, if registration open) |
+| Prop              | Type   | Description                                                   |
+| ----------------- | ------ | ------------------------------------------------------------- |
+| `FeedURL`         | string | RSS feed URL                                                  |
+| `CommentsFeedURL` | string | Comments RSS feed URL                                         |
+| `IsLoggedIn`      | bool   | Whether current user is authenticated                         |
+| `LoginURL`        | string | Login page URL                                                |
+| `LogoutURL?`      | string | Logout URL (only when logged in)                              |
+| `AdminURL?`       | string | Admin URL (only when logged in)                               |
+| `RegisterURL?`    | string | Registration URL (only when logged out, if registration open) |
 
 **Actions:** None (plain links).
 **Regions:** None.
@@ -183,8 +183,8 @@ Where `PageLink` is:
 
 The contextual orientation message for archive and search pages.
 
-| Prop | Type | Description |
-|---|---|---|
+| Prop       | Type   | Description                                                 |
+| ---------- | ------ | ----------------------------------------------------------- |
 | `Message?` | string | Contextual message ("You are browsing the 'News' category") |
 
 **Actions:** None.
@@ -201,33 +201,34 @@ A single post. Appears in two modes: as a list item (home, archives,
 search) and as the full single post view. The same component, different
 context.
 
-| Prop | Type | Description |
-|---|---|---|
-| `ID` | int | Post ID |
-| `Title` | string | Post title |
-| `Content` | HTML | Rendered post body |
-| `Excerpt` | string | Plain text excerpt |
-| `Permalink` | string | Canonical URL |
-| `Date` | string | Formatted publication date |
-| `Time` | string | Formatted publication time |
-| `AuthorName` | string | Display name of author |
-| `AuthorURL?` | string | Author archive URL |
-| `Categories` | []CategoryLink | Post's categories as links |
-| `CommentCount` | int | Number of approved comments |
-| `CommentsOpen` | bool | Whether comments are accepted |
-| `EditURL?` | string | Edit link (only for authorized users) |
+| Prop           | Type           | Description                           |
+| -------------- | -------------- | ------------------------------------- |
+| `ID`           | int            | Post ID                               |
+| `Title`        | string         | Post title                            |
+| `Content`      | HTML           | Rendered post body                    |
+| `Excerpt`      | string         | Plain text excerpt                    |
+| `Permalink`    | string         | Canonical URL                         |
+| `Date`         | string         | Formatted publication date            |
+| `Time`         | string         | Formatted publication time            |
+| `AuthorName`   | string         | Display name of author                |
+| `AuthorURL?`   | string         | Author archive URL                    |
+| `Categories`   | []CategoryLink | Post's categories as links            |
+| `CommentCount` | int            | Number of approved comments           |
+| `CommentsOpen` | bool           | Whether comments are accepted         |
+| `EditURL?`     | string         | Edit link (only for authorized users) |
 
 Where `CategoryLink` is:
 
-| Field | Type | Description |
-|---|---|---|
+| Field  | Type   | Description           |
+| ------ | ------ | --------------------- |
 | `Name` | string | Category display name |
-| `URL` | string | Category archive URL |
+| `URL`  | string | Category archive URL  |
 
 **Actions:** None (post display is read-only).
 **Regions:** None.
 
 **Context:**
+
 - Home page: list mode, may use Content or Excerpt
 - Archives/search: list mode, typically Excerpt
 - Single post page: full mode, always Content
@@ -236,11 +237,11 @@ Where `CategoryLink` is:
 
 A static page. Similar to Post but without blog metadata.
 
-| Prop | Type | Description |
-|---|---|---|
-| `ID` | int | Page ID |
-| `Title` | string | Page title |
-| `Content` | HTML | Rendered page body |
+| Prop       | Type   | Description                           |
+| ---------- | ------ | ------------------------------------- |
+| `ID`       | int    | Page ID                               |
+| `Title`    | string | Page title                            |
+| `Content`  | HTML   | Rendered page body                    |
 | `EditURL?` | string | Edit link (only for authorized users) |
 
 **Actions:** None.
@@ -251,31 +252,31 @@ A static page. Similar to Post but without blog metadata.
 
 The list of comments on a post.
 
-| Prop | Type | Description |
-|---|---|---|
-| `Comments` | []Comment | Approved comments |
-| `PostTitle` | string | Title of the post (for "N responses to 'Title'") |
-| `CommentCount` | int | Total approved comments |
-| `Order` | string | `"oldest"` or `"newest"` — engine needs this for swap strategy |
+| Prop           | Type      | Description                                                    |
+| -------------- | --------- | -------------------------------------------------------------- |
+| `Comments`     | []Comment | Approved comments                                              |
+| `PostTitle`    | string    | Title of the post (for "N responses to 'Title'")               |
+| `CommentCount` | int       | Total approved comments                                        |
+| `Order`        | string    | `"oldest"` or `"newest"` — engine needs this for swap strategy |
 
 Where `Comment` is:
 
-| Field | Type | Description |
-|---|---|---|
-| `ID` | int | Comment ID |
-| `Author` | string | Commenter display name |
-| `AuthorURL?` | string | Commenter website |
-| `Date` | string | Formatted comment date |
-| `Content` | HTML | Rendered comment body |
-| `Type` | string | `"comment"`, `"trackback"`, or `"pingback"` |
-| `EditURL?` | string | Edit link (only for authorized users) |
+| Field        | Type   | Description                                 |
+| ------------ | ------ | ------------------------------------------- |
+| `ID`         | int    | Comment ID                                  |
+| `Author`     | string | Commenter display name                      |
+| `AuthorURL?` | string | Commenter website                           |
+| `Date`       | string | Formatted comment date                      |
+| `Content`    | HTML   | Rendered comment body                       |
+| `Type`       | string | `"comment"`, `"trackback"`, or `"pingback"` |
+| `EditURL?`   | string | Edit link (only for authorized users)       |
 
 **Actions:** None (display only; the form is a separate component).
 
 **Regions:**
 
-| Region | Description |
-|---|---|
+| Region         | Description                                       |
+| -------------- | ------------------------------------------------- |
 | `comment-list` | The list container — swap target for new comments |
 
 **Context:** Single post page.
@@ -284,29 +285,29 @@ Where `Comment` is:
 
 The form for submitting a comment.
 
-| Prop | Type | Description |
-|---|---|---|
-| `PostID` | int | ID of the post being commented on |
-| `CommentsOpen` | bool | Whether comments are accepted |
-| `RequireNameEmail` | bool | Whether name/email are required |
-| `SavedAuthor?` | string | Pre-filled author from cookie |
-| `SavedEmail?` | string | Pre-filled email from cookie |
-| `SavedURL?` | string | Pre-filled website URL from cookie |
+| Prop               | Type   | Description                        |
+| ------------------ | ------ | ---------------------------------- |
+| `PostID`           | int    | ID of the post being commented on  |
+| `CommentsOpen`     | bool   | Whether comments are accepted      |
+| `RequireNameEmail` | bool   | Whether name/email are required    |
+| `SavedAuthor?`     | string | Pre-filled author from cookie      |
+| `SavedEmail?`      | string | Pre-filled email from cookie       |
+| `SavedURL?`        | string | Pre-filled website URL from cookie |
 
 **Actions:**
 
-| Action | Trigger | Description |
-|---|---|---|
+| Action   | Trigger     | Description         |
+| -------- | ----------- | ------------------- |
 | `submit` | form submit | Submits the comment |
 
 **Fields:**
 
-| Field | Name | Type | Description |
-|---|---|---|---|
-| `author` | `author` | text input | Commenter name |
-| `email` | `email` | text input | Commenter email |
-| `url` | `url` | text input | Commenter website |
-| `comment` | `comment` | textarea | Comment body |
+| Field     | Name      | Type       | Description       |
+| --------- | --------- | ---------- | ----------------- |
+| `author`  | `author`  | text input | Commenter name    |
+| `email`   | `email`   | text input | Commenter email   |
+| `url`     | `url`     | text input | Commenter website |
+| `comment` | `comment` | textarea   | Comment body      |
 
 **Regions:** None.
 **Context:** Single post page, when CommentsOpen is true.
@@ -315,9 +316,9 @@ The form for submitting a comment.
 
 The 404 page content.
 
-| Prop | Type | Description |
-|---|---|---|
-| (none) | | |
+| Prop   | Type | Description |
+| ------ | ---- | ----------- |
+| (none) |      |             |
 
 This component has no dynamic data. The theme provides the error
 message and typically embeds a SearchForm.
@@ -334,14 +335,14 @@ message and typically embeds a SearchForm.
 
 Previous/next navigation for paged post lists.
 
-| Prop | Type | Description |
-|---|---|---|
-| `HasPrev` | bool | Whether a newer page exists |
-| `HasNext` | bool | Whether an older page exists |
-| `PrevURL` | string | URL for newer entries |
-| `NextURL` | string | URL for older entries |
-| `CurrentPage` | int | Current page number |
-| `TotalPages` | int | Total number of pages |
+| Prop          | Type   | Description                  |
+| ------------- | ------ | ---------------------------- |
+| `HasPrev`     | bool   | Whether a newer page exists  |
+| `HasNext`     | bool   | Whether an older page exists |
+| `PrevURL`     | string | URL for newer entries        |
+| `NextURL`     | string | URL for older entries        |
+| `CurrentPage` | int    | Current page number          |
+| `TotalPages`  | int    | Total number of pages        |
 
 **Actions:** None (plain links; htmx enhancement is engine-controlled).
 **Regions:** None.
@@ -352,17 +353,17 @@ Previous/next navigation for paged post lists.
 Previous/next navigation between individual posts on the single post
 page.
 
-| Prop | Type | Description |
-|---|---|---|
+| Prop        | Type     | Description           |
+| ----------- | -------- | --------------------- |
 | `PrevPost?` | PostLink | Previous (older) post |
-| `NextPost?` | PostLink | Next (newer) post |
+| `NextPost?` | PostLink | Next (newer) post     |
 
 Where `PostLink` is:
 
-| Field | Type | Description |
-|---|---|---|
-| `Title` | string | Post title |
-| `URL` | string | Post permalink |
+| Field   | Type   | Description    |
+| ------- | ------ | -------------- |
+| `Title` | string | Post title     |
+| `URL`   | string | Post permalink |
 
 **Actions:** None (plain links).
 **Regions:** None.
@@ -372,18 +373,18 @@ Where `PostLink` is:
 
 Navigation within a multi-page post (posts using `<!--nextpage-->`).
 
-| Prop | Type | Description |
-|---|---|---|
-| `Pages` | []PageNum | Page numbers |
-| `CurrentPage` | int | Active page |
+| Prop          | Type      | Description  |
+| ------------- | --------- | ------------ |
+| `Pages`       | []PageNum | Page numbers |
+| `CurrentPage` | int       | Active page  |
 
 Where `PageNum` is:
 
-| Field | Type | Description |
-|---|---|---|
-| `Number` | int | Page number |
-| `URL` | string | URL for this page |
-| `IsCurrent` | bool | Whether this is the active page |
+| Field       | Type   | Description                     |
+| ----------- | ------ | ------------------------------- |
+| `Number`    | int    | Page number                     |
+| `URL`       | string | URL for this page               |
+| `IsCurrent` | bool   | Whether this is the active page |
 
 **Actions:** None (plain links).
 **Regions:** None.
@@ -397,12 +398,13 @@ Archive pages need a heading that describes what the user is looking at.
 
 ### ArchiveHeader
 
-| Prop | Type | Description |
-|---|---|---|
-| `Title` | string | The archive heading text |
+| Prop           | Type   | Description                                       |
+| -------------- | ------ | ------------------------------------------------- |
+| `Title`        | string | The archive heading text                          |
 | `Description?` | string | Optional description (e.g., category description) |
 
 The engine provides a pre-formatted title based on the archive type:
+
 - Category: "Archive for the 'News' Category"
 - Month: "Archive for January 2004"
 - Year: "Archive for 2004"
@@ -422,14 +424,14 @@ Page templates compose components into full pages. These are not
 components themselves — they're the theme's arrangement of components
 for each page type.
 
-| Template | Required Components | Optional Components |
-|---|---|---|
-| Home | SiteHeader, Post (loop), Pagination, SiteFooter | Sidebar + widgets, ArchiveHeader |
-| Single Post | SiteHeader, Post, CommentList, CommentForm, SiteFooter | PostNavigation, PageNavigation, Sidebar + widgets |
-| Static Page | SiteHeader, Page, SiteFooter | Sidebar + widgets |
-| Archive | SiteHeader, ArchiveHeader, Post (loop), Pagination, SiteFooter | Sidebar + widgets, SidebarContext |
-| Search | SiteHeader, ArchiveHeader, Post (loop), Pagination, SiteFooter | SearchForm, Sidebar + widgets, SidebarContext |
-| 404 | SiteHeader, NotFoundMessage, SiteFooter | SearchForm, Sidebar + widgets |
+| Template    | Required Components                                            | Optional Components                               |
+| ----------- | -------------------------------------------------------------- | ------------------------------------------------- |
+| Home        | SiteHeader, Post (loop), Pagination, SiteFooter                | Sidebar + widgets, ArchiveHeader                  |
+| Single Post | SiteHeader, Post, CommentList, CommentForm, SiteFooter         | PostNavigation, PageNavigation, Sidebar + widgets |
+| Static Page | SiteHeader, Page, SiteFooter                                   | Sidebar + widgets                                 |
+| Archive     | SiteHeader, ArchiveHeader, Post (loop), Pagination, SiteFooter | Sidebar + widgets, SidebarContext                 |
+| Search      | SiteHeader, ArchiveHeader, Post (loop), Pagination, SiteFooter | SearchForm, Sidebar + widgets, SidebarContext     |
+| 404         | SiteHeader, NotFoundMessage, SiteFooter                        | SearchForm, Sidebar + widgets                     |
 
 "Required" means the page doesn't make sense without it. "Optional"
 means the theme can include it or not. The engine doesn't enforce this
@@ -470,25 +472,25 @@ takes shape.
 
 What exists today that maps to these contracts:
 
-| Contract | Current Code | Gap |
-|---|---|---|
-| Post props | `PostView` struct | Missing: Time, AuthorURL, CommentsOpen, EditURL, CategoryLink URLs |
-| Comment props | `CommentView` struct | Missing: Type, EditURL |
-| CommentList | Part of `SingleData` | Missing: Order, PostTitle for heading |
-| CommentForm | Not implemented | Everything |
-| Pagination | Part of `HomeData` | Missing: PrevURL, NextURL (has page numbers instead) |
-| PostNavigation | Not implemented | Everything |
-| SearchForm | Not implemented | Everything |
-| CategoryList | Not implemented | Data exists in repository, not wired to templates |
-| ArchiveList | Not implemented | Query exists, not wired to templates |
-| PageList | Not implemented | Query exists, not wired to templates |
-| MetaLinks | Not implemented | Everything |
-| SiteHeader | Partial (BlogName, no description in template) | Missing: SiteDescription in template |
-| SiteFooter | Partial | Missing: feed URLs |
-| ArchiveHeader | Not implemented | Everything |
-| SidebarContext | Not implemented | Everything |
-| NotFoundMessage | Not implemented | Everything |
-| Page | Not implemented | Everything |
+| Contract        | Current Code                                   | Gap                                                                |
+| --------------- | ---------------------------------------------- | ------------------------------------------------------------------ |
+| Post props      | `PostView` struct                              | Missing: Time, AuthorURL, CommentsOpen, EditURL, CategoryLink URLs |
+| Comment props   | `CommentView` struct                           | Missing: Type, EditURL                                             |
+| CommentList     | Part of `SingleData`                           | Missing: Order, PostTitle for heading                              |
+| CommentForm     | Not implemented                                | Everything                                                         |
+| Pagination      | Part of `HomeData`                             | Missing: PrevURL, NextURL (has page numbers instead)               |
+| PostNavigation  | Not implemented                                | Everything                                                         |
+| SearchForm      | Not implemented                                | Everything                                                         |
+| CategoryList    | Not implemented                                | Data exists in repository, not wired to templates                  |
+| ArchiveList     | Not implemented                                | Query exists, not wired to templates                               |
+| PageList        | Not implemented                                | Query exists, not wired to templates                               |
+| MetaLinks       | Not implemented                                | Everything                                                         |
+| SiteHeader      | Partial (BlogName, no description in template) | Missing: SiteDescription in template                               |
+| SiteFooter      | Partial                                        | Missing: feed URLs                                                 |
+| ArchiveHeader   | Not implemented                                | Everything                                                         |
+| SidebarContext  | Not implemented                                | Everything                                                         |
+| NotFoundMessage | Not implemented                                | Everything                                                         |
+| Page            | Not implemented                                | Everything                                                         |
 
 ---
 

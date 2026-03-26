@@ -46,6 +46,11 @@ const (
 	ErrUnauthorized = "unauthorized"
 	ErrForbidden    = "forbidden"
 
+	// Template
+	ErrTemplateSyntax = "template_syntax" // malformed template (unclosed blocks, forbidden elements)
+	ErrTemplateEval   = "template_eval"   // expression evaluation failure (undefined var, type mismatch)
+	ErrTemplateRender = "template_render" // rendering failure (handler error, uncompiled expression)
+
 	// Internal
 	ErrInternal    = "internal_error"
 	ErrQueryFailed = "query_failed"

@@ -14,16 +14,16 @@ A blog serves these distinct views. Each is a full HTML page composed
 from shared components (header, sidebar, footer) plus page-specific
 content.
 
-| Page | WP 1.0 | WP 1.5 | Description |
-|---|---|---|---|
-| Home | index.php | index.php | Recent posts, paginated |
-| Single Post | index.php (inline) | single.php | One post with comments |
-| Static Page | — | page.php | Title + content, no metadata |
-| Category Archive | index.php (filtered) | archive.php | Posts in a category |
-| Date Archive | index.php (filtered) | archive.php | Posts by year/month/day |
-| Author Archive | — | archive.php | Posts by author |
-| Search Results | index.php (filtered) | search.php | Posts matching a query |
-| 404 | — | 404.php | Not found |
+| Page             | WP 1.0               | WP 1.5      | Description                  |
+| ---------------- | -------------------- | ----------- | ---------------------------- |
+| Home             | index.php            | index.php   | Recent posts, paginated      |
+| Single Post      | index.php (inline)   | single.php  | One post with comments       |
+| Static Page      | —                    | page.php    | Title + content, no metadata |
+| Category Archive | index.php (filtered) | archive.php | Posts in a category          |
+| Date Archive     | index.php (filtered) | archive.php | Posts by year/month/day      |
+| Author Archive   | —                    | archive.php | Posts by author              |
+| Search Results   | index.php (filtered) | search.php  | Posts matching a query       |
+| 404              | —                    | 404.php     | Not found                    |
 
 Every page type shares the same shell: header, content area, sidebar,
 footer. The content area changes; the shell does not.
@@ -50,15 +50,15 @@ not navigation.
 The sidebar is the blog's navigation and discovery surface. It appears
 on every page. Contents:
 
-| Widget | WP 1.0 | WP 1.5 | Data Source |
-|---|---|---|---|
-| Search | text input + button | same | form → `?s=query` |
-| Categories | flat list, linked | hierarchical list | `wp_terms` |
-| Archives | monthly links with counts | same | `wp_posts` grouped by month |
-| Calendar | table, days with posts linked | same | `wp_posts` by day |
-| Links/Blogroll | categorized external links | same | `wp_links` |
-| Meta | RSS, login, register, validator | same + logout | `wp_options`, auth state |
-| Pages | — | list of static pages | `wp_posts` where type=page |
+| Widget         | WP 1.0                          | WP 1.5               | Data Source                 |
+| -------------- | ------------------------------- | -------------------- | --------------------------- |
+| Search         | text input + button             | same                 | form → `?s=query`           |
+| Categories     | flat list, linked               | hierarchical list    | `wp_terms`                  |
+| Archives       | monthly links with counts       | same                 | `wp_posts` grouped by month |
+| Calendar       | table, days with posts linked   | same                 | `wp_posts` by day           |
+| Links/Blogroll | categorized external links      | same                 | `wp_links`                  |
+| Meta           | RSS, login, register, validator | same + logout        | `wp_options`, auth state    |
+| Pages          | —                               | list of static pages | `wp_posts` where type=page  |
 
 **Contextual sidebar** (WP 1.5 addition): On archive and search pages,
 the sidebar shows a message like "You are currently browsing the
@@ -84,13 +84,13 @@ many in a list (home, archives, search), or as a single focused view.
 
 When posts appear in a list (home, category, date, search), each shows:
 
-| Element | Description | WP 1.0 | WP 1.5 |
-|---|---|---|---|
-| Date heading | Groups posts by day | `the_date()` as h2 | `the_time()` inline |
-| Title | Post title, linked to permalink | h3 `.storytitle` | h2 with id |
-| Meta line | Author, time, categories, edit link | below title | below title |
-| Content | Full post body (home) or excerpt (archives) | `the_content()` | `the_excerpt()` on archives |
-| Feedback | Comment count link | "Comments (N)" | "N Comments »" |
+| Element      | Description                                 | WP 1.0             | WP 1.5                      |
+| ------------ | ------------------------------------------- | ------------------ | --------------------------- |
+| Date heading | Groups posts by day                         | `the_date()` as h2 | `the_time()` inline         |
+| Title        | Post title, linked to permalink             | h3 `.storytitle`   | h2 with id                  |
+| Meta line    | Author, time, categories, edit link         | below title        | below title                 |
+| Content      | Full post body (home) or excerpt (archives) | `the_content()`    | `the_excerpt()` on archives |
+| Feedback     | Comment count link                          | "Comments (N)"     | "N Comments »"              |
 
 **the_content vs the_excerpt**: WP 1.0 always showed full content. WP
 1.5 introduced `the_excerpt()` for archive views — showing a trimmed
@@ -107,14 +107,14 @@ work; date grouping is more distinctive.
 When viewing one post, the display includes everything from the list
 view plus:
 
-| Element | Description |
-|---|---|
-| Full content | Always the complete post body, never excerpt |
-| Page links | Navigation within multi-page posts (`<!--nextpage-->`) |
-| Post navigation | Links to previous/next post |
-| Trackback URI | URL for sending trackbacks (if open) |
-| Comment feed | RSS link for this post's comments |
-| Comments section | Full comment display + form (see below) |
+| Element          | Description                                            |
+| ---------------- | ------------------------------------------------------ |
+| Full content     | Always the complete post body, never excerpt           |
+| Page links       | Navigation within multi-page posts (`<!--nextpage-->`) |
+| Post navigation  | Links to previous/next post                            |
+| Trackback URI    | URL for sending trackbacks (if open)                   |
+| Comment feed     | RSS link for this post's comments                      |
+| Comments section | Full comment display + form (see below)                |
 
 ### Post Metadata
 
@@ -135,14 +135,14 @@ Comments appear on single post pages only.
 
 ### Comment List
 
-| Element | Description |
-|---|---|
-| Heading | "N Responses to 'Post Title'" (WP 1.5) or "Comments" (WP 1.0) |
-| Comment body | The comment text, with allowed HTML rendered |
-| Comment author | Name, optionally linked to their URL |
-| Comment date | Date and time of comment |
-| Comment type | Comment, Trackback, or Pingback (WP 1.5 distinguished these) |
-| Edit link | Visible to admins |
+| Element        | Description                                                   |
+| -------------- | ------------------------------------------------------------- |
+| Heading        | "N Responses to 'Post Title'" (WP 1.5) or "Comments" (WP 1.0) |
+| Comment body   | The comment text, with allowed HTML rendered                  |
+| Comment author | Name, optionally linked to their URL                          |
+| Comment date   | Date and time of comment                                      |
+| Comment type   | Comment, Trackback, or Pingback (WP 1.5 distinguished these)  |
+| Edit link      | Visible to admins                                             |
 
 WP 1.0 rendered comments as an ordered list. WP 1.5 added alternating
 background colors (`.graybox` on every other comment). Both used `<ol>`
@@ -152,13 +152,13 @@ with `<li id="comment-{ID}">`.
 
 Appears when comments are open. Fields:
 
-| Field | Required | Populated From |
-|---|---|---|
-| Name | Yes | Cookie (if returning commenter) |
-| Email | Yes | Cookie (not displayed publicly) |
-| Website URL | No | Cookie |
-| Comment text | Yes | — |
-| Submit button | — | "Say it!" (WP 1.0) / "Submit Comment" (WP 1.5) |
+| Field         | Required | Populated From                                 |
+| ------------- | -------- | ---------------------------------------------- |
+| Name          | Yes      | Cookie (if returning commenter)                |
+| Email         | Yes      | Cookie (not displayed publicly)                |
+| Website URL   | No       | Cookie                                         |
+| Comment text  | Yes      | —                                              |
+| Submit button | —        | "Say it!" (WP 1.0) / "Submit Comment" (WP 1.5) |
 
 Hidden fields: `comment_post_ID`, `redirect_to`.
 
@@ -230,11 +230,11 @@ For posts split with `<!--nextpage-->`:
 
 Three granularities:
 
-| Type | Heading Example |
-|---|---|
-| Year | "Archive for 2004" |
-| Month | "Archive for January 2004" |
-| Day | "Archive for January 3rd, 2004" |
+| Type  | Heading Example                 |
+| ----- | ------------------------------- |
+| Year  | "Archive for 2004"              |
+| Month | "Archive for January 2004"      |
+| Day   | "Archive for January 3rd, 2004" |
 
 - Filtered post list (excerpts)
 - Sidebar with context message
@@ -263,12 +263,12 @@ author line, no comments (by default). Just title and content.
 
 Not rendered as HTML but served as XML:
 
-| Feed | Path | Content |
-|---|---|---|
-| RSS 2.0 | `/feed/rss2` | Recent posts |
-| Atom | `/feed/atom` | Recent posts |
-| Comments RSS | `/comments/feed` | Recent comments (all posts) |
-| Post Comments RSS | `/post-slug/feed` | Comments on one post |
+| Feed              | Path              | Content                     |
+| ----------------- | ----------------- | --------------------------- |
+| RSS 2.0           | `/feed/rss2`      | Recent posts                |
+| Atom              | `/feed/atom`      | Recent posts                |
+| Comments RSS      | `/comments/feed`  | Recent comments (all posts) |
+| Post Comments RSS | `/post-slug/feed` | Comments on one post        |
 
 The sidebar links to these. The `<head>` includes `<link>` tags for
 feed autodiscovery.
@@ -279,23 +279,25 @@ feed autodiscovery.
 
 Some components change based on whether the user is logged in:
 
-| Context | Logged Out | Logged In |
-|---|---|---|
-| Sidebar Meta | "Login", "Register" | "Logout", "Site Admin" |
-| Post metadata | No edit link | "Edit This" link |
-| Comment metadata | No edit link | "Edit" link on each comment |
-| Comment form | Name/email/URL fields | Fields pre-populated or hidden |
+| Context          | Logged Out            | Logged In                      |
+| ---------------- | --------------------- | ------------------------------ |
+| Sidebar Meta     | "Login", "Register"   | "Logout", "Site Admin"         |
+| Post metadata    | No edit link          | "Edit This" link               |
+| Comment metadata | No edit link          | "Edit" link on each comment    |
+| Comment form     | Name/email/URL fields | Fields pre-populated or hidden |
 
 ---
 
 ## Summary: Component Inventory
 
 ### Shell (every page)
+
 1. Site header (title + description)
 2. Sidebar (search, categories, archives, calendar, links, pages, meta)
 3. Footer (credit line)
 
 ### Content (varies by page type)
+
 4. Post list (home, archives, search)
 5. Single post (with full content)
 6. Static page (title + content only)
@@ -304,6 +306,7 @@ Some components change based on whether the user is logged in:
 9. 404 message
 
 ### Navigation
+
 10. Pagination (previous/next entries)
 11. Post navigation (previous/next post)
 12. Multi-page post navigation
@@ -312,10 +315,12 @@ Some components change based on whether the user is logged in:
 15. Calendar (day links, in sidebar)
 
 ### Forms
+
 16. Search form
 17. Comment form
 
 ### Feeds
+
 18. RSS 2.0 (posts)
 19. Atom (posts)
 20. Comments RSS
@@ -325,22 +330,22 @@ Some components change based on whether the user is logged in:
 
 ## What Press Has Today
 
-| Component | Status |
-|---|---|
-| Site header | ✓ Title only, no description |
-| Sidebar | ✓ Hardcoded placeholder content |
-| Footer | ✓ Credit line |
-| Post list (home) | ✓ With pagination |
-| Single post | ✓ With comment display |
-| Static page | ✗ |
-| Comment form | ✗ |
-| Category archive | ✗ Handler stub exists |
-| Date archive | ✗ Handler stub exists |
-| Author archive | ✗ |
-| Search | ✗ |
-| 404 page | ✗ |
-| Post navigation | ✗ |
-| Calendar | ✗ |
-| Dynamic sidebar | ✗ Categories/archives/pages queries not wired |
-| Feeds | ✗ |
-| Auth-dependent UI | ✗ |
+| Component         | Status                                        |
+| ----------------- | --------------------------------------------- |
+| Site header       | ✓ Title only, no description                  |
+| Sidebar           | ✓ Hardcoded placeholder content               |
+| Footer            | ✓ Credit line                                 |
+| Post list (home)  | ✓ With pagination                             |
+| Single post       | ✓ With comment display                        |
+| Static page       | ✗                                             |
+| Comment form      | ✗                                             |
+| Category archive  | ✗ Handler stub exists                         |
+| Date archive      | ✗ Handler stub exists                         |
+| Author archive    | ✗                                             |
+| Search            | ✗                                             |
+| 404 page          | ✗                                             |
+| Post navigation   | ✗                                             |
+| Calendar          | ✗                                             |
+| Dynamic sidebar   | ✗ Categories/archives/pages queries not wired |
+| Feeds             | ✗                                             |
+| Auth-dependent UI | ✗                                             |

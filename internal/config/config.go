@@ -9,15 +9,16 @@ import (
 )
 
 type Config struct {
-	AppEnv     string
-	AppHost    string
-	AppPort    int
-	AppDebug   bool
-	SecretKey  string
-	DBPath     string
-	UploadsDir string
-	PublicDir  string
-	ThemeDir   string
+	AppEnv        string
+	AppHost       string
+	AppPort       int
+	AppDebug      bool
+	SecretKey     string
+	DBPath        string
+	UploadsDir    string
+	PublicDir     string
+	ThemeDir      string
+	SessionMaxAge int // session lifetime in days
 }
 
 func Load(envPath string) (*Config, error) {
@@ -28,15 +29,16 @@ func Load(envPath string) (*Config, error) {
 	}
 
 	cfg := &Config{
-		AppEnv:     getEnv("APP_ENV", "production"),
-		AppHost:    getEnv("APP_HOST", "localhost"),
-		AppPort:    getEnvInt("APP_PORT", 3000),
-		AppDebug:   getEnvBool("APP_DEBUG", false),
-		SecretKey:  getEnv("SECRET_KEY", ""),
-		DBPath:     getEnv("DB_PATH", "./storage/press.db"),
-		UploadsDir: getEnv("UPLOADS_DIR", "./storage/uploads"),
-		PublicDir:  getEnv("PUBLIC_DIR", "./public"),
-		ThemeDir:   getEnv("THEME_DIR", "./themes/freerange"),
+		AppEnv:        getEnv("APP_ENV", "production"),
+		AppHost:       getEnv("APP_HOST", "localhost"),
+		AppPort:       getEnvInt("APP_PORT", 3000),
+		AppDebug:      getEnvBool("APP_DEBUG", false),
+		SecretKey:     getEnv("SECRET_KEY", ""),
+		DBPath:        getEnv("DB_PATH", "./storage/press.db"),
+		UploadsDir:    getEnv("UPLOADS_DIR", "./storage/uploads"),
+		PublicDir:     getEnv("PUBLIC_DIR", "./public"),
+		ThemeDir:      getEnv("THEME_DIR", "./themes/freerange"),
+		SessionMaxAge: getEnvInt("SESSION_MAX_AGE", 30),
 	}
 
 	return cfg, nil

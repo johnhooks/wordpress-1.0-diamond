@@ -17,9 +17,9 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "press",
-	Short: "Press - A blog engine continuing WordPress 1.0",
-	Long:  `Press is what happens when you fork WordPress 1.0 and keep evolving it as a blogging engine.`,
+	Use:          "press",
+	Short:        "Press - A blog engine continuing WordPress 1.0",
+	Long:         `Press is what happens when you fork WordPress 1.0 and keep evolving it as a blogging engine.`,
 	SilenceUsage: true,
 }
 

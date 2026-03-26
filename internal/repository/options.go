@@ -104,7 +104,7 @@ func (r *OptionsRepository) SetMultiple(ctx context.Context, options map[string]
 	if err != nil {
 		return errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	for name, value := range options {
 		_, err := tx.Exec(`

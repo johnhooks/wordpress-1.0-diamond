@@ -1,7 +1,0 @@
-{{define "post-navigation"}}
-<p>
-{{if .PrevPost}}<a href="{{.PrevPost.URL}}">&laquo; {{.PrevPost.Title}}</a>{{end}}
-{{if and .PrevPost .NextPost}} | {{end}}
-{{if .NextPost}}<a href="{{.NextPost.URL}}">{{.NextPost.Title}} &raquo;</a>{{end}}
-</p>
-{{end}}

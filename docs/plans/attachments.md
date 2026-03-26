@@ -10,25 +10,25 @@ needs: an author, a date, a title, a slug, a parent, and metadata via
 
 Attachments are rows in `wp_posts` with `post_type = 'attachment'`.
 
-| Field              | Usage                                         |
-|--------------------|-----------------------------------------------|
-| post_type          | `'attachment'`                                |
-| post_title         | Filename or user-provided title               |
-| post_name          | Slug (sanitized filename)                     |
-| post_content       | Description (optional)                        |
-| post_excerpt       | Caption (optional)                            |
-| post_mime_type     | MIME type — `image/jpeg`, `application/pdf`   |
-| post_parent        | The post or page this was uploaded to (0 if unattached) |
-| post_author        | Who uploaded it                               |
-| post_date          | Upload date                                   |
-| post_status        | `'inherit'` (inherits parent's visibility)    |
-| guid               | The file URL                                  |
+| Field          | Usage                                                   |
+| -------------- | ------------------------------------------------------- |
+| post_type      | `'attachment'`                                          |
+| post_title     | Filename or user-provided title                         |
+| post_name      | Slug (sanitized filename)                               |
+| post_content   | Description (optional)                                  |
+| post_excerpt   | Caption (optional)                                      |
+| post_mime_type | MIME type — `image/jpeg`, `application/pdf`             |
+| post_parent    | The post or page this was uploaded to (0 if unattached) |
+| post_author    | Who uploaded it                                         |
+| post_date      | Upload date                                             |
+| post_status    | `'inherit'` (inherits parent's visibility)              |
+| guid           | The file URL                                            |
 
 Metadata in `wp_postmeta`:
 
-| meta_key              | Value                                      |
-|-----------------------|--------------------------------------------|
-| `_wp_attached_file`   | Relative path: `2004/01/photo.jpg`         |
+| meta_key                  | Value                                     |
+| ------------------------- | ----------------------------------------- |
+| `_wp_attached_file`       | Relative path: `2004/01/photo.jpg`        |
 | `_wp_attachment_metadata` | Dimensions, filesize (JSON or serialized) |
 
 This means `post_type` now has three values: `post`, `page`, `attachment`.

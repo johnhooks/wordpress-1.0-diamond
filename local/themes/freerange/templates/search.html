@@ -1,17 +1,23 @@
-{{template "site-header" .}}
-{{template "archive-header" .}}
+<div id="wrapper">
 
-{{range .Posts}}
-    <article>
-        <h3><a href="{{.Permalink}}">{{.TheTitle}}</a></h3>
-        {{template "post-meta" .}}
-        <p>{{.TheExcerpt}}</p>
-    </article>
-    <hr>
-{{else}}
-    <p>No results found.</p>
-{{end}}
+<div id="header">
+    <h1><a href="/">{blog_name}</a></h1>
+    <p class="description">{blog_description}</p>
+</div>
 
-{{template "pagination" .}}
-{{template "sidebar" .}}
-{{template "site-footer" .}}
+<div id="content">
+    <h2>Search results for: {search_query}</h2>
+
+    {if posts}
+        {each posts as post}
+            <post />
+        {/each}
+        <pagination />
+    {else}
+        <p>No results found.</p>
+    {/if}
+</div>
+
+<sidebar />
+
+</div>

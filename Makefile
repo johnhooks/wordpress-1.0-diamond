@@ -10,7 +10,11 @@ VENDOR_MAP = orderedmap:dist/index.js \
              rope-sequence:dist/index.js \
              htmx.org:dist/htmx.min.js
 
-.PHONY: vendor vendor-clean build test dev serve reset fixtures fresh press clean
+# Site directory — override to run multiple sites
+# Usage: make dev SITE=examples/photoblog
+SITE = local
+
+.PHONY: vendor vendor-clean build test dev stop stop-all serve reset fixtures fresh press clean
 
 vendor: node_modules
 	@mkdir -p $(VENDOR_DIR)
@@ -34,30 +38,39 @@ build:
 	go build -o press ./cmd/press
 
 # Start the development server with file watching
-dev:
-	cd local && air
+dev: build
+	@bin/dev $(SITE)
+
+# Stop the development server for a SITE
+stop:
+	@bin/stop $(SITE)
+
+# Stop all running development servers
+stop-all:
+	@bin/stop-all
 
 # Start the development server (no file watching)
 serve: build
-	cd local && ../press serve
+	cd $(SITE) && ../press serve
 
 # Drop database and re-run migrations
 reset: build
-	cd local && ../press db reset
+	cd $(SITE) && ../press db reset
 
 # Load fixture data into the database
 fixtures:
-	go run ./data/fixtures/ local/storage/press.db
+	go run ./data/fixtures/ $(SITE)/storage/press.db
 
 # Reset and reload: drop, migrate, load fixtures
 fresh: reset fixtures
 
 # Run press CLI commands (usage: make press CMD="user list")
 press: build
-	cd local && ../press $(CMD)
+	cd $(SITE) && ../press $(CMD)
 
 test:
 	go test ./...
 
 clean:
 	rm -f press
+	rm -rf tmp/pids

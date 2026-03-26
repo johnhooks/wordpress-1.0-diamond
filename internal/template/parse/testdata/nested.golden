@@ -1,0 +1,30 @@
+(document
+  (element "html"
+    (element "head")
+    (element "body"
+      (element "div"
+        (each (ident "categories") :as "cat"
+          (element "h2"
+            (expr (. (ident "cat") "Name"))
+          )
+          (each (. (ident "cat") "Posts") :as "post"
+            (if (. (ident "post") "Featured")
+              (element "article" (class "featured")
+                (element "h3"
+                  (expr (. (ident "post") "Title"))
+                )
+              )
+              (else
+                (element "article"
+                  (element "h3"
+                    (expr (. (ident "post") "Title"))
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    )
+  )
+)

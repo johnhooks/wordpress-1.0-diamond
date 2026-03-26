@@ -1,0 +1,35 @@
+{{define "admin-login"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{.SiteName}} &rsaquo; Log In</title>
+</head>
+<body style="max-width: 20em; margin: 4em auto;">
+<h1 style="text-align: center;"><a href="{{.SiteURL}}">{{.SiteName}}</a></h1>
+
+{{if .Error}}
+<p><strong>Error:</strong> {{.Error}}</p>
+{{end}}
+
+<form name="login" id="loginform" action="/wp-admin/login" method="post">
+    <input type="hidden" name="redirect_to" value="{{.RedirectTo}}">
+
+    <p>
+        <label for="log">Login</label><br>
+        <input type="text" name="log" id="log" style="width: 100%; box-sizing: border-box;" autofocus>
+    </p>
+
+    <p>
+        <label for="pwd">Password</label><br>
+        <input type="password" name="pwd" id="pwd" style="width: 100%; box-sizing: border-box;">
+    </p>
+
+    <p><input type="submit" value="Log In"></p>
+</form>
+
+<p><a href="{{.SiteURL}}">&larr; Back to {{.SiteName}}</a></p>
+</body>
+</html>
+{{end}}

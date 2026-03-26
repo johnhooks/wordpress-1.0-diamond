@@ -226,7 +226,7 @@ func (r *UsersRepository) Delete(ctx context.Context, id int64, reassignTo int64
 	if err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	if reassignTo > 0 {
 		if _, err := tx.ExecContext(ctx, "UPDATE wp_posts SET post_author = ? WHERE post_author = ?", reassignTo, id); err != nil {

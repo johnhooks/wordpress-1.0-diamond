@@ -23,7 +23,7 @@ var migrateUpCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		goose.SetBaseFS(database.MigrationsFS)
 		if err := goose.SetDialect("sqlite"); err != nil {
@@ -46,7 +46,7 @@ var migrateDownCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		goose.SetBaseFS(database.MigrationsFS)
 		if err := goose.SetDialect("sqlite"); err != nil {
@@ -69,7 +69,7 @@ var migrateStatusCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		goose.SetBaseFS(database.MigrationsFS)
 		if err := goose.SetDialect("sqlite"); err != nil {
@@ -94,7 +94,7 @@ var migrateFreshCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		goose.SetBaseFS(database.MigrationsFS)
 		if err := goose.SetDialect("sqlite"); err != nil {
@@ -118,7 +118,7 @@ var migrateCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		if err := goose.SetDialect("sqlite"); err != nil {
 			return err

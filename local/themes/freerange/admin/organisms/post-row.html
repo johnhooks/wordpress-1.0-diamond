@@ -1,0 +1,13 @@
+{{define "admin-post-row"}}
+<div style="margin-bottom: 1.5em;">
+    <strong>{{.Date}}</strong>
+    [<a href="{{.EditURL}}">Edit</a>
+    | <a href="{{.ViewURL}}">View</a>
+    | {{.CommentCount}} comments]
+    {{if eq .Status "private"}} — <strong>Private</strong>{{end}}
+    {{if eq .Status "draft"}} — <em>Draft</em>{{end}}
+    <br>
+    <strong><a href="{{.ViewURL}}">{{.Title}}</a></strong>
+    — <em>{{.AuthorName}}, in {{.Categories}}</em>
+</div>
+{{end}}

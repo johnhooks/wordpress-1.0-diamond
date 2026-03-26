@@ -1,0 +1,18 @@
+(document
+  (element "html"
+    (element "head")
+    (element "body"
+      (element "div"
+        (element "site-header")
+        (element "article"
+          (element "h1"
+            (expr (. (ident "post") "Title"))
+          )
+          (element "comment-form" (post-id (. (ident "post") "ID")))
+        )
+        (element "sidebar")
+        (element "site-footer")
+      )
+    )
+  )
+)

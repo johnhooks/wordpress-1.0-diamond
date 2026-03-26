@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+. "$(dirname "$0")/env"
+
+if [ ! -d "$PID_DIR" ]; then
+    exit 0
+fi
+
+for f in "$PID_DIR"/*.pid; do
+    [ -f "$f" ] || continue
+
+    entry=$(cat "$f")
+    pid="${entry%%:*}"
+    port="${entry##*:}"
+    site=$(basename "$f" .pid)
+
+    if kill -0 "$pid" 2>/dev/null; then
+        kill "$pid" 2>/dev/null
+        echo "Stopped PID $pid ($site)"
+    elif [ -n "$port" ]; then
+        fuser -k "$port/tcp" 2>/dev/null && echo "Killed stale process on port $port ($site)" || true
+    fi
+
+    rm -f "$f"
+done

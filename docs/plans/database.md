@@ -153,6 +153,7 @@ CREATE INDEX idx_usermeta_meta_key ON wp_usermeta (meta_key);
 ```
 
 **Standard meta keys we'll use (matching WP 1.0 user fields):**
+
 - `first_name`, `last_name`, `nickname`, `description`
 - `aim`, `yim`, `jabber` (was MSN)
 - `wp_user_level` is a numeric value from 0-10, same as the original.
@@ -193,6 +194,7 @@ CREATE INDEX idx_term_taxonomy_taxonomy ON wp_term_taxonomy (taxonomy);
 ```
 
 **Taxonomies we use:**
+
 - `category` for post categories, replacing wp_categories.
 - `link_category` for blogroll link categories, replacing wp_linkcategories.
 - `series` for post series. See `docs/plans/series.md`.
@@ -278,43 +280,43 @@ CREATE INDEX idx_options_autoload ON wp_options (autoload);
 
 How WP 1.0 category operations map to the modern taxonomy tables:
 
-| WP 1.0 Operation | Old Tables | Modern Equivalent |
-|---|---|---|
-| List categories | `SELECT * FROM wp_categories` | `SELECT t.*, tt.* FROM wp_terms t JOIN wp_term_taxonomy tt ON t.term_id = tt.term_id WHERE tt.taxonomy = 'category'` |
-| Get post categories | `SELECT * FROM wp_post2cat WHERE post_id = ?` | `SELECT t.* FROM wp_terms t JOIN wp_term_taxonomy tt ON t.term_id = tt.term_id JOIN wp_term_relationships tr ON tt.term_taxonomy_id = tr.term_taxonomy_id WHERE tr.object_id = ? AND tt.taxonomy = 'category'` |
-| Add post to category | `INSERT INTO wp_post2cat (post_id, category_id)` | `INSERT INTO wp_term_relationships (object_id, term_taxonomy_id)` + update count |
-| Category hierarchy | `category_parent` column | `parent` column on `wp_term_taxonomy` |
-| Link categories | `SELECT * FROM wp_linkcategories` | Same as categories but `WHERE tt.taxonomy = 'link_category'` |
-| Link category display options | Columns on `wp_linkcategories` | Key-value pairs in `wp_termmeta` |
+| WP 1.0 Operation              | Old Tables                                       | Modern Equivalent                                                                                                                                                                                              |
+| ----------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| List categories               | `SELECT * FROM wp_categories`                    | `SELECT t.*, tt.* FROM wp_terms t JOIN wp_term_taxonomy tt ON t.term_id = tt.term_id WHERE tt.taxonomy = 'category'`                                                                                           |
+| Get post categories           | `SELECT * FROM wp_post2cat WHERE post_id = ?`    | `SELECT t.* FROM wp_terms t JOIN wp_term_taxonomy tt ON t.term_id = tt.term_id JOIN wp_term_relationships tr ON tt.term_taxonomy_id = tr.term_taxonomy_id WHERE tr.object_id = ? AND tt.taxonomy = 'category'` |
+| Add post to category          | `INSERT INTO wp_post2cat (post_id, category_id)` | `INSERT INTO wp_term_relationships (object_id, term_taxonomy_id)` + update count                                                                                                                               |
+| Category hierarchy            | `category_parent` column                         | `parent` column on `wp_term_taxonomy`                                                                                                                                                                          |
+| Link categories               | `SELECT * FROM wp_linkcategories`                | Same as categories but `WHERE tt.taxonomy = 'link_category'`                                                                                                                                                   |
+| Link category display options | Columns on `wp_linkcategories`                   | Key-value pairs in `wp_termmeta`                                                                                                                                                                               |
 
 ## Table Summary
 
 ### WordPress Tables (modernized)
 
-| Table | Purpose | WP 1.0 Equivalent |
-|-------|---------|-------------------|
-| wp_posts | Posts, pages, attachments | wp_posts (expanded) |
-| wp_postmeta | Post/page/attachment metadata | (new) |
-| wp_comments | Comments | wp_comments (expanded) |
-| wp_commentmeta | Comment metadata | (new) |
-| wp_users | User accounts | wp_users (slimmed) |
-| wp_usermeta | User profile data | (new, replaces inline columns) |
-| wp_terms | Category/tag names | wp_categories (generalized) |
-| wp_term_taxonomy | Taxonomy assignments | wp_categories (split out) |
-| wp_term_relationships | Object-to-term links | wp_post2cat (generalized) |
-| wp_termmeta | Term metadata | wp_linkcategories display options |
-| wp_links | Blogroll | wp_links (minor changes) |
-| wp_options | Settings | wp_options + 4 helper tables (collapsed) |
+| Table                 | Purpose                       | WP 1.0 Equivalent                        |
+| --------------------- | ----------------------------- | ---------------------------------------- |
+| wp_posts              | Posts, pages, attachments     | wp_posts (expanded)                      |
+| wp_postmeta           | Post/page/attachment metadata | (new)                                    |
+| wp_comments           | Comments                      | wp_comments (expanded)                   |
+| wp_commentmeta        | Comment metadata              | (new)                                    |
+| wp_users              | User accounts                 | wp_users (slimmed)                       |
+| wp_usermeta           | User profile data             | (new, replaces inline columns)           |
+| wp_terms              | Category/tag names            | wp_categories (generalized)              |
+| wp_term_taxonomy      | Taxonomy assignments          | wp_categories (split out)                |
+| wp_term_relationships | Object-to-term links          | wp_post2cat (generalized)                |
+| wp_termmeta           | Term metadata                 | wp_linkcategories display options        |
+| wp_links              | Blogroll                      | wp_links (minor changes)                 |
+| wp_options            | Settings                      | wp_options + 4 helper tables (collapsed) |
 
 ### Press Tables (new)
 
-| Table | Purpose | Details |
-|-------|---------|---------|
-| wp_steps | ProseMirror edit history | Every editing operation, attributed to a user. Powers undo, collab, and revision history. See `docs/editor.md`. |
-| wp_save_points | Named points in step history | "The author hit save here." Bookmarks in the step log, not full copies. |
-| wp_groups | Permission group metadata | Display name and description. Authorization logic lives in tuples. |
-| wp_tuples | Relationship tuples | `subject → relation → object`. One table for all permissions: roles, per-post sharing, share links. See `docs/permissions.md`. |
-| wp_share_tokens | Share link metadata | Token, creator, expiration. The authorization itself is a tuple. |
+| Table           | Purpose                      | Details                                                                                                                        |
+| --------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| wp_steps        | ProseMirror edit history     | Every editing operation, attributed to a user. Powers undo, collab, and revision history. See `docs/editor.md`.                |
+| wp_save_points  | Named points in step history | "The author hit save here." Bookmarks in the step log, not full copies.                                                        |
+| wp_groups       | Permission group metadata    | Display name and description. Authorization logic lives in tuples.                                                             |
+| wp_tuples       | Relationship tuples          | `subject → relation → object`. One table for all permissions: roles, per-post sharing, share links. See `docs/permissions.md`. |
+| wp_share_tokens | Share link metadata          | Token, creator, expiration. The authorization itself is a tuple.                                                               |
 
 WordPress has had 12 tables since 2004. They crammed everything else into
 meta tables and `post_type` overloading (revisions, menu items, CSS
@@ -357,12 +359,14 @@ When we query for an option that doesn't exist, we record that fact. This preven
 ### Cache Invalidation
 
 On update:
+
 - If the option is in the autoload map → update it in place
 - If moving from non-autoload to autoload → add to map
 - If moving from autoload to non-autoload → remove from map
 - Clear from notoptions set if present
 
 On delete:
+
 - Remove from whichever cache layer it's in
 - Add to notoptions set
 

@@ -147,7 +147,9 @@ func TestPostsRepository_ListFilters(t *testing.T) {
 		if i == 2 {
 			post.PostStatus = "draft"
 		}
-		posts.Create(ctx, post)
+		if err := posts.Create(ctx, post); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Filter by status
@@ -210,10 +212,12 @@ func TestPostsRepository_ListFilters(t *testing.T) {
 	}
 
 	// Post type filter
-	posts.Create(ctx, &model.Post{
+	if err := posts.Create(ctx, &model.Post{
 		PostAuthor: 1, PostTitle: "About", PostName: "about",
 		PostContent: "page", PostStatus: "publish", PostType: "page",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 	result, err = posts.List(ctx, query.Query{
 		Filters: []query.Filter{{Field: "type", Operator: query.Is, Value: "page"}},
 		PerPage: 100,
@@ -235,15 +239,23 @@ func TestPostsRepository_CategoryFilter(t *testing.T) {
 	// Create category
 	term := &model.Term{Name: "Tech", Slug: "tech"}
 	tt := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, term, tt)
+	if err := terms.Create(ctx, term, tt); err != nil {
+		t.Fatal(err)
+	}
 
 	// Create posts
 	p1 := &model.Post{PostAuthor: 1, PostTitle: "Go is great", PostName: "go-great", PostContent: "x", PostStatus: "publish", PostType: "post"}
 	p2 := &model.Post{PostAuthor: 1, PostTitle: "Unrelated", PostName: "unrelated", PostContent: "y", PostStatus: "publish", PostType: "post"}
-	posts.Create(ctx, p1)
-	posts.Create(ctx, p2)
+	if err := posts.Create(ctx, p1); err != nil {
+		t.Fatal(err)
+	}
+	if err := posts.Create(ctx, p2); err != nil {
+		t.Fatal(err)
+	}
 
-	terms.AddTermToPost(ctx, p1.ID, tt.TermTaxonomyID)
+	if err := terms.AddTermToPost(ctx, p1.ID, tt.TermTaxonomyID); err != nil {
+		t.Fatal(err)
+	}
 
 	// Filter by category
 	result, err := posts.List(ctx, query.Query{
@@ -269,10 +281,12 @@ func TestPostsRepository_EnsureUniqueSlug(t *testing.T) {
 	posts := repository.NewPostsRepository(database)
 	ctx := context.Background()
 
-	posts.Create(ctx, &model.Post{
+	if err := posts.Create(ctx, &model.Post{
 		PostAuthor: 1, PostTitle: "Hello", PostName: "hello",
 		PostContent: "x", PostStatus: "publish", PostType: "post",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	s, err := posts.EnsureUniqueSlug(ctx, "hello", 0)
 	if err != nil {
@@ -282,10 +296,12 @@ func TestPostsRepository_EnsureUniqueSlug(t *testing.T) {
 		t.Errorf("expected 'hello-2', got %q", s)
 	}
 
-	posts.Create(ctx, &model.Post{
+	if err := posts.Create(ctx, &model.Post{
 		PostAuthor: 1, PostTitle: "Hello 2", PostName: "hello-2",
 		PostContent: "x", PostStatus: "publish", PostType: "post",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	s, err = posts.EnsureUniqueSlug(ctx, "hello", 0)
 	if err != nil {
@@ -315,19 +331,29 @@ func TestPostsRepository_DeleteCascade(t *testing.T) {
 		PostAuthor: 1, PostTitle: "Cascade", PostName: "cascade",
 		PostContent: "x", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
 
-	comments.Create(ctx, &model.Comment{
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "Jane",
 		CommentContent: "hi", CommentApproved: "1", CommentType: "comment",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	term := &model.Term{Name: "Cat", Slug: "cat"}
 	tt := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, term, tt)
-	terms.AddTermToPost(ctx, post.ID, tt.TermTaxonomyID)
+	if err := terms.Create(ctx, term, tt); err != nil {
+		t.Fatal(err)
+	}
+	if err := terms.AddTermToPost(ctx, post.ID, tt.TermTaxonomyID); err != nil {
+		t.Fatal(err)
+	}
 
-	posts.Delete(ctx, post.ID)
+	if _, err := posts.Delete(ctx, post.ID); err != nil {
+		t.Fatal(err)
+	}
 
 	byPost, err := comments.GetByPostID(ctx, post.ID)
 	if err != nil {
@@ -356,10 +382,16 @@ func TestPostsRepository_DeleteCascadePostmeta(t *testing.T) {
 		PostAuthor: 1, PostTitle: "Meta Cascade", PostName: "meta-cascade",
 		PostContent: "x", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
 
-	meta.Set(ctx, post.ID, "custom_field", "value1")
-	meta.Set(ctx, post.ID, "another_field", "value2")
+	if err := meta.Set(ctx, post.ID, "custom_field", "value1"); err != nil {
+		t.Fatal(err)
+	}
+	if err := meta.Set(ctx, post.ID, "another_field", "value2"); err != nil {
+		t.Fatal(err)
+	}
 
 	// Verify meta exists
 	all, err := meta.GetAll(ctx, post.ID)
@@ -395,43 +427,65 @@ func TestPostsRepository_DeleteCascadeMultipleComments(t *testing.T) {
 		PostAuthor: 1, PostTitle: "Full Cascade", PostName: "full-cascade",
 		PostContent: "x", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, post)
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
 
 	// Multiple comments (approved and unapproved)
-	comments.Create(ctx, &model.Comment{
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "A",
 		CommentContent: "first", CommentApproved: "1", CommentType: "comment",
-	})
-	comments.Create(ctx, &model.Comment{
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: post.ID, CommentAuthor: "B",
 		CommentContent: "second", CommentApproved: "0", CommentType: "comment",
-	})
+	}); err != nil {
+		t.Fatal(err)
+	}
 
 	// Multiple categories
 	cat1 := &model.Term{Name: "Cat1", Slug: "cat1"}
 	tt1 := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, cat1, tt1)
-	terms.AddTermToPost(ctx, post.ID, tt1.TermTaxonomyID)
+	if err := terms.Create(ctx, cat1, tt1); err != nil {
+		t.Fatal(err)
+	}
+	if err := terms.AddTermToPost(ctx, post.ID, tt1.TermTaxonomyID); err != nil {
+		t.Fatal(err)
+	}
 
 	cat2 := &model.Term{Name: "Cat2", Slug: "cat2"}
 	tt2 := &model.TermTaxonomy{Taxonomy: "category"}
-	terms.Create(ctx, cat2, tt2)
-	terms.AddTermToPost(ctx, post.ID, tt2.TermTaxonomyID)
+	if err := terms.Create(ctx, cat2, tt2); err != nil {
+		t.Fatal(err)
+	}
+	if err := terms.AddTermToPost(ctx, post.ID, tt2.TermTaxonomyID); err != nil {
+		t.Fatal(err)
+	}
 
 	// Metadata
-	meta.Set(ctx, post.ID, "key1", "val1")
+	if err := meta.Set(ctx, post.ID, "key1", "val1"); err != nil {
+		t.Fatal(err)
+	}
 
 	// Create another post to verify it's NOT affected
 	other := &model.Post{
 		PostAuthor: 1, PostTitle: "Survivor", PostName: "survivor",
 		PostContent: "x", PostStatus: "publish", PostType: "post",
 	}
-	posts.Create(ctx, other)
-	comments.Create(ctx, &model.Comment{
+	if err := posts.Create(ctx, other); err != nil {
+		t.Fatal(err)
+	}
+	if err := comments.Create(ctx, &model.Comment{
 		CommentPostID: other.ID, CommentAuthor: "Safe",
 		CommentContent: "safe", CommentApproved: "1", CommentType: "comment",
-	})
-	meta.Set(ctx, other.ID, "safe_key", "safe_val")
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if err := meta.Set(ctx, other.ID, "safe_key", "safe_val"); err != nil {
+		t.Fatal(err)
+	}
 
 	// Delete first post
 	if _, err := posts.Delete(ctx, post.ID); err != nil {
@@ -471,9 +525,15 @@ func TestPostsRepository_Sort(t *testing.T) {
 	posts := repository.NewPostsRepository(database)
 	ctx := context.Background()
 
-	posts.Create(ctx, &model.Post{PostAuthor: 1, PostTitle: "Zebra", PostName: "zebra", PostContent: "x", PostStatus: "publish", PostType: "post"})
-	posts.Create(ctx, &model.Post{PostAuthor: 1, PostTitle: "Alpha", PostName: "alpha", PostContent: "x", PostStatus: "publish", PostType: "post"})
-	posts.Create(ctx, &model.Post{PostAuthor: 1, PostTitle: "Middle", PostName: "middle", PostContent: "x", PostStatus: "publish", PostType: "post"})
+	if err := posts.Create(ctx, &model.Post{PostAuthor: 1, PostTitle: "Zebra", PostName: "zebra", PostContent: "x", PostStatus: "publish", PostType: "post"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := posts.Create(ctx, &model.Post{PostAuthor: 1, PostTitle: "Alpha", PostName: "alpha", PostContent: "x", PostStatus: "publish", PostType: "post"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := posts.Create(ctx, &model.Post{PostAuthor: 1, PostTitle: "Middle", PostName: "middle", PostContent: "x", PostStatus: "publish", PostType: "post"}); err != nil {
+		t.Fatal(err)
+	}
 
 	result, err := posts.List(ctx, query.Query{
 		Sort:    &query.Sort{Field: "title", Direction: "asc"},

@@ -122,7 +122,7 @@ func (r *MetaRepository) GetAll(ctx context.Context, objectID int64) ([]Meta, er
 	if err != nil {
 		return nil, errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var metas []Meta
 	for rows.Next() {

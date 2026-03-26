@@ -24,7 +24,7 @@ func Paragraph(_ Node, children func() template.HTML) template.HTML {
 func Heading(node Node, children func() template.HTML) template.HTML {
 	attrs := HeadingAttrs{Level: 1}
 	if node.Attrs != nil {
-		json.Unmarshal(node.Attrs, &attrs)
+		_ = json.Unmarshal(node.Attrs, &attrs)
 	}
 	level := attrs.Level
 	if level < 1 || level > 6 {
@@ -45,7 +45,7 @@ func Blockquote(_ Node, children func() template.HTML) template.HTML {
 func CodeBlock(node Node, children func() template.HTML) template.HTML {
 	var attrs CodeBlockAttrs
 	if node.Attrs != nil {
-		json.Unmarshal(node.Attrs, &attrs)
+		_ = json.Unmarshal(node.Attrs, &attrs)
 	}
 	if attrs.Params != "" {
 		lang := html.EscapeString(attrs.Params)
@@ -63,7 +63,7 @@ func HorizontalRule(_ Node, _ func() template.HTML) template.HTML {
 func Image(node Node, _ func() template.HTML) template.HTML {
 	var attrs ImageAttrs
 	if node.Attrs != nil {
-		json.Unmarshal(node.Attrs, &attrs)
+		_ = json.Unmarshal(node.Attrs, &attrs)
 	}
 	var b strings.Builder
 	b.WriteString(`<img src="`)
@@ -98,7 +98,7 @@ func Text(node Node, _ func() template.HTML) template.HTML {
 func OrderedList(node Node, children func() template.HTML) template.HTML {
 	attrs := OrderedListAttrs{Order: 1}
 	if node.Attrs != nil {
-		json.Unmarshal(node.Attrs, &attrs)
+		_ = json.Unmarshal(node.Attrs, &attrs)
 	}
 	if attrs.Order != 1 {
 		return template.HTML(fmt.Sprintf(`<ol start="%d">`, attrs.Order)) + children() + "</ol>"

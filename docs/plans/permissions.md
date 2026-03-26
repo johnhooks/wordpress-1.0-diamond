@@ -54,24 +54,24 @@ authorization logic lives in the tuples.
 
 ## Relations
 
-| Relation   | Meaning                                           |
-|------------|---------------------------------------------------|
-| `member`   | User belongs to a group                           |
-| `viewer`   | Can view the object                               |
-| `editor`   | Can edit the object                               |
-| `owner`    | Full control — edit, delete, manage permissions   |
-| `commenter`| Can comment (even if comments are closed)         |
+| Relation    | Meaning                                         |
+| ----------- | ----------------------------------------------- |
+| `member`    | User belongs to a group                         |
+| `viewer`    | Can view the object                             |
+| `editor`    | Can edit the object                             |
+| `owner`     | Full control — edit, delete, manage permissions |
+| `commenter` | Can comment (even if comments are closed)       |
 
 ## Object Types
 
-| Object type | What it means                                     |
-|-------------|---------------------------------------------------|
-| `group`     | Target of `member` relations                      |
-| `post`      | A specific post (object_id = post ID)             |
-| `page`      | A specific page (object_id = page ID)             |
-| `type:post` | All posts (global permission on the post type)    |
-| `type:page` | All pages (global permission on the page type)    |
-| `site`      | Site-wide permissions (manage_options, etc.)       |
+| Object type | What it means                                  |
+| ----------- | ---------------------------------------------- |
+| `group`     | Target of `member` relations                   |
+| `post`      | A specific post (object_id = post ID)          |
+| `page`      | A specific page (object_id = page ID)          |
+| `type:post` | All posts (global permission on the post type) |
+| `type:page` | All pages (global permission on the page type) |
+| `site`      | Site-wide permissions (manage_options, etc.)   |
 
 ## How Checks Work
 
@@ -110,12 +110,12 @@ invalidation.
 
 Seed data creates groups that map to WordPress's classic roles:
 
-| Group          | Tuples                                                  |
-|----------------|---------------------------------------------------------|
-| Administrators | `editor` on `type:post`, `type:page`; `owner` on `site` |
+| Group          | Tuples                                                           |
+| -------------- | ---------------------------------------------------------------- |
+| Administrators | `editor` on `type:post`, `type:page`; `owner` on `site`          |
 | Editors        | `editor` on `type:post`, `type:page`; `commenter` on `type:post` |
-| Authors        | `editor` on own posts only (checked via post.author)    |
-| Subscribers    | (no tuples — can view public content only)              |
+| Authors        | `editor` on own posts only (checked via post.author)             |
+| Subscribers    | (no tuples — can view public content only)                       |
 
 The "Authors can edit own posts" case is the one place where a tuple
 isn't enough — you also need to check `post.author == user.id`. This is
@@ -125,12 +125,12 @@ a simple AND condition in the check, not a new abstraction.
 
 Every post has a visibility level stored on the post itself:
 
-| Visibility  | Who can see it                                    |
-|-------------|---------------------------------------------------|
-| `public`    | Anyone. In feeds and the post stream.             |
-| `unlisted`  | Anyone with the URL. Not in feeds or the stream.  |
-| `shared`    | Only subjects with a `viewer` or `editor` tuple.  |
-| `private`   | Only the author.                                  |
+| Visibility | Who can see it                                   |
+| ---------- | ------------------------------------------------ |
+| `public`   | Anyone. In feeds and the post stream.            |
+| `unlisted` | Anyone with the URL. Not in feeds or the stream. |
+| `shared`   | Only subjects with a `viewer` or `editor` tuple. |
+| `private`  | Only the author.                                 |
 
 Visibility is orthogonal to status. A draft can be shared (collaborators
 can see and edit it). A published post can be private (only the author
@@ -158,7 +158,7 @@ the post with the granted permission.
 - **Expiration** is optional, checked against `wp_share_tokens.expires_at`.
 - **Revocation** is deleting the tuple and the token row.
 
-No account required for viewing or commenting. The token *is* the
+No account required for viewing or commenting. The token _is_ the
 permission. This is the FGA-influenced idea applied to a blog: sharing
 a link IS granting access, not just sending a URL and hoping the
 recipient can figure out how to log in.
@@ -235,11 +235,11 @@ before the permission checks can be fully implemented.
 
 ## What This Replaces
 
-| WordPress concept          | Press equivalent                        |
-|----------------------------|-----------------------------------------|
-| `user_level` 0-10          | Group membership + tuples               |
-| `wp_capabilities` meta     | Tuples on `type:*` and `site`           |
-| `post_status = 'private'`  | `visibility = 'private'` on the post    |
-| Post password protection   | Share link with a token (or keep passwords) |
-| No per-post sharing        | Tuples on specific `post:<id>`          |
-| No share links             | `token` subject type in tuples          |
+| WordPress concept         | Press equivalent                            |
+| ------------------------- | ------------------------------------------- |
+| `user_level` 0-10         | Group membership + tuples                   |
+| `wp_capabilities` meta    | Tuples on `type:*` and `site`               |
+| `post_status = 'private'` | `visibility = 'private'` on the post        |
+| Post password protection  | Share link with a token (or keep passwords) |
+| No per-post sharing       | Tuples on specific `post:<id>`              |
+| No share links            | `token` subject type in tuples              |

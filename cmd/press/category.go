@@ -31,7 +31,7 @@ var categoryCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		terms := repository.NewTermsRepository(db)
@@ -92,7 +92,7 @@ var categoryListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		terms := repository.NewTermsRepository(db)
@@ -143,7 +143,7 @@ var categoryDeleteCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer db.Close()
+		defer func() { _ = db.Close() }()
 
 		ctx := context.Background()
 		terms := repository.NewTermsRepository(db)

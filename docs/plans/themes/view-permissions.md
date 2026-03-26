@@ -78,16 +78,16 @@ function in templates. We know exactly what X is for every component.
 
 For a single post page, the permission set is:
 
-| Check | Result | Used By |
-|---|---|---|
-| Can user edit this post? | `EditURL` on PostView | post-meta molecule |
-| Can user delete this post? | `DeleteURL` on PostView | post organism |
-| Can user share this post? | `ShareURL` on PostView | post organism |
-| Can user comment on this post? | `CommentsOpen` on SingleData | comment-form organism |
-| Can user edit each comment? | `EditURL` on each CommentView | comment molecule |
-| Can user delete each comment? | `DeleteURL` on each CommentView | comment molecule |
-| Is user logged in? | `IsLoggedIn` on page data | meta-links organism |
-| Can user access admin? | `AdminURL` on page data | meta-links organism |
+| Check                          | Result                          | Used By               |
+| ------------------------------ | ------------------------------- | --------------------- |
+| Can user edit this post?       | `EditURL` on PostView           | post-meta molecule    |
+| Can user delete this post?     | `DeleteURL` on PostView         | post organism         |
+| Can user share this post?      | `ShareURL` on PostView          | post organism         |
+| Can user comment on this post? | `CommentsOpen` on SingleData    | comment-form organism |
+| Can user edit each comment?    | `EditURL` on each CommentView   | comment molecule      |
+| Can user delete each comment?  | `DeleteURL` on each CommentView | comment molecule      |
+| Is user logged in?             | `IsLoggedIn` on page data       | meta-links organism   |
+| Can user access admin?         | `AdminURL` on page data         | meta-links organism   |
 
 That's the full set. No surprises. No plugin adding a "Can user
 moderate?" check at runtime. The handler knows exactly what to resolve.
@@ -127,14 +127,14 @@ sidebar).
 
 ## Per-Page Permission Sets
 
-| Page Type | Permission Checks |
-|---|---|
-| Home | IsLoggedIn, CanEdit per post in list |
+| Page Type   | Permission Checks                                                                      |
+| ----------- | -------------------------------------------------------------------------------------- |
+| Home        | IsLoggedIn, CanEdit per post in list                                                   |
 | Single Post | IsLoggedIn, CanEdit/CanDelete/CanShare post, CanComment, CanEdit/CanDelete per comment |
-| Static Page | IsLoggedIn, CanEdit page |
-| Archive | IsLoggedIn, CanEdit per post in list |
-| Search | IsLoggedIn, CanEdit per post in list |
-| 404 | IsLoggedIn |
+| Static Page | IsLoggedIn, CanEdit page                                                               |
+| Archive     | IsLoggedIn, CanEdit per post in list                                                   |
+| Search      | IsLoggedIn, CanEdit per post in list                                                   |
+| 404         | IsLoggedIn                                                                             |
 
 The handler calls the appropriate batch function for its page type.
 No over-fetching — the 404 page doesn't resolve post permissions it
@@ -147,12 +147,12 @@ will never use.
 When htmx requests a fragment, the handler resolves permissions for
 that fragment only.
 
-| Fragment | Permission Checks |
-|---|---|
-| Single comment (after submission) | CanEdit/CanDelete this comment |
-| Comment list refresh | CanEdit/CanDelete per comment |
-| Sidebar refresh | IsLoggedIn |
-| Post refresh | CanEdit/CanDelete/CanShare this post |
+| Fragment                          | Permission Checks                    |
+| --------------------------------- | ------------------------------------ |
+| Single comment (after submission) | CanEdit/CanDelete this comment       |
+| Comment list refresh              | CanEdit/CanDelete per comment        |
+| Sidebar refresh                   | IsLoggedIn                           |
+| Post refresh                      | CanEdit/CanDelete/CanShare this post |
 
 Same principle: resolve before render, pass as props, template checks
 `{{if}}`. The fragment handler is smaller, the permission set is

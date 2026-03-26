@@ -64,19 +64,19 @@ invisible formatting landmines.
 
 ProseMirror input rules for common markdown patterns:
 
-| Type        | Trigger                        |
-|-------------|--------------------------------|
-| Heading 1   | `# ` at start of line          |
-| Heading 2   | `## ` at start of line         |
-| Heading 3   | `### ` at start of line        |
-| Bullet list | `- ` or `* ` at start of line  |
-| Ordered list| `1. ` at start of line         |
-| Blockquote  | `> ` at start of line          |
-| Code block  | ``` at start of line           |
-| Horizontal rule | `---` on its own line      |
-| Bold        | `**text**`                     |
-| Italic      | `*text*`                       |
-| Code inline | `` `text` ``                   |
+| Type            | Trigger                       |
+| --------------- | ----------------------------- |
+| Heading 1       | `# ` at start of line         |
+| Heading 2       | `## ` at start of line        |
+| Heading 3       | `### ` at start of line       |
+| Bullet list     | `- ` or `* ` at start of line |
+| Ordered list    | `1. ` at start of line        |
+| Blockquote      | `> ` at start of line         |
+| Code block      | ``` at start of line          |
+| Horizontal rule | `---` on its own line         |
+| Bold            | `**text**`                    |
+| Italic          | `*text*`                      |
+| Code inline     | `` `text` ``                  |
 
 These fire as you type — the markdown syntax is consumed and replaced
 with the formatted node. Writers who think in markdown get their shortcuts.

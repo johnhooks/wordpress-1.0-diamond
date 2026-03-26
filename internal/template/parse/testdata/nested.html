@@ -1,0 +1,16 @@
+<div>
+  {each categories as cat}
+    <h2>{cat.Name}</h2>
+    {each cat.Posts as post}
+      {if post.Featured}
+        <article class="featured">
+          <h3>{post.Title}</h3>
+        </article>
+      {else}
+        <article>
+          <h3>{post.Title}</h3>
+        </article>
+      {/if}
+    {/each}
+  {/each}
+</div>

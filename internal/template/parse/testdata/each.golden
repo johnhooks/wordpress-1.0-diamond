@@ -1,0 +1,16 @@
+(document
+  (element "html"
+    (element "head")
+    (element "body"
+      (element "ul"
+        (each (ident "posts") :as "post"
+          (element "li"
+            (element "a" (href (. (ident "post") "Permalink"))
+              (expr (. (ident "post") "Title"))
+            )
+          )
+        )
+      )
+    )
+  )
+)

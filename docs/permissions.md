@@ -24,33 +24,33 @@ owner
 
 Each action maps to a minimum required relation:
 
-| Action | Required relation |
-|--------|-------------------|
-| view | viewer |
-| comment | commenter |
-| create | writer |
-| edit | writer |
-| delete | writer |
-| publish | writer |
-| upload | writer |
-| moderate | moderator |
-| manage_categories | moderator |
-| manage_links | moderator |
-| manage_options | owner |
-| manage_users | owner |
+| Action            | Required relation |
+| ----------------- | ----------------- |
+| view              | viewer            |
+| comment           | commenter         |
+| create            | writer            |
+| edit              | writer            |
+| delete            | writer            |
+| publish           | writer            |
+| upload            | writer            |
+| moderate          | moderator         |
+| manage_categories | moderator         |
+| manage_links      | moderator         |
+| manage_options    | owner             |
+| manage_users      | owner             |
 
 ## Object scopes
 
-| Object | Example | Meaning |
-|--------|---------|---------|
-| `site:""` | `owner → site:""` | Site administration only (manage_options, manage_users, moderate) |
-| `type:post` | `editor → type:post` | All objects of that post type |
-| `type:page` | `viewer → type:page` | All pages |
-| `type:attachment` | `writer → type:attachment` | All attachments |
-| `post:"42"` | `writer → post:"42"` | A specific post |
-| `page:"17"` | `writer → page:"17"` | A specific page |
-| `attachment:"5"` | `writer → attachment:"5"` | A specific attachment |
-| `group:"editors"` | `member → group:"editors"` | Group membership |
+| Object            | Example                    | Meaning                                                           |
+| ----------------- | -------------------------- | ----------------------------------------------------------------- |
+| `site:""`         | `owner → site:""`          | Site administration only (manage_options, manage_users, moderate) |
+| `type:post`       | `editor → type:post`       | All objects of that post type                                     |
+| `type:page`       | `viewer → type:page`       | All pages                                                         |
+| `type:attachment` | `writer → type:attachment` | All attachments                                                   |
+| `post:"42"`       | `writer → post:"42"`       | A specific post                                                   |
+| `page:"17"`       | `writer → page:"17"`       | A specific page                                                   |
+| `attachment:"5"`  | `writer → attachment:"5"`  | A specific attachment                                             |
+| `group:"editors"` | `member → group:"editors"` | Group membership                                                  |
 
 Site-level grants only cover site-level checks. They do not cascade to
 content. An `owner → site:""` grant lets you manage options and users,
@@ -71,62 +71,62 @@ ownership-sensitive actions.
 
 ## Default groups
 
-| Group | Purpose |
-|-------|---------|
-| public | Grants that apply to everyone, including anonymous users. Not a membership — always included in every check. |
-| administrators | Site owners. Full control. |
-| editors | Can edit/publish anyone's content. Can moderate. |
-| authors | Can create and manage their own posts. |
-| subscribers | No special grants. Public group grants only. |
+| Group          | Purpose                                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------ |
+| public         | Grants that apply to everyone, including anonymous users. Not a membership — always included in every check. |
+| administrators | Site owners. Full control.                                                                                   |
+| editors        | Can edit/publish anyone's content. Can moderate.                                                             |
+| authors        | Can create and manage their own posts.                                                                       |
+| subscribers    | No special grants. Public group grants only.                                                                 |
 
 ## Seed tuples
 
 ### Site administration
 
-| Subject | Relation | Object | Covers |
-|---------|----------|--------|--------|
-| `group:administrators` | `owner` | `site:""` | manage_options, manage_users, moderate, manage_categories, manage_links |
-| `group:editors` | `moderator` | `site:""` | moderate, manage_categories, manage_links |
+| Subject                | Relation    | Object    | Covers                                                                  |
+| ---------------------- | ----------- | --------- | ----------------------------------------------------------------------- |
+| `group:administrators` | `owner`     | `site:""` | manage_options, manage_users, moderate, manage_categories, manage_links |
+| `group:editors`        | `moderator` | `site:""` | moderate, manage_categories, manage_links                               |
 
 ### Content — posts
 
-| Subject | Relation | Object | Covers |
-|---------|----------|--------|--------|
-| `group:public` | `viewer` | `type:post` | anyone can view posts |
-| `group:public` | `commenter` | `type:post` | anyone can comment on posts |
-| `group:administrators` | `editor` | `type:post` | edit/delete/publish any post |
-| `group:editors` | `editor` | `type:post` | edit/delete/publish any post |
-| `group:authors` | `writer` | `type:post` | create posts, edit/delete/publish own |
+| Subject                | Relation    | Object      | Covers                                |
+| ---------------------- | ----------- | ----------- | ------------------------------------- |
+| `group:public`         | `viewer`    | `type:post` | anyone can view posts                 |
+| `group:public`         | `commenter` | `type:post` | anyone can comment on posts           |
+| `group:administrators` | `editor`    | `type:post` | edit/delete/publish any post          |
+| `group:editors`        | `editor`    | `type:post` | edit/delete/publish any post          |
+| `group:authors`        | `writer`    | `type:post` | create posts, edit/delete/publish own |
 
 ### Content — pages
 
-| Subject | Relation | Object | Covers |
-|---------|----------|--------|--------|
-| `group:public` | `viewer` | `type:page` | anyone can view pages |
+| Subject                | Relation | Object      | Covers                       |
+| ---------------------- | -------- | ----------- | ---------------------------- |
+| `group:public`         | `viewer` | `type:page` | anyone can view pages        |
 | `group:administrators` | `editor` | `type:page` | edit/delete/publish any page |
-| `group:editors` | `editor` | `type:page` | edit/delete/publish any page |
+| `group:editors`        | `editor` | `type:page` | edit/delete/publish any page |
 
 ### Content — attachments
 
-| Subject | Relation | Object | Covers |
-|---------|----------|--------|--------|
+| Subject                | Relation | Object            | Covers                |
+| ---------------------- | -------- | ----------------- | --------------------- |
 | `group:administrators` | `editor` | `type:attachment` | manage any attachment |
-| `group:editors` | `writer` | `type:attachment` | upload, manage own |
-| `group:authors` | `writer` | `type:attachment` | upload, manage own |
+| `group:editors`        | `writer` | `type:attachment` | upload, manage own    |
+| `group:authors`        | `writer` | `type:attachment` | upload, manage own    |
 
 ### Memberships
 
-| Subject | Relation | Object |
-|---------|----------|--------|
+| Subject  | Relation | Object                 |
+| -------- | -------- | ---------------------- |
 | `user:1` | `member` | `group:administrators` |
 
 ### Dynamic tuples (created by handlers)
 
-| Subject | Relation | Object | When |
-|---------|----------|--------|------|
-| `user:N` | `writer` | `post:ID` | post creation (authorship) |
-| `user:N` | `writer` | `page:ID` | page creation |
-| `user:N` | `writer` | `attachment:ID` | file upload |
+| Subject  | Relation | Object          | When                       |
+| -------- | -------- | --------------- | -------------------------- |
+| `user:N` | `writer` | `post:ID`       | post creation (authorship) |
+| `user:N` | `writer` | `page:ID`       | page creation              |
+| `user:N` | `writer` | `attachment:ID` | file upload                |
 
 ## Permissions vs content status
 
@@ -154,11 +154,11 @@ not for publication status.
 
 `CreateTuple` validates all fields before inserting:
 
-| Field | Valid values |
-|-------|-------------|
-| Subject type | `user`, `group`, `token` |
-| Object type | `site`, `type`, `post`, `page`, `attachment`, `group` |
-| Relation | `member`, `viewer`, `commenter`, `writer`, `editor`, `moderator`, `owner` |
+| Field        | Valid values                                                              |
+| ------------ | ------------------------------------------------------------------------- |
+| Subject type | `user`, `group`, `token`                                                  |
+| Object type  | `site`, `type`, `post`, `page`, `attachment`, `group`                     |
+| Relation     | `member`, `viewer`, `commenter`, `writer`, `editor`, `moderator`, `owner` |
 
 Invalid values are rejected with an error. This prevents typos
 (`"eidtor"`) and invented relations (`"superadmin"`) from silently

@@ -1,12 +1,10 @@
-{{define "comment-list"}}
-{{template "comment-count" len .Comments}}
-<ol id="comment-list">
-{{range .Comments}}
-    {{template "comment" .}}
-{{end}}
-</ol>
-{{end}}
-
-{{define "comment-count"}}
-<h3 id="comments">{{.}} Comment{{if ne . 1}}s{{end}}</h3>
-{{end}}
+<div class="comments">
+    {if comments}
+    <h2>Comments</h2>
+    <div class="comment-list">
+        {each comments as comment}
+        <comment />
+        {/each}
+    </div>
+    {/if}
+</div>

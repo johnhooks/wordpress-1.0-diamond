@@ -65,7 +65,7 @@ func (s *Store) DeleteGroup(ctx context.Context, slug string) error {
 	if err != nil {
 		return errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Delete tuples where this group is subject or object.
 	_, err = tx.ExecContext(ctx,
@@ -249,7 +249,7 @@ func (s *Store) CreateShareToken(ctx context.Context, st *ShareToken, relation R
 	if err != nil {
 		return errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	_, err = tx.ExecContext(ctx, `
 		INSERT INTO wp_share_tokens (token, created_by, created_at, expires_at)
@@ -292,7 +292,7 @@ func (s *Store) DeleteShareToken(ctx context.Context, token string) error {
 	if err != nil {
 		return errors.Internal(err, errors.ErrQueryFailed)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	_, err = tx.ExecContext(ctx, "DELETE FROM wp_tuples WHERE subject_type = 'token' AND subject_id = ?", token)
 	if err != nil {
@@ -310,4 +310,3 @@ func (s *Store) DeleteShareToken(ctx context.Context, token string) error {
 
 	return tx.Commit()
 }
-

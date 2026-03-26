@@ -16,7 +16,8 @@ func (s *Server) handlePost(w http.ResponseWriter, r *http.Request, m *permalink
 
 	switch {
 	case m.PostID != "":
-		id, err := strconv.ParseInt(m.PostID, 10, 64)
+		var id int64
+		id, err = strconv.ParseInt(m.PostID, 10, 64)
 		if err != nil {
 			http.NotFound(w, r)
 			return
@@ -82,15 +83,16 @@ func (s *Server) renderPost(w http.ResponseWriter, r *http.Request, post *postRe
 		}
 	}
 
-	siteData := s.siteData(ctx)
+	siteData := s.siteData(r)
 	siteData.PageTitle = post.PostTitle
 
 	data := SingleData{
 		SiteData:     siteData,
 		Post:         post.View,
+		PostID:       post.ID,
 		Comments:     commentViews,
 		CommentsOpen: post.CommentStatus == "open",
 	}
 
-	s.render(w, r, "single.html", data)
+	s.renderSite(w, "single", data)
 }

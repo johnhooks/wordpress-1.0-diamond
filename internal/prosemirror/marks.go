@@ -30,7 +30,7 @@ func Code(_ Mark, content template.HTML) template.HTML {
 func Link(mark Mark, content template.HTML) template.HTML {
 	var attrs LinkAttrs
 	if mark.Attrs != nil {
-		json.Unmarshal(mark.Attrs, &attrs)
+		_ = json.Unmarshal(mark.Attrs, &attrs)
 	}
 	var b strings.Builder
 	b.WriteString(`<a href="`)

@@ -1,6 +1,5 @@
-{{define "search-form"}}
-<form method="get" action="/">
-    <input type="text" name="s" value="{{.SearchQuery}}" placeholder="Search...">
-    <button type="submit">Go</button>
+<form class="search-form" method="get" action="/">
+    <label for="s">Search</label>
+    <input type="text" name="s" id="s" value="{search_query}"/>
+    <button type="submit">Search</button>
 </form>
-{{end}}

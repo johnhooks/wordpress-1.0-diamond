@@ -1,8 +1,13 @@
-{{define "sidebar"}}
-<hr>
-{{template "search-form" .}}
-{{template "category-list" .}}
-{{template "archive-list" .}}
-{{template "page-list" .}}
-{{template "meta-links" .}}
-{{end}}
+<div id="sidebar">
+    <search-form />
+    {if categories}
+    <category-list />
+    {/if}
+    {if archives}
+    <archive-list />
+    {/if}
+    {if pages}
+    <page-list />
+    {/if}
+    <meta-links />
+</div>

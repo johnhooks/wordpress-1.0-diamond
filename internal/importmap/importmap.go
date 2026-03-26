@@ -29,7 +29,7 @@ type Map struct {
 func Build(staticFS fs.FS, vendorDir, urlPrefix string) (*Map, error) {
 	m := &Map{
 		Imports: make(map[string]string),
-		Hashed: make(map[string]string),
+		Hashed:  make(map[string]string),
 	}
 
 	err := fs.WalkDir(staticFS, vendorDir, func(p string, d fs.DirEntry, err error) error {

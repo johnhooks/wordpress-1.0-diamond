@@ -62,8 +62,8 @@ on your computer.
 ### Templates Use `TheTitle`, `TheContent`, `TheDate`
 
 WordPress template tags were `the_title()`, `the_content()`,
-`the_date()`. Press carries the same names: `{{.TheTitle}}`,
-`{{.TheContent}}`, `{{.TheDate}}`.
+`the_date()`. Press carries the same names: `{the_title}`,
+`{the_content}`, `{the_date}`.
 
 This serves no technical purpose. It exists because this is WordPress
 1.6 and the heritage matters, even when it makes Go developers twitch.
@@ -86,7 +86,7 @@ controlled presentation. Hooks let anyone modify anything at runtime.
 Press takes the themes and leaves the hooks. What happens when
 extension is explicit and compiled instead of implicit and runtime?
 
-### Themes Are Compiled Artifacts
+### Themes Are Finished Before They Ship
 
 No live editing on production. You build a theme, preview it, apply it.
 The writing experience is the priority. Pick a theme, tweak the
@@ -159,10 +159,10 @@ to the beginning to try.
 
 ## The Weird Stuff
 
-Some of these decisions will be wrong. The `TheTitle` naming is almost
-certainly wrong. Server-rendering the entire admin might hit a wall.
-The theme compilation system is a gigantic experiment that might not
-work.
+Some of these decisions will be wrong. Server-rendering the entire
+admin might hit a wall. The template engine is a from-scratch HTML5
+parser fork with a Svelte-inspired expression language, which is
+either exactly right or completely unhinged.
 
 We're not hiding this. Press is a curiosity project. It's a vehicle
 for exploring ideas about the web, about writing tools, about what
@@ -177,6 +177,6 @@ There's only one way to find out if any of this works.
 
 ---
 
-*Press. WordPress 1.6. The release that never happened.*
+_Press. WordPress 1.6. The release that never happened._
 
-*Let's see where it goes.*
+_Let's see where it goes._

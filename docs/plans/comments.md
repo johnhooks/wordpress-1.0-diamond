@@ -54,37 +54,39 @@ message type on the same channel.
 
 Both types live in `wp_comments`.
 
-| Field              | Post Comment                     | Editorial Comment                |
-|--------------------|----------------------------------|----------------------------------|
-| comment_post_ID    | Which post                       | Which post                       |
-| comment_type       | `'comment'`                      | `'editorial'`                    |
-| comment_content    | The comment text                 | The annotation text              |
-| comment_parent     | Parent comment (threading)       | Parent comment (thread on annotation) |
-| comment_approved   | `'0'`, `'1'`, `'spam'`          | Always `'1'` (no moderation)    |
-| comment_author     | Display name                     | Display name                     |
-| user_id            | User ID (if logged in)           | User ID (required)               |
-| comment_date       | When posted                      | When posted                      |
+| Field            | Post Comment               | Editorial Comment                     |
+| ---------------- | -------------------------- | ------------------------------------- |
+| comment_post_ID  | Which post                 | Which post                            |
+| comment_type     | `'comment'`                | `'editorial'`                         |
+| comment_content  | The comment text           | The annotation text                   |
+| comment_parent   | Parent comment (threading) | Parent comment (thread on annotation) |
+| comment_approved | `'0'`, `'1'`, `'spam'`     | Always `'1'` (no moderation)          |
+| comment_author   | Display name               | Display name                          |
+| user_id          | User ID (if logged in)     | User ID (required)                    |
+| comment_date     | When posted                | When posted                           |
 
 Editorial comments need anchor data — where in the document they're
 attached. Stored in `wp_commentmeta`:
 
-| meta_key           | Value                                          |
-|--------------------|------------------------------------------------|
-| `anchor_from`      | Start position in document                     |
-| `anchor_to`        | End position in document                       |
-| `resolved`         | Whether the thread is resolved                 |
-| `resolved_by`      | User who resolved it                           |
+| meta_key      | Value                          |
+| ------------- | ------------------------------ |
+| `anchor_from` | Start position in document     |
+| `anchor_to`   | End position in document       |
+| `resolved`    | Whether the thread is resolved |
+| `resolved_by` | User who resolved it           |
 
 ## Permission Model
 
 Commenting is gated by tuples. No tuple, no comment.
 
 **Post comments:**
+
 - `commenter` tuple on the specific post — from a share token or direct grant
 - `editor` tuple on the post — editors can always comment
 - `commenter` tuple on `type:post` — global comment permission (logged-in users)
 
 **Editorial comments:**
+
 - `editor` tuple on the post — only editors can see and create annotations
 - Viewers cannot see editorial comments
 
@@ -93,7 +95,7 @@ Commenting is gated by tuples. No tuple, no comment.
 When you create a share link, you choose what it grants:
 
 | Token permission | Can view | Can comment | Can edit |
-|------------------|----------|-------------|----------|
+| ---------------- | -------- | ----------- | -------- |
 | `viewer`         | yes      | no          | no       |
 | `commenter`      | yes      | yes         | no       |
 | `editor`         | yes      | yes         | yes      |

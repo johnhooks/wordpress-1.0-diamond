@@ -76,6 +76,7 @@ trimmed from the tail. The only consequence is you can only walk back
 so far in history — not a big deal.
 
 The step log powers:
+
 - **Undo/redo** — walk backwards and forwards through operations
 - **Real-time collaboration** — steps sent over WebSocket, server rebases
   conflicts, broadcasts to all connected clients
@@ -149,6 +150,7 @@ Client A (ProseMirror) ←→ WebSocket ←→ Server (Go) ←→ WebSocket ←�
 ### Permission Gate
 
 The WebSocket upgrade handler checks the tuples cache:
+
 - `editor` tuple on this post → read-write connection
 - `viewer` tuple → read-only connection (live preview, no editing)
 - No tuple → rejected
