@@ -39,7 +39,7 @@
           (text "Comments")
         )
         (element "div" (class "comment-list")
-          (element "div" (class "comment")
+          (element "div" (class "comment") (id "comment-10")
             (element "p" (class "comment-meta")
               (element "strong"
                 (element "a" (href "https://alice.example.com")
@@ -53,7 +53,7 @@
               (raw "<p>Great post!</p>")
             )
           )
-          (element "div" (class "comment")
+          (element "div" (class "comment") (id "comment-11")
             (element "p" (class "comment-meta")
               (element "strong"
                 (text "Bob")

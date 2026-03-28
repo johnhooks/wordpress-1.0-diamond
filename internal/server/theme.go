@@ -156,6 +156,24 @@ func (th *Theme) EvalTagTemplate(
 	return result, nil
 }
 
+// RenderFragment evaluates a named template with data and writes the
+// resulting HTML directly to w, without the document shell. Used for
+// htmx partial responses.
+func (th *Theme) RenderFragment(w io.Writer, ctx context.Context, name string, data any) error {
+	doc, err := th.getTemplate(name)
+	if err != nil {
+		return err
+	}
+
+	ctx = template.WithTagResolver(ctx, th)
+
+	result, err := template.Evaluate(ctx, doc, data)
+	if err != nil {
+		return err
+	}
+	return parse.Render(w, result)
+}
+
 // attrsFromNode extracts a map of attribute key-value pairs from a
 // parsed element node. Used by tag handlers to pass caller attributes
 // through to sub-templates.
