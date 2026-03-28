@@ -66,19 +66,15 @@ func (th *Theme) RegisterHandler(name string, handler template.TagNodeHandler) {
 }
 
 // ResolveTag implements template.TagResolver.
-func (th *Theme) ResolveTag(name string) (template.TagNodeHandler, bool) {
-	h, ok := th.handlers[name]
-	return h, ok
+func (th *Theme) ResolveTag(name string) template.TagNodeHandler {
+	return th.handlers[name]
 }
 
 // Render writes the document shell and renders the named page template
 // within it. The engine owns the <head> (charset, viewport, title,
 // theme stylesheet, htmx). Page templates are body-content fragments.
 func (th *Theme) Render(w io.Writer, ctx context.Context, name string, data any) error {
-	doc, err := th.getTemplate(name)
-	if err != nil {
-		return err
-	}
+	doc := th.getTemplate(name)
 
 	// Extract title fields from the view data.
 	blogName := lookupViewString(data, "blog_name")
@@ -108,16 +104,13 @@ func (th *Theme) Render(w io.Writer, ctx context.Context, name string, data any)
 	ctx = template.WithTagResolver(ctx, th)
 
 	// Evaluate the page template into a plain HTML AST, then render.
-	result, err := template.Evaluate(ctx, doc, data)
-	if err != nil {
-		return err
-	}
+	result := template.Evaluate(ctx, doc, data)
 	if err := parse.Render(w, result); err != nil {
 		return err
 	}
 
 	// Close the document.
-	_, err = io.WriteString(w, "\n</body>\n</html>\n")
+	_, err := io.WriteString(w, "\n</body>\n</html>\n")
 	return err
 }
 
@@ -131,16 +124,9 @@ func (th *Theme) EvalTagTemplate(
 	callerAttrs map[string]string,
 	engineAttrs map[string]string,
 	data any,
-) (*parse.Node, error) {
-	doc, err := th.getTemplate(name)
-	if err != nil {
-		return nil, errors.Wrap(err, errors.ErrTemplateRender, fmt.Sprintf("tag template %q", name), http.StatusInternalServerError)
-	}
-
-	result, err := ev.EvaluateScoped(doc, data)
-	if err != nil {
-		return nil, err
-	}
+) *parse.Node {
+	doc := th.getTemplate(name)
+	result := ev.EvaluateScoped(doc, data)
 
 	// Merge attributes on the output tree's wrapper element.
 	wrapper := firstElementChild(result)
@@ -153,24 +139,17 @@ func (th *Theme) EvalTagTemplate(
 		}
 	}
 
-	return result, nil
+	return result
 }
 
 // RenderFragment evaluates a named template with data and writes the
 // resulting HTML directly to w, without the document shell. Used for
-// htmx partial responses.
+// htmx partial responses where a template is rendered outside the
+// normal page flow.
 func (th *Theme) RenderFragment(w io.Writer, ctx context.Context, name string, data any) error {
-	doc, err := th.getTemplate(name)
-	if err != nil {
-		return err
-	}
-
+	doc := th.getTemplate(name)
 	ctx = template.WithTagResolver(ctx, th)
-
-	result, err := template.Evaluate(ctx, doc, data)
-	if err != nil {
-		return err
-	}
+	result := template.Evaluate(ctx, doc, data)
 	return parse.Render(w, result)
 }
 
@@ -188,23 +167,30 @@ func attrsFromNode(el *parse.Node) map[string]string {
 	return attrs
 }
 
-func (th *Theme) getTemplate(name string) (*parse.Node, error) {
+// getTemplate returns the parsed AST for a template. Panics if the
+// template does not exist. Templates are validated at load time; a
+// missing template at request time is a programmer error.
+func (th *Theme) getTemplate(name string) *parse.Node {
 	if th.devMode {
 		// Search molecules → organisms → templates in order.
 		for _, sub := range themeDirs {
 			path := filepath.Join(th.dir, sub, name+".html")
 			if _, err := os.Stat(path); err == nil {
-				return parseFile(path)
+				doc, err := parseFile(path)
+				if err != nil {
+					panic(fmt.Sprintf("theme: failed to parse template %q: %v", name, err))
+				}
+				return doc
 			}
 		}
-		return nil, errors.NotFound(errors.ErrNotFound, fmt.Sprintf("template %q not found", name))
+		panic(fmt.Sprintf("theme: template %q not found", name))
 	}
 
 	doc, ok := th.templates[name]
 	if !ok {
-		return nil, errors.NotFound(errors.ErrNotFound, fmt.Sprintf("template %q not found", name))
+		panic(fmt.Sprintf("theme: template %q not found", name))
 	}
-	return doc, nil
+	return doc
 }
 
 // lookupViewString resolves a view-tagged string field from a struct.

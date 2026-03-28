@@ -34,3 +34,8 @@ var vocabularyTags = map[string]bool{
 func isVocabularyTag(name string) bool {
 	return vocabularyTags[name]
 }
+
+// IsVocabularyTag reports whether name is a known vocabulary tag.
+func IsVocabularyTag(name string) bool {
+	return vocabularyTags[name]
+}

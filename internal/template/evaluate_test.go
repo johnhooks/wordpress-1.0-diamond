@@ -16,10 +16,7 @@ func evaluateTemplate(t *testing.T, input string, data any) string {
 		t.Fatalf("ParseTemplate error: %v", err)
 	}
 
-	result, err := Evaluate(context.Background(), doc, data)
-	if err != nil {
-		t.Fatalf("Evaluate error: %v", err)
-	}
+	result := Evaluate(context.Background(), doc, data)
 
 	var buf bytes.Buffer
 	if err := parse.Render(&buf, result); err != nil {
@@ -334,10 +331,10 @@ func TestEvaluate_ConstInsideEachNotVisibleOutside(t *testing.T) {
 }
 
 func TestEvaluate_TagNodeHandler(t *testing.T) {
-	handler := func(_ context.Context, ev *Evaluator, el *parse.Node) (*parse.Node, error) {
+	handler := func(_ context.Context, ev *Evaluator, el *parse.Node) *parse.Node {
 		div := newElementNode("div", []parse.Attribute{{Key: "class", Val: "custom"}})
 		div.AppendChild(newTextNode("handled"))
-		return div, nil
+		return div
 	}
 
 	doc, err := parse.ParseTemplate(strings.NewReader(`<div><my-tag/></div>`))
@@ -348,10 +345,7 @@ func TestEvaluate_TagNodeHandler(t *testing.T) {
 	resolver := &testResolver{handlers: map[string]TagNodeHandler{"my-tag": handler}}
 	ctx := WithTagResolver(context.Background(), resolver)
 
-	result, err := Evaluate(ctx, doc, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	result := Evaluate(ctx, doc, nil)
 
 	var buf bytes.Buffer
 	if err := parse.Render(&buf, result); err != nil {
@@ -364,7 +358,7 @@ func TestEvaluate_TagNodeHandler(t *testing.T) {
 }
 
 func TestEvaluate_TagHandlerWithSubTemplate(t *testing.T) {
-	handler := func(_ context.Context, ev *Evaluator, el *parse.Node) (*parse.Node, error) {
+	handler := func(_ context.Context, ev *Evaluator, el *parse.Node) *parse.Node {
 		wrapper := newElementNode("section", nil)
 		name := ""
 		for _, a := range el.Attr {
@@ -373,7 +367,7 @@ func TestEvaluate_TagHandlerWithSubTemplate(t *testing.T) {
 			}
 		}
 		wrapper.AppendChild(newTextNode("Hello, " + name))
-		return wrapper, nil
+		return wrapper
 	}
 
 	doc, err := parse.ParseTemplate(strings.NewReader(`<div><greeting name="{Name}"/></div>`))
@@ -385,10 +379,7 @@ func TestEvaluate_TagHandlerWithSubTemplate(t *testing.T) {
 	ctx := WithTagResolver(context.Background(), resolver)
 
 	data := struct{ Name string }{Name: "World"}
-	result, err := Evaluate(ctx, doc, data)
-	if err != nil {
-		t.Fatal(err)
-	}
+	result := Evaluate(ctx, doc, data)
 
 	var buf bytes.Buffer
 	if err := parse.Render(&buf, result); err != nil {
@@ -435,7 +426,6 @@ type testResolver struct {
 	handlers map[string]TagNodeHandler
 }
 
-func (r *testResolver) ResolveTag(name string) (TagNodeHandler, bool) {
-	h, ok := r.handlers[name]
-	return h, ok
+func (r *testResolver) ResolveTag(name string) TagNodeHandler {
+	return r.handlers[name]
 }

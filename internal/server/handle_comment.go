@@ -88,17 +88,11 @@ func (s *Server) handleCommentHTMX(w http.ResponseWriter, r *http.Request, postI
 		CSRFToken: auth.CSRFFromContext(ctx).Token(fmt.Sprintf("comment-%d", postID)),
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := s.theme.RenderFragment(w, ctx, "comment-form", formData); err != nil {
-		log.Printf("failed to render comment form: %v", err)
-		s.httpError(w, r, "An internal error occurred.", http.StatusInternalServerError)
-		return
-	}
+	s.theme.RenderFragment(w, ctx, "comment-form", formData)
 
 	// OOB swap: append the new comment to the comment list.
 	cv := newCommentView(comment)
 	fmt.Fprintf(w, `<div hx-swap-oob="beforeend:.comment-list">`)
-	if err := s.theme.RenderFragment(w, ctx, "comment", cv); err != nil {
-		log.Printf("failed to render comment: %v", err)
-	}
+	s.theme.RenderFragment(w, ctx, "comment", cv)
 	fmt.Fprintf(w, `</div>`)
 }

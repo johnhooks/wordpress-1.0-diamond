@@ -3,6 +3,7 @@ package template
 import (
 	"context"
 	"flag"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -353,9 +354,9 @@ func TestGoldenMolecules(t *testing.T) {
 // nodeTemplateHandler returns a TagNodeHandler that loads and evaluates
 // a sub-template from the theme, returning the result as a node tree.
 func nodeTemplateHandler(dir, name string) TagNodeHandler {
-	return func(ctx context.Context, ev *Evaluator, el *parse.Node) (*parse.Node, error) {
+	return func(ctx context.Context, ev *Evaluator, el *parse.Node) *parse.Node {
 		path := filepath.Join(themeDir, dir, name+".html")
-		return evalSubTemplate(ctx, ev, path, nil)
+		return evalSubTemplate(ev, path, nil)
 	}
 }
 
@@ -364,26 +365,26 @@ func nodeTemplateHandler(dir, name string) TagNodeHandler {
 // a sub-template. This mirrors what real tag handlers like tagPost and
 // tagComment do.
 func scopedNodeHandler(dir, tmpl, binding string) TagNodeHandler {
-	return func(ctx context.Context, ev *Evaluator, el *parse.Node) (*parse.Node, error) {
+	return func(ctx context.Context, ev *Evaluator, el *parse.Node) *parse.Node {
 		val, ok := ev.Scope().Lookup(binding)
 		if !ok {
-			return nil, nil
+			return nil
 		}
 		path := filepath.Join(themeDir, dir, tmpl+".html")
-		return evalSubTemplate(ctx, ev, path, val)
+		return evalSubTemplate(ev, path, val)
 	}
 }
 
-func evalSubTemplate(ctx context.Context, ev *Evaluator, path string, data any) (*parse.Node, error) {
+func evalSubTemplate(ev *Evaluator, path string, data any) *parse.Node {
 	f, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		panic(fmt.Sprintf("test: open template %s: %v", path, err))
 	}
 	defer f.Close()
 
 	doc, err := parse.ParseTemplateFragment(f)
 	if err != nil {
-		return nil, err
+		panic(fmt.Sprintf("test: parse template %s: %v", path, err))
 	}
 
 	if data != nil {
@@ -392,9 +393,9 @@ func evalSubTemplate(ctx context.Context, ev *Evaluator, path string, data any) 
 
 	out := newDocumentNode()
 	if err := ev.EvaluateChildren(out, doc); err != nil {
-		return nil, err
+		panic(fmt.Sprintf("test: evaluate template %s: %v", path, err))
 	}
-	return out, nil
+	return out
 }
 
 func themeResolver() *testResolver {
@@ -628,10 +629,7 @@ func runGoldenEval(t *testing.T, name, templatePath string, data any, resolver T
 	if resolver != nil {
 		ctx = WithTagResolver(ctx, resolver)
 	}
-	result, err := Evaluate(ctx, doc, data)
-	if err != nil {
-		t.Fatalf("evaluate: %v", err)
-	}
+	result := Evaluate(ctx, doc, data)
 
 	got := parse.Sprint(result)
 	goldenPath := filepath.Join("testdata", name+".golden")

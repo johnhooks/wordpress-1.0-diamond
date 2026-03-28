@@ -54,17 +54,19 @@ type Evaluator struct {
 }
 
 // Evaluate evaluates a template AST against data and returns
-// a plain HTML node tree suitable for parse.Render.
-func Evaluate(ctx context.Context, doc *parse.Node, data any) (*parse.Node, error) {
+// a plain HTML node tree suitable for parse.Render. Panics on
+// evaluation errors; a validated theme with correct data should
+// never produce errors.
+func Evaluate(ctx context.Context, doc *parse.Node, data any) *parse.Node {
 	ev := &Evaluator{
 		ctx:   ctx,
 		scope: NewScope(data),
 	}
 	out := newDocumentNode()
 	if err := ev.evaluateChildren(out, doc); err != nil {
-		return nil, err
+		panic(fmt.Sprintf("template: Evaluate: %v", err))
 	}
-	return out, nil
+	return out
 }
 
 // evaluateInto evaluates node n and appends zero or more output
@@ -131,12 +133,17 @@ func (ev *Evaluator) evaluateChildren(parent *parse.Node, src *parse.Node) error
 
 // evaluateElement handles a plain element node. If a TagResolver is
 // on the context, it checks for a vocabulary tag handler first.
+// Panics if the element is a known vocabulary tag without a handler.
 func (ev *Evaluator) evaluateElement(parent *parse.Node, n *parse.Node) error {
 	// Check for vocabulary tag handler.
 	if resolver, ok := tagResolverFromContext(ev.ctx); ok {
-		if handler, found := resolver.ResolveTag(n.Data); found {
+		if handler := resolver.ResolveTag(n.Data); handler != nil {
 			return ev.evaluateVocabularyTag(parent, n, handler)
 		}
+	}
+
+	if parse.IsVocabularyTag(n.Data) {
+		panic(fmt.Sprintf("template: vocabulary tag <%s> has no handler", n.Data))
 	}
 
 	// Clone the element (no children).
@@ -332,11 +339,13 @@ func (ev *Evaluator) evaluateConst(n *parse.Node) error {
 // TagNodeHandler is a vocabulary tag handler for the evaluator.
 // It receives the element node and returns a replacement subtree.
 // Handlers control descent by calling back into the evaluator.
-type TagNodeHandler func(ctx context.Context, ev *Evaluator, el *parse.Node) (*parse.Node, error)
+// Handlers must not fail; panics indicate programmer errors.
+type TagNodeHandler func(ctx context.Context, ev *Evaluator, el *parse.Node) *parse.Node
 
 // TagResolver resolves vocabulary tag names to node-based handlers.
+// Returns nil for elements that are not vocabulary tags.
 type TagResolver interface {
-	ResolveTag(name string) (TagNodeHandler, bool)
+	ResolveTag(name string) TagNodeHandler
 }
 
 type tagResolverKey struct{}
@@ -365,10 +374,7 @@ func (ev *Evaluator) evaluateVocabularyTag(parent *parse.Node, n *parse.Node, ha
 		return evaluateWrap(err, "resolving attributes on <%s>", n.Data)
 	}
 
-	result, err := handler(ev.ctx, ev, el)
-	if err != nil {
-		return evaluateWrap(err, "handler for <%s>", n.Data)
-	}
+	result := handler(ev.ctx, ev, el)
 
 	if result == nil {
 		return nil
@@ -407,21 +413,19 @@ func (ev *Evaluator) EvaluateChildren(parent *parse.Node, src *parse.Node) error
 // EvaluateScoped creates a child scope with the given data, evaluates
 // the template, and returns the result tree. Used by tag handlers to
 // render sub-templates with their own data context.
-func (ev *Evaluator) EvaluateScoped(doc *parse.Node, data any) (*parse.Node, error) {
+func (ev *Evaluator) EvaluateScoped(doc *parse.Node, data any) *parse.Node {
 	child := ev.scope.PushData(data)
 
 	oldScope := ev.scope
 	ev.scope = child
 
 	out := newDocumentNode()
-	err := ev.evaluateChildren(out, doc)
+	if err := ev.evaluateChildren(out, doc); err != nil {
+		panic(fmt.Sprintf("template: EvaluateScoped: %v", err))
+	}
 
 	ev.scope = oldScope
-
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
+	return out
 }
 
 // Scope returns the current scope for handlers that need to inspect

@@ -10,7 +10,7 @@ import (
 // tagSidebar renders a <sidebar /> vocabulary tag. Injects
 // role="complementary" as an engine attribute. Sidebar molecules
 // resolve their data from the parent scope chain.
-func (s *Server) tagSidebar(ctx context.Context, ev *template.Evaluator, el *parse.Node) (*parse.Node, error) {
+func (s *Server) tagSidebar(ctx context.Context, ev *template.Evaluator, el *parse.Node) *parse.Node {
 	engineAttrs := map[string]string{
 		"role": "complementary",
 	}
