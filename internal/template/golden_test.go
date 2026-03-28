@@ -154,10 +154,9 @@ type siteFixture struct {
 // --- Molecule tests (no handlers needed) ---
 
 type moleculeTest struct {
-	name     string         // template file name (without .html)
-	dir      string         // subdirectory under theme (molecules, organisms, templates)
-	data     any            // fixture data for the root scope
-	handlers map[string]any // vocabulary tag handlers (nil for molecules)
+	name string // template file name (without .html)
+	dir  string // subdirectory under theme (molecules, organisms, templates)
+	data any    // fixture data for the root scope
 }
 
 var moleculeTests = []moleculeTest{
@@ -360,6 +359,26 @@ func nodeTemplateHandler(dir, name string) TagNodeHandler {
 	}
 }
 
+// engineAttrHandler returns a TagNodeHandler that loads a sub-template
+// and injects engine attributes onto the wrapper element, mirroring
+// what EvalTagTemplate does with engineAttrs in production.
+func engineAttrHandler(dir, name string, attrs map[string]string) TagNodeHandler {
+	return func(ctx context.Context, ev *Evaluator, el *parse.Node) *parse.Node {
+		path := filepath.Join(themeDir, dir, name+".html")
+		result := evalSubTemplate(ev, path, nil)
+		// Find the first element child and inject engine attrs.
+		for c := result.FirstChild; c != nil; c = c.NextSibling {
+			if c.Type == parse.ElementNode {
+				for key, val := range attrs {
+					c.Attr = append(c.Attr, parse.Attribute{Key: key, Val: val})
+				}
+				break
+			}
+		}
+		return result
+	}
+}
+
 // scopedNodeHandler returns a TagNodeHandler that looks up a binding
 // from scope, pushes its view fields into a child scope, and evaluates
 // a sub-template. This mirrors what real tag handlers like tagPost and
@@ -380,7 +399,7 @@ func evalSubTemplate(ev *Evaluator, path string, data any) *parse.Node {
 	if err != nil {
 		panic(fmt.Sprintf("test: open template %s: %v", path, err))
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	doc, err := parse.ParseTemplateFragment(f)
 	if err != nil {
@@ -400,19 +419,20 @@ func evalSubTemplate(ev *Evaluator, path string, data any) *parse.Node {
 
 func themeResolver() *testResolver {
 	return &testResolver{handlers: map[string]TagNodeHandler{
-		"post":            scopedNodeHandler("molecules", "post", "post"),
-		"comment":         scopedNodeHandler("molecules", "comment", "comment"),
-		"pagination":      nodeTemplateHandler("molecules", "pagination"),
-		"post-navigation": nodeTemplateHandler("molecules", "post-navigation"),
-		"comment-form":    nodeTemplateHandler("molecules", "comment-form"),
-		"comment-list":    nodeTemplateHandler("organisms", "comment-list"),
-		"sidebar":         nodeTemplateHandler("organisms", "sidebar"),
-		"search-form":     nodeTemplateHandler("molecules", "search-form"),
-		"category-list":   nodeTemplateHandler("molecules", "category-list"),
-		"archive-list":    nodeTemplateHandler("molecules", "archive-list"),
-		"page-list":       nodeTemplateHandler("molecules", "page-list"),
-		"meta-links":      nodeTemplateHandler("molecules", "meta-links"),
-		"archive-header":  nodeTemplateHandler("molecules", "archive-header"),
+		"post":               scopedNodeHandler("molecules", "post", "post"),
+		"comment":            scopedNodeHandler("molecules", "comment", "comment"),
+		"pagination":         nodeTemplateHandler("molecules", "pagination"),
+		"post-navigation":    nodeTemplateHandler("molecules", "post-navigation"),
+		"comment-form":       nodeTemplateHandler("molecules", "comment-form"),
+		"comment-list":       nodeTemplateHandler("organisms", "comment-list"),
+		"sidebar":            nodeTemplateHandler("organisms", "sidebar"),
+		"search-form":        nodeTemplateHandler("molecules", "search-form"),
+		"category-list":      nodeTemplateHandler("molecules", "category-list"),
+		"archive-list":       nodeTemplateHandler("molecules", "archive-list"),
+		"page-list":          nodeTemplateHandler("molecules", "page-list"),
+		"meta-links":         nodeTemplateHandler("molecules", "meta-links"),
+		"archive-header":     nodeTemplateHandler("molecules", "archive-header"),
+		"comment-list-empty": engineAttrHandler("molecules", "comment-list-empty", map[string]string{"data-empty": ""}),
 	}}
 }
 
@@ -618,7 +638,7 @@ func runGoldenEval(t *testing.T, name, templatePath string, data any, resolver T
 	if err != nil {
 		t.Fatalf("open template: %v", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	doc, err := parse.ParseTemplateFragment(f)
 	if err != nil {
