@@ -12,9 +12,8 @@ import (
 )
 
 // tagComment renders a <comment /> vocabulary tag. It resolves the
-// comment from the current scope (bound by {each comments as comment}),
-// pushes its view fields into a child scope, and injects the comment
-// ID as an engine attribute on the wrapper element.
+// comment from the current scope (bound by {each comments as comment})
+// and pushes its view fields into a child scope.
 func (s *Server) tagComment(ctx context.Context, ev *template.Evaluator, el *parse.Node) (*parse.Node, error) {
 	val, ok := ev.Scope().Lookup("comment")
 	if !ok {
@@ -25,11 +24,7 @@ func (s *Server) tagComment(ctx context.Context, ev *template.Evaluator, el *par
 		return nil, errors.New(errors.ErrTemplateRender, fmt.Sprintf("<comment />: expected CommentView, got %T", val), http.StatusInternalServerError)
 	}
 
-	engineAttrs := map[string]string{
-		"id": fmt.Sprintf("comment-%d", comment.ID),
-	}
-
-	return s.theme.EvalTagTemplate(ctx, ev, "comment", attrsFromNode(el), engineAttrs, comment)
+	return s.theme.EvalTagTemplate(ctx, ev, "comment", attrsFromNode(el), nil, comment)
 }
 
 // tagCommentList renders a <comment-list /> vocabulary tag.

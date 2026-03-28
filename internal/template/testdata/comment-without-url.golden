@@ -1,5 +1,5 @@
 (document
-  (element "div" (class "comment")
+  (element "div" (class "comment") (id "comment-12")
     (element "p" (class "comment-meta")
       (element "strong"
         (text "Charlie")

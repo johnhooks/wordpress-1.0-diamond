@@ -56,15 +56,12 @@ func (s *Server) handleCommentSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// BUG: The form has hx-post with hx-swap="outerHTML", so htmx
-	// expects an HTML fragment back. But we redirect, which htmx
-	// follows and swaps the entire page into the form element.
-	// The fix: detect HX-Request header, return a fresh empty form
-	// (via the comment-form tag handler) plus an OOB swap to append
-	// the new comment to the comment list. Fall back to redirect
-	// for non-htmx requests. Fix in the AST render pipeline refactor.
+	if r.Header.Get("HX-Request") == "true" {
+		s.handleCommentHTMX(w, r, postID, comment)
+		return
+	}
 
-	// Redirect back to the post
+	// Non-htmx: redirect back to the post.
 	post, err := s.posts.GetByID(r.Context(), postID)
 	if err != nil {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
@@ -72,4 +69,36 @@ func (s *Server) handleCommentSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	redirect := s.linker.PostPath(post.ID, post.PostDate, post.PostName)
 	http.Redirect(w, r, redirect+"#comment-"+strconv.FormatInt(comment.CommentID, 10), http.StatusSeeOther)
+}
+
+// handleCommentHTMX renders an htmx response: a fresh empty comment
+// form (swapped in place via hx-swap="outerHTML") plus an OOB swap
+// that appends the new comment to the comment list.
+func (s *Server) handleCommentHTMX(w http.ResponseWriter, r *http.Request, postID int64, comment *model.Comment) {
+	cookie, _ := r.Cookie(auth.CookieName)
+	sessionToken := ""
+	if cookie != nil {
+		sessionToken = cookie.Value
+	}
+	ctx := auth.WithCSRF(r.Context(), auth.NewCSRFHelper(sessionToken, s.cfg.SecretKey))
+
+	// Render a fresh comment form (replaces the submitted form).
+	formData := commentFormData{
+		PostID:    postID,
+		CSRFToken: auth.CSRFFromContext(ctx).Token(fmt.Sprintf("comment-%d", postID)),
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := s.theme.RenderFragment(w, ctx, "comment-form", formData); err != nil {
+		log.Printf("failed to render comment form: %v", err)
+		s.httpError(w, r, "An internal error occurred.", http.StatusInternalServerError)
+		return
+	}
+
+	// OOB swap: append the new comment to the comment list.
+	cv := newCommentView(comment)
+	fmt.Fprintf(w, `<div hx-swap-oob="beforeend:.comment-list">`)
+	if err := s.theme.RenderFragment(w, ctx, "comment", cv); err != nil {
+		log.Printf("failed to render comment: %v", err)
+	}
+	fmt.Fprintf(w, `</div>`)
 }
