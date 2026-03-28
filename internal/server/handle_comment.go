@@ -88,11 +88,19 @@ func (s *Server) handleCommentHTMX(w http.ResponseWriter, r *http.Request, postI
 		CSRFToken: auth.CSRFFromContext(ctx).Token(fmt.Sprintf("comment-%d", postID)),
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	s.theme.RenderFragment(w, ctx, "comment-form", formData)
+	if err := s.theme.RenderFragment(w, ctx, "comment-form", formData); err != nil {
+		log.Printf("render comment-form fragment: %v", err)
+		return
+	}
 
 	// OOB swap: append the new comment to the comment list.
 	cv := newCommentView(comment)
-	fmt.Fprintf(w, `<div hx-swap-oob="beforeend:.comment-list">`)
-	s.theme.RenderFragment(w, ctx, "comment", cv)
-	fmt.Fprintf(w, `</div>`)
+	if _, err := fmt.Fprintf(w, `<div hx-swap-oob="beforeend:.comment-list">`); err != nil {
+		return
+	}
+	if err := s.theme.RenderFragment(w, ctx, "comment", cv); err != nil {
+		log.Printf("render comment fragment: %v", err)
+		return
+	}
+	_, _ = fmt.Fprintf(w, `</div>`)
 }

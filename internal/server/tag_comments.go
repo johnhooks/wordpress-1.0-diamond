@@ -31,6 +31,14 @@ func (s *Server) tagCommentList(ctx context.Context, ev *template.Evaluator, el 
 	return s.theme.EvalTagTemplate(ctx, ev, "comment-list", attrsFromNode(el), nil, nil)
 }
 
+// tagCommentListEmpty renders a <comment-list-empty /> vocabulary tag.
+// It injects the data-empty engine attribute so the engine can hide the
+// element when sibling comments exist.
+func (s *Server) tagCommentListEmpty(ctx context.Context, ev *template.Evaluator, el *parse.Node) *parse.Node {
+	engineAttrs := map[string]string{"data-empty": ""}
+	return s.theme.EvalTagTemplate(ctx, ev, "comment-list-empty", attrsFromNode(el), engineAttrs, nil)
+}
+
 // tagCommentForm renders a <comment-form /> vocabulary tag. It resolves
 // the post ID from scope and generates a CSRF token from the request
 // context, pushing both into a child scope for the molecule template.
