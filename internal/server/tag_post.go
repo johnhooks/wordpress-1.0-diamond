@@ -28,3 +28,9 @@ func (s *Server) tagPost(ctx context.Context, ev *template.Evaluator, el *parse.
 
 	return s.theme.EvalTagTemplate(ctx, ev, "post", attrsFromNode(el), engineAttrs, post)
 }
+
+// tagPostList renders a <post-list /> vocabulary tag.
+// Posts are resolved from the parent scope chain.
+func (s *Server) tagPostList(ctx context.Context, ev *template.Evaluator, el *parse.Node) *parse.Node {
+	return s.theme.EvalTagTemplate(ctx, ev, "post-list", attrsFromNode(el), nil, nil)
+}

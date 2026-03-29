@@ -107,6 +107,7 @@ func (s *Server) registerTagHandlers() {
 	s.theme.RegisterHandler("comment", s.tagComment)
 	s.theme.RegisterHandler("pagination", s.tagPagination)
 	s.theme.RegisterHandler("post-navigation", s.tagPostNavigation)
+	s.theme.RegisterHandler("post-list", s.tagPostList)
 	s.theme.RegisterHandler("comment-form", s.tagCommentForm)
 	s.theme.RegisterHandler("comment-list-empty", s.tagCommentListEmpty)
 	s.theme.RegisterHandler("search-form", s.tagSearchForm)

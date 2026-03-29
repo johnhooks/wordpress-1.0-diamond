@@ -95,7 +95,7 @@ func (s *Server) handleCommentHTMX(w http.ResponseWriter, r *http.Request, postI
 
 	// OOB swap: append the new comment to the comment list.
 	cv := newCommentView(comment)
-	if _, err := fmt.Fprintf(w, `<div hx-swap-oob="beforeend:.comment-list">`); err != nil {
+	if _, err := fmt.Fprintf(w, `<div hx-swap-oob="beforeend:#post-%d-comments .comment-list">`, postID); err != nil {
 		return
 	}
 	if err := s.theme.RenderFragment(w, ctx, "comment", cv); err != nil {

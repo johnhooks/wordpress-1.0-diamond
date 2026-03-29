@@ -6,14 +6,8 @@
 </div>
 
 <div id="content">
-    {if posts}
-        {each posts as post}
-            <post />
-        {/each}
-        <pagination />
-    {else}
-        <p>No posts yet.</p>
-    {/if}
+    <post-list />
+    <pagination />
 </div>
 
 <sidebar />

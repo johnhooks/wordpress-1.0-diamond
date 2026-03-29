@@ -1,5 +1,5 @@
 (document
-  (element "div" (class "comment") (id "comment-10")
+  (element "div" (class "comment")
     (element "p" (class "comment-meta")
       (element "strong"
         (element "a" (href "https://alice.example.com")
