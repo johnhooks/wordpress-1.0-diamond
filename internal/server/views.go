@@ -105,15 +105,6 @@ type CommentView struct {
 	EditURL    string `view:"edit_url"`
 }
 
-// CommentFormData is the data context for the "comment-form" fragment.
-type CommentFormData struct {
-	Post         PostView `view:"post"`
-	CommentsOpen bool     `view:"comments_open"`
-	SavedAuthor  string   `view:"saved_author"`
-	SavedEmail   string   `view:"saved_email"`
-	SavedURL     string   `view:"saved_url"`
-}
-
 // HomeData is the template data for the "home" page template.
 type HomeData struct {
 	SiteData
@@ -133,9 +124,6 @@ type SingleData struct {
 	PostID       int64         `view:"post_id"`
 	Comments     []CommentView `view:"comments"`
 	CommentsOpen bool          `view:"comments_open"`
-	SavedAuthor  string        `view:"saved_author"`
-	SavedEmail   string        `view:"saved_email"`
-	SavedURL     string        `view:"saved_url"`
 	PrevPost     *PageLink     `view:"prev_post"`
 	NextPost     *PageLink     `view:"next_post"`
 }
