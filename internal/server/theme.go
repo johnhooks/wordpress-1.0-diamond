@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"press/internal/errors"
@@ -250,7 +251,13 @@ func firstElementChild(n *parse.Node) *parse.Node {
 // caller classes appended). All other attributes are set directly,
 // with caller values overriding existing ones.
 func mergeAttrs(n *parse.Node, attrs map[string]string) {
-	for key, val := range attrs {
+	keys := make([]string, 0, len(attrs))
+	for k := range attrs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		val := attrs[key]
 		if key == "class" {
 			mergeClass(n, val)
 			continue

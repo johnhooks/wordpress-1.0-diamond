@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Test Blog</title>
+    <link rel="stylesheet" href="/theme/style.css"/>
+    <script src="/static/vendor/htmx.org.js" defer></script>
+</head>
+<body>
+<div id="wrapper">
+
+<div id="header">
+    <h1><a href="/">Test Blog</a></h1>
+    <p class="description">Just another Press blog</p>
+</div>
+
+<div id="content">
+    <div class="post-list">
+    
+    <article class="post" id="post-1">
+    <h2><a href="/2004/01/hello-world">Hello World</a></h2>
+    <p class="post-meta">
+        January 1, 2004 by admin
+        
+            in <a href="/category/uncategorized">Uncategorized</a>, <a href="/category/news">News</a>
+        
+    </p>
+    <div class="entry"><p>Welcome to Press.</p></div>
+</article>
+
+    
+    <article class="post" id="post-2">
+    <h2><a href="/2004/01/second-post">Second Post</a></h2>
+    <p class="post-meta">
+        January 2, 2004 by admin
+        
+    </p>
+    <div class="entry"><p>Another post.</p></div>
+</article>
+
+    
+</div>
+
+    <nav class="pagination">
+    
+    <a href="/page/2" class="next">Next »</a>
+</nav>
+
+</div>
+
+<div id="sidebar" role="complementary">
+    <form class="search-form" method="get" action="/">
+    <label for="s">Search</label>
+    <input type="text" name="s" id="s" value=""/>
+    <button type="submit">Search</button>
+</form>
+
+    
+    <div class="widget widget-categories">
+    <h2>Categories</h2>
+    <ul>
+        
+        <li><a href="/category/uncategorized">Uncategorized</a></li>
+        
+        <li><a href="/category/news">News</a></li>
+        
+    </ul>
+</div>
+
+    
+    
+    <div class="widget widget-archives">
+    <h2>Archives</h2>
+    <ul>
+        
+        <li><a href="/2004/01">January 2004</a></li>
+        
+        <li><a href="/2004/02">February 2004</a></li>
+        
+    </ul>
+</div>
+
+    
+    
+    <div class="widget widget-pages">
+    <h2>Pages</h2>
+    <ul>
+        
+        <li><a href="/about">About</a></li>
+        
+        <li><a href="/contact">Contact</a></li>
+        
+    </ul>
+</div>
+
+    
+    <div class="widget widget-meta">
+    <h2>Meta</h2>
+    <ul>
+        
+        <li><a href="/wp-admin/">Dashboard</a></li>
+        <li><a href="/wp-login.php?action=logout">Log out</a></li>
+        
+    </ul>
+</div>
+
+</div>
+
+
+</div>
+
+</body>
+</html>
