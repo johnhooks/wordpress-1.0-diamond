@@ -83,22 +83,29 @@ func (s *Server) handleCommentHTMX(w http.ResponseWriter, r *http.Request, postI
 	ctx := auth.WithCSRF(r.Context(), auth.NewCSRFHelper(sessionToken, s.cfg.SecretKey))
 
 	// Render a fresh comment form (replaces the submitted form).
-	formData := commentFormData{
-		PostID:    postID,
-		CSRFToken: auth.CSRFFromContext(ctx).Token(fmt.Sprintf("comment-%d", postID)),
-	}
+	// The tag handler owns the <form> element, hidden inputs, and htmx
+	// attrs. It reads post_id from scope and CSRF from context.
+	formScope := struct {
+		PostID int64 `view:"post_id"`
+	}{PostID: postID}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := s.theme.RenderFragment(w, ctx, "comment-form", formData); err != nil {
+	if err := s.theme.RenderTag(w, ctx, "comment-form", formScope); err != nil {
 		log.Printf("render comment-form fragment: %v", err)
 		return
 	}
 
 	// OOB swap: append the new comment to the comment list.
+	// Uses RenderTag so the tag handler injects the engine id attr.
+	// The tagComment handler looks up "comment" from scope, so wrap
+	// the view in a struct with the expected binding.
 	cv := newCommentView(comment)
+	commentScope := struct {
+		Comment CommentView `view:"comment"`
+	}{Comment: cv}
 	if _, err := fmt.Fprintf(w, `<div hx-swap-oob="beforeend:#post-%d-comments .comment-list">`, postID); err != nil {
 		return
 	}
-	if err := s.theme.RenderFragment(w, ctx, "comment", cv); err != nil {
+	if err := s.theme.RenderTag(w, ctx, "comment", commentScope); err != nil {
 		log.Printf("render comment fragment: %v", err)
 		return
 	}

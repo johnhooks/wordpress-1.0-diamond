@@ -285,15 +285,10 @@ var moleculeTests = []moleculeTest{
 		name: "comment-form",
 		dir:  "molecules",
 		data: struct {
-			PostID    int64  `view:"post_id"`
-			CSRFToken string `view:"csrf_token"`
-			Author    string `view:"author"`
-			Email     string `view:"email"`
-			URL       string `view:"url"`
-		}{
-			PostID:    1,
-			CSRFToken: "test-csrf-token",
-		},
+			Author string `view:"author"`
+			Email  string `view:"email"`
+			URL    string `view:"url"`
+		}{},
 	},
 	{
 		name: "post-navigation-both",
@@ -391,23 +386,43 @@ func injectAttrs(n *parse.Node, attrs map[string]string) {
 }
 
 // commentFormHandler returns a TagNodeHandler that mirrors the real
-// tagCommentForm handler: it looks up post_id and csrf_token from
-// scope and pushes a scoped data struct with empty author/email/url.
+// tagCommentForm handler: the engine builds the <form> element with
+// routing and htmx attributes, adds hidden inputs for post ID and
+// CSRF token, and evaluates the theme template (visible fields) into
+// the form as children.
 func commentFormHandler() TagNodeHandler {
 	return func(ctx context.Context, ev *Evaluator, el *parse.Node) *parse.Node {
 		postIDVal, _ := ev.Scope().Lookup("post_id")
 		postID, _ := postIDVal.(int64)
 		csrfVal, _ := ev.Scope().Lookup("csrf_token")
 		csrf, _ := csrfVal.(string)
+
 		data := struct {
-			PostID    int64  `view:"post_id"`
-			CSRFToken string `view:"csrf_token"`
-			Author    string `view:"author"`
-			Email     string `view:"email"`
-			URL       string `view:"url"`
-		}{PostID: postID, CSRFToken: csrf}
+			Author string `view:"author"`
+			Email  string `view:"email"`
+			URL    string `view:"url"`
+		}{}
 		path := filepath.Join(themeDir, "molecules", "comment-form.html")
-		return evalSubTemplate(ev, path, data)
+		body := evalSubTemplate(ev, path, data)
+
+		fields := &parse.Node{Type: parse.DocumentNode}
+		fields.AppendChild(HiddenInput("comment_post_id", fmt.Sprintf("%d", postID)))
+		fields.AppendChild(HiddenInput("_csrf", csrf))
+		for c := body.FirstChild; c != nil; {
+			next := c.NextSibling
+			body.RemoveChild(c)
+			fields.AppendChild(c)
+			c = next
+		}
+
+		return BuildElement("form", []parse.Attribute{
+			{Key: "method", Val: "post"},
+			{Key: "action", Val: "/comments"},
+			{Key: "hx-post", Val: "/comments"},
+			{Key: "hx-target", Val: "this"},
+			{Key: "hx-swap", Val: "outerHTML"},
+			{Key: "hx-disabled-elt", Val: "this, find [type='submit']"},
+		}, fields)
 	}
 }
 
@@ -816,6 +831,29 @@ func TestGoldenRendered(t *testing.T) {
 	}
 }
 
+// --- Direct handler rendered tests ---
+//
+// These test vocabulary tag handlers directly (as RenderTag does in
+// production) rather than going through a parent template that
+// contains the vocabulary tag.
+
+func TestGoldenRenderedCommentForm(t *testing.T) {
+	resolver := renderedResolver()
+	handler := resolver.ResolveTag("comment-form")
+
+	data := struct {
+		PostID    int64  `view:"post_id"`
+		CSRFToken string `view:"csrf_token"`
+	}{PostID: 1, CSRFToken: "test-csrf-token"}
+
+	ctx := WithTagResolver(context.Background(), resolver)
+	ev := NewEvaluator(ctx, data)
+	el := &parse.Node{Type: parse.ElementNode, Data: "comment-form"}
+	result := handler(ctx, ev, el)
+
+	goldenCompare(t, "comment-form", "testdata/rendered", result)
+}
+
 // --- Golden test runner ---
 
 func runGoldenEval(t *testing.T, name, templatePath string, data any, resolver TagResolver) {
@@ -842,6 +880,12 @@ func runGoldenEvalDir(t *testing.T, name, templatePath string, data any, resolve
 		ctx = WithTagResolver(ctx, resolver)
 	}
 	result := Evaluate(ctx, doc, data)
+
+	goldenCompare(t, name, goldenDir, result)
+}
+
+func goldenCompare(t *testing.T, name, goldenDir string, result *parse.Node) {
+	t.Helper()
 
 	got := parse.Sprint(result)
 	goldenPath := filepath.Join(goldenDir, name+".golden")

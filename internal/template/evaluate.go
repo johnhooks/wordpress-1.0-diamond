@@ -39,6 +39,40 @@ func cloneShallow(n *parse.Node) *parse.Node {
 	return n.CloneNode()
 }
 
+// BuildElement creates an element node with the given tag and attributes,
+// then moves all children from body into it. Returns a document node
+// wrapping the element. Tag handlers use this to build engine-owned
+// wrapper elements (like <form>) around evaluated template content.
+func BuildElement(tag string, attrs []parse.Attribute, body *parse.Node) *parse.Node {
+	el := &parse.Node{
+		Type: parse.ElementNode,
+		Data: tag,
+		Attr: attrs,
+	}
+	for c := body.FirstChild; c != nil; {
+		next := c.NextSibling
+		body.RemoveChild(c)
+		el.AppendChild(c)
+		c = next
+	}
+	doc := newDocumentNode()
+	doc.AppendChild(el)
+	return doc
+}
+
+// HiddenInput creates an <input type="hidden"> element node.
+func HiddenInput(name, value string) *parse.Node {
+	return &parse.Node{
+		Type: parse.ElementNode,
+		Data: "input",
+		Attr: []parse.Attribute{
+			{Key: "type", Val: "hidden"},
+			{Key: "name", Val: name},
+			{Key: "value", Val: value},
+		},
+	}
+}
+
 func appendChildren(parent *parse.Node, children []*parse.Node) {
 	for _, c := range children {
 		parent.AppendChild(c)
@@ -51,6 +85,14 @@ func appendChildren(parent *parse.Node, children []*parse.Node) {
 type Evaluator struct {
 	ctx   context.Context
 	scope *Scope
+}
+
+// NewEvaluator creates an Evaluator with data as the root scope.
+// The context should carry a TagResolver (via WithTagResolver) so
+// nested vocabulary tags resolve correctly. Used by RenderTag to
+// invoke tag handlers outside the normal full-page evaluation path.
+func NewEvaluator(ctx context.Context, data any) *Evaluator {
+	return &Evaluator{ctx: ctx, scope: NewScope(data)}
 }
 
 // Evaluate evaluates a template AST against data and returns
