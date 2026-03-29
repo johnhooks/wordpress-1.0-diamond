@@ -285,11 +285,11 @@ var moleculeTests = []moleculeTest{
 		name: "comment-form",
 		dir:  "molecules",
 		data: struct {
-			PostID      int64  `view:"post_id"`
-			CSRFToken   string `view:"csrf_token"`
-			SavedAuthor string `view:"saved_author"`
-			SavedEmail  string `view:"saved_email"`
-			SavedURL    string `view:"saved_url"`
+			PostID    int64  `view:"post_id"`
+			CSRFToken string `view:"csrf_token"`
+			Author    string `view:"author"`
+			Email     string `view:"email"`
+			URL       string `view:"url"`
 		}{
 			PostID:    1,
 			CSRFToken: "test-csrf-token",
@@ -390,6 +390,27 @@ func injectAttrs(n *parse.Node, attrs map[string]string) {
 	}
 }
 
+// commentFormHandler returns a TagNodeHandler that mirrors the real
+// tagCommentForm handler: it looks up post_id and csrf_token from
+// scope and pushes a scoped data struct with empty author/email/url.
+func commentFormHandler() TagNodeHandler {
+	return func(ctx context.Context, ev *Evaluator, el *parse.Node) *parse.Node {
+		postIDVal, _ := ev.Scope().Lookup("post_id")
+		postID, _ := postIDVal.(int64)
+		csrfVal, _ := ev.Scope().Lookup("csrf_token")
+		csrf, _ := csrfVal.(string)
+		data := struct {
+			PostID    int64  `view:"post_id"`
+			CSRFToken string `view:"csrf_token"`
+			Author    string `view:"author"`
+			Email     string `view:"email"`
+			URL       string `view:"url"`
+		}{PostID: postID, CSRFToken: csrf}
+		path := filepath.Join(themeDir, "molecules", "comment-form.html")
+		return evalSubTemplate(ev, path, data)
+	}
+}
+
 // scopedNodeHandler returns a TagNodeHandler that looks up a binding
 // from scope, pushes its view fields into a child scope, and evaluates
 // a sub-template. This mirrors what real tag handlers like tagPost and
@@ -434,7 +455,7 @@ func themeResolver() *testResolver {
 		"comment":            scopedNodeHandler("molecules", "comment", "comment"),
 		"pagination":         nodeTemplateHandler("molecules", "pagination"),
 		"post-navigation":    nodeTemplateHandler("molecules", "post-navigation"),
-		"comment-form":       nodeTemplateHandler("molecules", "comment-form"),
+		"comment-form":       commentFormHandler(),
 		"comment-list":       nodeTemplateHandler("organisms", "comment-list"),
 		"post-list":          nodeTemplateHandler("organisms", "post-list"),
 		"sidebar":            nodeTemplateHandler("organisms", "sidebar"),
@@ -531,9 +552,6 @@ type singleData struct {
 	Comments     []commentView `view:"comments"`
 	CommentsOpen bool          `view:"comments_open"`
 	CSRFToken    string        `view:"csrf_token"`
-	SavedAuthor  string        `view:"saved_author"`
-	SavedEmail   string        `view:"saved_email"`
-	SavedURL     string        `view:"saved_url"`
 	PrevPost     *pageLink     `view:"prev_post"`
 	NextPost     *pageLink     `view:"next_post"`
 }
@@ -708,7 +726,7 @@ func renderedResolver() *testResolver {
 		}),
 		"pagination":      nodeTemplateHandler("molecules", "pagination"),
 		"post-navigation": nodeTemplateHandler("molecules", "post-navigation"),
-		"comment-form":    nodeTemplateHandler("molecules", "comment-form"),
+		"comment-form":    commentFormHandler(),
 		"comment-list": scopeEngineAttrHandler("organisms", "comment-list", "post_id", func(v any) map[string]string {
 			postID, _ := v.(int64)
 			return map[string]string{"id": fmt.Sprintf("post-%d-comments", postID)}

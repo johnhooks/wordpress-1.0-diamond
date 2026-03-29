@@ -71,7 +71,7 @@
         (element "h2"
           (text "Leave a comment")
         )
-        (element "form" (method "post") (action "/comments") (hx-post "/comments") (hx-target "this") (hx-swap "outerHTML")
+        (element "form" (method "post") (action "/comments") (hx-post "/comments") (hx-target "this") (hx-swap "outerHTML") (hx-disabled-elt "this, find [type='submit']")
           (element "input" (type "hidden") (name "comment_post_id") (value "1"))
           (element "input" (type "hidden") (name "_csrf") (value "test-csrf-token"))
           (element "p"

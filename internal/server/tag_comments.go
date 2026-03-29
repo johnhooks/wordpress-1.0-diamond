@@ -71,4 +71,7 @@ func (s *Server) tagCommentForm(ctx context.Context, ev *template.Evaluator, el 
 type commentFormData struct {
 	PostID    int64  `view:"post_id"`
 	CSRFToken string `view:"csrf_token"`
+	Author    string `view:"author"`
+	Email     string `view:"email"`
+	URL       string `view:"url"`
 }
