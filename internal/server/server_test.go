@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"press/internal/auth"
 	"press/internal/config"
 	"press/internal/db"
 	"press/internal/model"
@@ -40,6 +42,7 @@ func setupServer(t *testing.T) (*server.Server, *repository.PostsRepository, *re
 		PublicDir:     publicDir,
 		ThemeDir:      "../../local/themes/freerange",
 		SessionMaxAge: 30,
+		SecretKey:     "test-secret-key",
 	}
 
 	s, err := server.New(cfg, database)
@@ -319,6 +322,123 @@ func TestServer_StaticFiles(t *testing.T) {
 	// We just want no panic/500 — a 200 or 404 is fine
 	if w.Code == http.StatusInternalServerError {
 		t.Error("static route returned 500")
+	}
+}
+
+func TestServer_CommentHTMX(t *testing.T) {
+	s, posts, _, _, _, _ := setupServer(t)
+	ctx := context.Background()
+
+	post := &model.Post{
+		PostAuthor: 1, PostTitle: "HTMX Post", PostName: "htmx-post",
+		PostContent: "<p>Test htmx comments</p>", PostStatus: "publish", PostType: "post",
+		CommentStatus: "open",
+	}
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
+
+	// Generate a valid CSRF token for this post.
+	sessionToken := "test-session-token"
+	secretKey := "test-secret-key"
+	action := fmt.Sprintf("comment-%d", post.ID)
+	csrf := auth.NewCSRFHelper(sessionToken, secretKey)
+	csrfToken := csrf.Token(action)
+
+	form := fmt.Sprintf(
+		"comment_post_id=%d&_csrf=%s&author=Alice&email=alice%%40example.com&comment=Great+post!",
+		post.ID, csrfToken,
+	)
+	req := httptest.NewRequest("POST", "/comments", strings.NewReader(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("HX-Request", "true")
+	req.AddCookie(&http.Cookie{Name: auth.CookieName, Value: sessionToken})
+
+	w := httptest.NewRecorder()
+	s.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d: %s", w.Code, w.Body.String())
+	}
+
+	body := w.Body.String()
+
+	// The response should contain a fresh comment form with engine-owned attrs.
+	if !containsStr(body, `hx-post="/comments"`) {
+		t.Error("expected engine-injected hx-post on comment form")
+	}
+	if !containsStr(body, `hx-swap="outerHTML"`) {
+		t.Error("expected engine-injected hx-swap on comment form")
+	}
+	if !containsStr(body, `method="post"`) {
+		t.Error("expected engine-injected method on comment form")
+	}
+	if !containsStr(body, `action="/comments"`) {
+		t.Error("expected engine-injected action on comment form")
+	}
+
+	// The form should have a CSRF hidden input (with a fresh token).
+	if !containsStr(body, `name="_csrf"`) {
+		t.Error("expected CSRF hidden input in comment form")
+	}
+
+	// The response should contain an OOB swap with the new comment.
+	oobTarget := fmt.Sprintf(`hx-swap-oob="beforeend:#post-%d-comments .comment-list"`, post.ID)
+	if !containsStr(body, oobTarget) {
+		t.Error("expected OOB swap targeting comment list")
+	}
+
+	// The new comment should have an engine-injected id.
+	if !containsStr(body, `id="comment-`) {
+		t.Error("expected engine-injected id on new comment")
+	}
+
+	// The comment content should be present.
+	if !containsStr(body, "Alice") {
+		t.Error("expected comment author in response")
+	}
+	if !containsStr(body, "Great post!") {
+		t.Error("expected comment content in response")
+	}
+}
+
+func TestServer_CommentNonHTMX(t *testing.T) {
+	s, posts, _, _, _, _ := setupServer(t)
+	ctx := context.Background()
+
+	post := &model.Post{
+		PostAuthor: 1, PostTitle: "Redirect Post", PostName: "redirect-post",
+		PostContent: "<p>Test non-htmx</p>", PostStatus: "publish", PostType: "post",
+		CommentStatus: "open",
+	}
+	if err := posts.Create(ctx, post); err != nil {
+		t.Fatal(err)
+	}
+
+	sessionToken := "test-session-token"
+	secretKey := "test-secret-key"
+	csrf := auth.NewCSRFHelper(sessionToken, secretKey)
+	csrfToken := csrf.Token(fmt.Sprintf("comment-%d", post.ID))
+
+	form := fmt.Sprintf(
+		"comment_post_id=%d&_csrf=%s&author=Bob&email=bob%%40example.com&comment=Nice!",
+		post.ID, csrfToken,
+	)
+	req := httptest.NewRequest("POST", "/comments", strings.NewReader(form))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: auth.CookieName, Value: sessionToken})
+
+	w := httptest.NewRecorder()
+	s.Handler().ServeHTTP(w, req)
+
+	// Non-htmx path should redirect.
+	if w.Code != http.StatusSeeOther {
+		t.Fatalf("expected 303 redirect, got %d: %s", w.Code, w.Body.String())
+	}
+
+	loc := w.Header().Get("Location")
+	if !containsStr(loc, "#comment-") {
+		t.Errorf("expected redirect to comment anchor, got %q", loc)
 	}
 }
 

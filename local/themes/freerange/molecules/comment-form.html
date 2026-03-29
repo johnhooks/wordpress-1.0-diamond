@@ -1,21 +1,17 @@
-<form method="post" action="/comments" hx-post="/comments" hx-target="this" hx-swap="outerHTML" hx-disabled-elt="this, find [type='submit']">
-    <input type="hidden" name="comment_post_id" value="{post_id}"/>
-    <input type="hidden" name="_csrf" value="{csrf_token}"/>
-    <p>
-        <label for="author">Name</label><br/>
-        <input type="text" name="author" id="author" value="{author}"/>
-    </p>
-    <p>
-        <label for="email">Email</label><br/>
-        <input type="email" name="email" id="email" value="{email}"/>
-    </p>
-    <p>
-        <label for="url">Website</label><br/>
-        <input type="url" name="url" id="url" value="{url}"/>
-    </p>
-    <p>
-        <label for="comment">Comment</label><br/>
-        <textarea name="comment" id="comment" rows="8" cols="50"></textarea>
-    </p>
-    <p><button type="submit">Submit Comment</button></p>
-</form>
+<p>
+    <label for="author">Name</label><br/>
+    <input type="text" name="author" id="author" value="{author}"/>
+</p>
+<p>
+    <label for="email">Email</label><br/>
+    <input type="email" name="email" id="email" value="{email}"/>
+</p>
+<p>
+    <label for="url">Website</label><br/>
+    <input type="url" name="url" id="url" value="{url}"/>
+</p>
+<p>
+    <label for="comment">Comment</label><br/>
+    <textarea name="comment" id="comment" rows="8" cols="50"></textarea>
+</p>
+<p><button type="submit">Submit Comment</button></p>

@@ -50,28 +50,46 @@ func (s *Server) tagCommentListEmpty(ctx context.Context, ev *template.Evaluator
 	return s.theme.EvalTagTemplate(ctx, ev, "comment-list-empty", attrsFromNode(el), engineAttrs, nil)
 }
 
-// tagCommentForm renders a <comment-form /> vocabulary tag. It resolves
-// the post ID from scope and generates a CSRF token from the request
-// context, pushing both into a child scope for the molecule template.
+// tagCommentForm renders a <comment-form /> vocabulary tag. The engine
+// owns the <form> element, its routing attributes, and the hidden
+// inputs (post ID, CSRF token). The theme template provides only the
+// visible field markup, which is evaluated into the form as children.
 func (s *Server) tagCommentForm(ctx context.Context, ev *template.Evaluator, el *parse.Node) *parse.Node {
 	postIDVal, _ := ev.Scope().Lookup("post_id")
 	postID, _ := postIDVal.(int64)
 
 	csrf := auth.CSRFFromContext(ctx)
+	csrfToken := csrf.Token(fmt.Sprintf("comment-%d", postID))
 
-	data := commentFormData{
-		PostID:    postID,
-		CSRFToken: csrf.Token(fmt.Sprintf("comment-%d", postID)),
+	// Evaluate the theme template (visible fields only).
+	doc := s.theme.GetTemplate("comment-form")
+	body := ev.EvaluateScoped(doc, commentFormData{})
+
+	// Build the engine-owned <form> around the evaluated fields.
+	// Hidden inputs go first, then the theme content.
+	fields := &parse.Node{Type: parse.DocumentNode}
+	fields.AppendChild(template.HiddenInput("comment_post_id", fmt.Sprintf("%d", postID)))
+	fields.AppendChild(template.HiddenInput("_csrf", csrfToken))
+	for c := body.FirstChild; c != nil; {
+		next := c.NextSibling
+		body.RemoveChild(c)
+		fields.AppendChild(c)
+		c = next
 	}
 
-	return s.theme.EvalTagTemplate(ctx, ev, "comment-form", attrsFromNode(el), nil, data)
+	return template.BuildElement("form", []parse.Attribute{
+		{Key: "method", Val: "post"},
+		{Key: "action", Val: "/comments"},
+		{Key: "hx-post", Val: "/comments"},
+		{Key: "hx-target", Val: "this"},
+		{Key: "hx-swap", Val: "outerHTML"},
+		{Key: "hx-disabled-elt", Val: "this, find [type='submit']"},
+	}, fields)
 }
 
 // commentFormData is pushed into scope for the comment-form molecule.
 type commentFormData struct {
-	PostID    int64  `view:"post_id"`
-	CSRFToken string `view:"csrf_token"`
-	Author    string `view:"author"`
-	Email     string `view:"email"`
-	URL       string `view:"url"`
+	Author string `view:"author"`
+	Email  string `view:"email"`
+	URL    string `view:"url"`
 }

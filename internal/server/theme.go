@@ -74,7 +74,7 @@ func (th *Theme) ResolveTag(name string) template.TagNodeHandler {
 // within it. The engine owns the <head> (charset, viewport, title,
 // theme stylesheet, htmx). Page templates are body-content fragments.
 func (th *Theme) Render(w io.Writer, ctx context.Context, name string, data any) error {
-	doc := th.getTemplate(name)
+	doc := th.GetTemplate(name)
 
 	// Extract title fields from the view data.
 	blogName := lookupViewString(data, "blog_name")
@@ -134,7 +134,7 @@ func (th *Theme) EvalTagTemplate(
 		panic(fmt.Sprintf("theme: vocabulary tag <%s> must not have an id attribute; id is reserved for the engine", name))
 	}
 
-	doc := th.getTemplate(name)
+	doc := th.GetTemplate(name)
 	result := ev.EvaluateScoped(doc, data)
 
 	// Reject id on the molecule's own wrapper element for the same
@@ -157,14 +157,26 @@ func (th *Theme) EvalTagTemplate(
 	return result
 }
 
-// RenderFragment evaluates a named template with data and writes the
-// resulting HTML directly to w, without the document shell. Used for
-// htmx partial responses where a template is rendered outside the
-// normal page flow.
-func (th *Theme) RenderFragment(w io.Writer, ctx context.Context, name string, data any) error {
-	doc := th.getTemplate(name)
+// RenderTag renders a vocabulary tag by name for htmx partial responses.
+// It creates an evaluator with data as the root scope, calls the
+// registered tag handler (which injects engine attributes), and
+// serializes the result. Both the full-page path and the partial path
+// go through the same tag handler, so both get the same engine attrs.
+func (th *Theme) RenderTag(w io.Writer, ctx context.Context, name string, data any) error {
+	handler := th.ResolveTag(name)
+	if handler == nil {
+		panic(fmt.Sprintf("theme: RenderTag: no handler for %q", name))
+	}
+
 	ctx = template.WithTagResolver(ctx, th)
-	result := template.Evaluate(ctx, doc, data)
+	ev := template.NewEvaluator(ctx, data)
+
+	// Pass a nil element node since there are no caller attributes
+	// on a direct invocation.
+	result := handler(ctx, ev, &parse.Node{Type: parse.ElementNode, Data: name})
+	if result == nil {
+		return nil
+	}
 	return parse.Render(w, result)
 }
 
@@ -182,10 +194,10 @@ func attrsFromNode(el *parse.Node) map[string]string {
 	return attrs
 }
 
-// getTemplate returns the parsed AST for a template. Panics if the
+// GetTemplate returns the parsed AST for a template. Panics if the
 // template does not exist. Templates are validated at load time; a
 // missing template at request time is a programmer error.
-func (th *Theme) getTemplate(name string) *parse.Node {
+func (th *Theme) GetTemplate(name string) *parse.Node {
 	if th.devMode {
 		// Search molecules → organisms → templates in order.
 		for _, sub := range themeDirs {
