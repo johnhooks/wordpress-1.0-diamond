@@ -21,8 +21,8 @@ ProseMirror editor packages.
 ```
 cmd/press/          CLI commands (Cobra)
 internal/           Engine code (server, repositories, models, permissions)
-local/              Example Press instance (config, database, themes)
-local/themes/       Theme files (HTML templates, CSS)
+themes/             Bundled themes (freerange is the default)
+local/              Example Press instance (config, database, symlinks to themes)
 data/fixtures/      JSON fixture data and loader for local development
 docs/               Documentation and plans
 ```
@@ -165,7 +165,7 @@ Migrations are in `internal/database/migrations/` and managed by goose.
 
 ## Themes
 
-The default theme is Freerange, located at `local/themes/freerange/`.
+The default theme is Freerange, located at `themes/freerange/`.
 It is organized into molecules, organisms, and templates following an
 atomic design hierarchy. The engine calls 9 required template names;
 everything else is the theme's internal organization.

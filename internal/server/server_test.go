@@ -40,7 +40,7 @@ func setupServer(t *testing.T) (*server.Server, *repository.PostsRepository, *re
 		AppHost:       "localhost",
 		AppPort:       8080,
 		PublicDir:     publicDir,
-		ThemeDir:      "../../local/themes/freerange",
+		ThemeDir:      "../../themes/freerange",
 		SessionMaxAge: 30,
 		SecretKey:     "test-secret-key",
 	}

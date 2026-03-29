@@ -14,7 +14,7 @@ import (
 
 var update = flag.Bool("update", false, "update golden files")
 
-const goldenThemeDir = "../../local/themes/freerange"
+const goldenThemeDir = "../../themes/freerange"
 
 // goldenTheme loads the freerange theme with real tag handlers registered.
 func goldenTheme(t *testing.T) *Theme {
