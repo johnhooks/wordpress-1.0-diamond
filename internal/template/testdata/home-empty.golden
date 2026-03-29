@@ -11,11 +11,15 @@
       )
     )
     (element "div" (id "content")
-      (element "p"
-        (text "No posts yet.")
+      (element "div" (class "post-list")
+        (element "p"
+          (text "No posts yet.")
+        )
+      )
+      (element "nav" (class "pagination")
       )
     )
-    (element "div" (id "sidebar")
+    (element "div"
       (element "form" (class "search-form") (method "get") (action "/")
         (element "label" (for "s")
           (text "Search")

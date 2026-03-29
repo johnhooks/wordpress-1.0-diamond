@@ -12,6 +12,7 @@ import (
 // resolve their data from the parent scope chain.
 func (s *Server) tagSidebar(ctx context.Context, ev *template.Evaluator, el *parse.Node) *parse.Node {
 	engineAttrs := map[string]string{
+		"id":   "sidebar",
 		"role": "complementary",
 	}
 	return s.theme.EvalTagTemplate(ctx, ev, "sidebar", attrsFromNode(el), engineAttrs, nil)

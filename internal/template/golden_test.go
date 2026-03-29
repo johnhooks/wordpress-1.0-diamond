@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"testing"
 
 	"press/internal/template/parse"
@@ -366,16 +367,26 @@ func engineAttrHandler(dir, name string, attrs map[string]string) TagNodeHandler
 	return func(ctx context.Context, ev *Evaluator, el *parse.Node) *parse.Node {
 		path := filepath.Join(themeDir, dir, name+".html")
 		result := evalSubTemplate(ev, path, nil)
-		// Find the first element child and inject engine attrs.
-		for c := result.FirstChild; c != nil; c = c.NextSibling {
-			if c.Type == parse.ElementNode {
-				for key, val := range attrs {
-					c.Attr = append(c.Attr, parse.Attribute{Key: key, Val: val})
-				}
-				break
-			}
-		}
+		injectAttrs(result, attrs)
 		return result
+	}
+}
+
+// injectAttrs adds attributes to the first element child of a node
+// in sorted key order for deterministic golden output.
+func injectAttrs(n *parse.Node, attrs map[string]string) {
+	keys := make([]string, 0, len(attrs))
+	for k := range attrs {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		if c.Type == parse.ElementNode {
+			for _, k := range keys {
+				c.Attr = append(c.Attr, parse.Attribute{Key: k, Val: attrs[k]})
+			}
+			break
+		}
 	}
 }
 
@@ -425,6 +436,7 @@ func themeResolver() *testResolver {
 		"post-navigation":    nodeTemplateHandler("molecules", "post-navigation"),
 		"comment-form":       nodeTemplateHandler("molecules", "comment-form"),
 		"comment-list":       nodeTemplateHandler("organisms", "comment-list"),
+		"post-list":          nodeTemplateHandler("organisms", "post-list"),
 		"sidebar":            nodeTemplateHandler("organisms", "sidebar"),
 		"search-form":        nodeTemplateHandler("molecules", "search-form"),
 		"category-list":      nodeTemplateHandler("molecules", "category-list"),
@@ -460,6 +472,22 @@ var organismTests = []organismTest{
 		}{},
 	},
 	{
+		name: "post-list",
+		dir:  "organisms",
+		data: struct {
+			Posts []postView `view:"posts"`
+		}{
+			Posts: []postView{fixturePost, fixturePost2},
+		},
+	},
+	{
+		name: "post-list-empty",
+		dir:  "organisms",
+		data: struct {
+			Posts []postView `view:"posts"`
+		}{},
+	},
+	{
 		name: "sidebar",
 		dir:  "organisms",
 		data: siteData(),
@@ -468,6 +496,7 @@ var organismTests = []organismTest{
 
 var organismFileMap = map[string]string{
 	"comment-list-empty": "comment-list",
+	"post-list-empty":    "post-list",
 }
 
 func TestGoldenOrganisms(t *testing.T) {
@@ -629,9 +658,154 @@ func TestGoldenPages(t *testing.T) {
 	}
 }
 
+// --- Rendered golden tests (HTML AST with engine attributes) ---
+//
+// These tests verify the final HTML AST that tag handlers return,
+// including engine-injected attributes like id, data-empty, and role.
+// The template golden tests above verify template structure without
+// engine attrs; these verify what actually gets serialized to HTML.
+
+// scopedEngineAttrHandler combines scope lookup with engine attribute
+// injection. The attrFn receives the resolved value and returns the
+// engine attributes to inject on the wrapper element.
+func scopedEngineAttrHandler(dir, tmpl, binding string, attrFn func(any) map[string]string) TagNodeHandler {
+	return func(ctx context.Context, ev *Evaluator, el *parse.Node) *parse.Node {
+		val, ok := ev.Scope().Lookup(binding)
+		if !ok {
+			return nil
+		}
+		path := filepath.Join(themeDir, dir, tmpl+".html")
+		result := evalSubTemplate(ev, path, val)
+		injectAttrs(result, attrFn(val))
+		return result
+	}
+}
+
+// scopeEngineAttrHandler evaluates a template with the current scope
+// (no data push) and injects engine attributes derived from a scope
+// lookup. The attrFn receives the looked-up value (or nil if not found).
+func scopeEngineAttrHandler(dir, name, binding string, attrFn func(any) map[string]string) TagNodeHandler {
+	return func(ctx context.Context, ev *Evaluator, el *parse.Node) *parse.Node {
+		val, _ := ev.Scope().Lookup(binding)
+		path := filepath.Join(themeDir, dir, name+".html")
+		result := evalSubTemplate(ev, path, nil)
+		injectAttrs(result, attrFn(val))
+		return result
+	}
+}
+
+// renderedResolver returns a resolver that mirrors the real tag
+// handlers' engine attribute injection.
+func renderedResolver() *testResolver {
+	return &testResolver{handlers: map[string]TagNodeHandler{
+		"post": scopedEngineAttrHandler("molecules", "post", "post", func(v any) map[string]string {
+			p := v.(postView)
+			return map[string]string{"id": fmt.Sprintf("post-%d", p.ID)}
+		}),
+		"comment": scopedEngineAttrHandler("molecules", "comment", "comment", func(v any) map[string]string {
+			c := v.(commentView)
+			return map[string]string{"id": fmt.Sprintf("comment-%d", c.ID)}
+		}),
+		"pagination":      nodeTemplateHandler("molecules", "pagination"),
+		"post-navigation": nodeTemplateHandler("molecules", "post-navigation"),
+		"comment-form":    nodeTemplateHandler("molecules", "comment-form"),
+		"comment-list": scopeEngineAttrHandler("organisms", "comment-list", "post_id", func(v any) map[string]string {
+			postID, _ := v.(int64)
+			return map[string]string{"id": fmt.Sprintf("post-%d-comments", postID)}
+		}),
+		"post-list":          nodeTemplateHandler("organisms", "post-list"),
+		"sidebar":            engineAttrHandler("organisms", "sidebar", map[string]string{"id": "sidebar", "role": "complementary"}),
+		"search-form":        nodeTemplateHandler("molecules", "search-form"),
+		"category-list":      nodeTemplateHandler("molecules", "category-list"),
+		"archive-list":       nodeTemplateHandler("molecules", "archive-list"),
+		"page-list":          nodeTemplateHandler("molecules", "page-list"),
+		"meta-links":         nodeTemplateHandler("molecules", "meta-links"),
+		"archive-header":     nodeTemplateHandler("molecules", "archive-header"),
+		"comment-list-empty": engineAttrHandler("molecules", "comment-list-empty", map[string]string{"data-empty": ""}),
+	}}
+}
+
+var renderedTests = []organismTest{
+	{
+		name: "comment-list",
+		dir:  "organisms",
+		data: struct {
+			Comments []commentView `view:"comments"`
+		}{
+			Comments: []commentView{fixtureComment, fixtureComment2},
+		},
+	},
+	{
+		name: "comment-list-empty",
+		dir:  "organisms",
+		data: struct {
+			Comments []commentView `view:"comments"`
+		}{},
+	},
+	{
+		name: "single",
+		dir:  "templates",
+		data: singleData{
+			siteFixture:  siteData(),
+			Post:         fixturePost,
+			PostID:       1,
+			Comments:     []commentView{fixtureComment, fixtureComment2},
+			CommentsOpen: true,
+			CSRFToken:    "test-csrf-token",
+			PrevPost:     &pageLink{Title: "Earlier", URL: "/earlier"},
+			NextPost:     nil,
+		},
+	},
+	{
+		name: "single-no-comments",
+		dir:  "templates",
+		data: singleData{
+			siteFixture:  siteData(),
+			Post:         fixturePost2,
+			PostID:       2,
+			Comments:     []commentView{},
+			CommentsOpen: false,
+		},
+	},
+	{
+		name: "home",
+		dir:  "templates",
+		data: homeData{
+			siteFixture: siteData(),
+			Posts:       []postView{fixturePost, fixturePost2},
+			HasNext:     true,
+			NextURL:     "/page/2",
+		},
+	},
+}
+
+var renderedFileMap = map[string]string{
+	"comment-list-empty": "comment-list",
+	"single-no-comments": "single",
+}
+
+func TestGoldenRendered(t *testing.T) {
+	resolver := renderedResolver()
+	for _, tt := range renderedTests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmplName := tt.name
+			if mapped, ok := renderedFileMap[tmplName]; ok {
+				tmplName = mapped
+			}
+			path := filepath.Join(themeDir, tt.dir, tmplName+".html")
+			runGoldenEvalDir(t, tt.name, path, tt.data, resolver, "testdata/rendered")
+		})
+	}
+}
+
 // --- Golden test runner ---
 
 func runGoldenEval(t *testing.T, name, templatePath string, data any, resolver TagResolver) {
+	t.Helper()
+	runGoldenEvalDir(t, name, templatePath, data, resolver, "testdata")
+}
+
+func runGoldenEvalDir(t *testing.T, name, templatePath string, data any, resolver TagResolver, goldenDir string) {
 	t.Helper()
 
 	f, err := os.Open(templatePath)
@@ -652,9 +826,12 @@ func runGoldenEval(t *testing.T, name, templatePath string, data any, resolver T
 	result := Evaluate(ctx, doc, data)
 
 	got := parse.Sprint(result)
-	goldenPath := filepath.Join("testdata", name+".golden")
+	goldenPath := filepath.Join(goldenDir, name+".golden")
 
 	if *update {
+		if err := os.MkdirAll(goldenDir, 0755); err != nil {
+			t.Fatal(err)
+		}
 		if err := os.WriteFile(goldenPath, []byte(got), 0644); err != nil {
 			t.Fatal(err)
 		}

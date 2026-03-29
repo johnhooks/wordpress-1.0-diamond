@@ -22,13 +22,24 @@ func (s *Server) tagComment(ctx context.Context, ev *template.Evaluator, el *par
 		panic(fmt.Sprintf("<comment />: expected CommentView, got %T", val))
 	}
 
-	return s.theme.EvalTagTemplate(ctx, ev, "comment", attrsFromNode(el), nil, comment)
+	engineAttrs := map[string]string{
+		"id": fmt.Sprintf("comment-%d", comment.ID),
+	}
+	return s.theme.EvalTagTemplate(ctx, ev, "comment", attrsFromNode(el), engineAttrs, comment)
 }
 
 // tagCommentList renders a <comment-list /> vocabulary tag.
-// Comments are resolved from the parent scope chain.
+// Comments are resolved from the parent scope chain. The engine
+// injects an id scoped to the post so multiple comment sections
+// on the same page each have a unique swap target.
 func (s *Server) tagCommentList(ctx context.Context, ev *template.Evaluator, el *parse.Node) *parse.Node {
-	return s.theme.EvalTagTemplate(ctx, ev, "comment-list", attrsFromNode(el), nil, nil)
+	postIDVal, _ := ev.Scope().Lookup("post_id")
+	postID, _ := postIDVal.(int64)
+
+	engineAttrs := map[string]string{
+		"id": fmt.Sprintf("post-%d-comments", postID),
+	}
+	return s.theme.EvalTagTemplate(ctx, ev, "comment-list", attrsFromNode(el), engineAttrs, nil)
 }
 
 // tagCommentListEmpty renders a <comment-list-empty /> vocabulary tag.

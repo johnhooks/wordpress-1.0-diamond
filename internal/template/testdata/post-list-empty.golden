@@ -1,0 +1,7 @@
+(document
+  (element "div" (class "post-list")
+    (element "p"
+      (text "No posts yet.")
+    )
+  )
+)

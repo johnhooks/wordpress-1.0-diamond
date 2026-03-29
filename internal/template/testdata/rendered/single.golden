@@ -11,7 +11,7 @@
       )
     )
     (element "div" (id "content")
-      (element "article" (class "post")
+      (element "article" (class "post") (id "post-1")
         (element "h2"
           (element "a" (href "/2004/01/hello-world")
             (text "Hello World")
@@ -34,12 +34,12 @@
           (raw "<p>Welcome to Press.</p>")
         )
       )
-      (element "div" (class "comments")
+      (element "div" (class "comments") (id "post-1-comments")
         (element "h2"
           (text "Comments")
         )
         (element "div" (class "comment-list")
-          (element "div" (class "comment")
+          (element "div" (class "comment") (id "comment-10")
             (element "p" (class "comment-meta")
               (element "strong"
                 (element "a" (href "https://alice.example.com")
@@ -53,7 +53,7 @@
               (raw "<p>Great post!</p>")
             )
           )
-          (element "div" (class "comment")
+          (element "div" (class "comment") (id "comment-11")
             (element "p" (class "comment-meta")
               (element "strong"
                 (text "Bob")
@@ -118,7 +118,7 @@
         )
       )
     )
-    (element "div"
+    (element "div" (id "sidebar") (role "complementary")
       (element "form" (class "search-form") (method "get") (action "/")
         (element "label" (for "s")
           (text "Search")

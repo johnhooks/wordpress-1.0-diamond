@@ -125,12 +125,27 @@ func (th *Theme) EvalTagTemplate(
 	engineAttrs map[string]string,
 	data any,
 ) *parse.Node {
+	// The engine owns "id" on vocabulary tags. Theme authors must not
+	// set id in caller attributes or molecule templates. The engine
+	// uses id for htmx OOB swap targeting.
+	// TODO: add this rule to the theme validator so it reports a clear
+	// error at load time instead of panicking at request time.
+	if _, ok := callerAttrs["id"]; ok {
+		panic(fmt.Sprintf("theme: vocabulary tag <%s> must not have an id attribute; id is reserved for the engine", name))
+	}
+
 	doc := th.getTemplate(name)
 	result := ev.EvaluateScoped(doc, data)
 
-	// Merge attributes on the output tree's wrapper element.
+	// Reject id on the molecule's own wrapper element for the same
+	// reason. The engine is the sole source of id on vocabulary output.
 	wrapper := firstElementChild(result)
 	if wrapper != nil {
+		for _, a := range wrapper.Attr {
+			if a.Key == "id" {
+				panic(fmt.Sprintf("theme: molecule template %q must not have an id attribute on its wrapper element; id is reserved for the engine", name))
+			}
+		}
 		if len(engineAttrs) > 0 {
 			mergeAttrs(wrapper, engineAttrs)
 		}
