@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Test Blog</title>
+    <link rel="stylesheet" href="/theme/style.css"/>
+    <script src="/static/vendor/htmx.org.js" defer></script>
+</head>
+<body>
+<div id="wrapper">
+
+<div id="header">
+    <h1><a href="/">Test Blog</a></h1>
+    <p class="description">Just another Press blog</p>
+</div>
+
+<div id="content">
+    <article class="post" id="post-1">
+    <h2><a href="/2004/01/hello-world">Hello World</a></h2>
+    <p class="post-meta">
+        January 1, 2004 by admin
+        
+            in <a href="/category/uncategorized">Uncategorized</a>, <a href="/category/news">News</a>
+        
+    </p>
+    <div class="entry"><p>Welcome to Press.</p></div>
+</article>
+
+    <div class="comments" id="post-1-comments">
+    <h2>Comments</h2>
+    <div class="comment-list">
+        
+        <div class="comment" id="comment-10">
+    <p class="comment-meta">
+        <strong>
+            <a href="https://alice.example.com">Alice</a>
+        </strong>
+        | January 2, 2004
+    </p>
+    <div class="comment-content"><p>Great post!</p></div>
+</div>
+
+        
+        <div class="comment" id="comment-11">
+    <p class="comment-meta">
+        <strong>
+            Bob
+        </strong>
+        | January 3, 2004
+    </p>
+    <div class="comment-content"><p>Thanks for sharing.</p></div>
+</div>
+
+        
+    </div>
+</div>
+
+    
+    <div class="comment-respond">
+        <h2>Leave a comment</h2>
+        <form method="post" action="/comments" hx-post="/comments" hx-target="this" hx-swap="outerHTML" hx-disabled-elt="this, find [type=&#39;submit&#39;]"><input type="hidden" name="comment_post_id" value="1"/><input type="hidden" name="_csrf" value="87631e728be1d713a00a6ce05c3dfc43"/><p>
+    <label for="author">Name</label><br/>
+    <input type="text" name="author" id="author" value=""/>
+</p>
+<p>
+    <label for="email">Email</label><br/>
+    <input type="email" name="email" id="email" value=""/>
+</p>
+<p>
+    <label for="url">Website</label><br/>
+    <input type="url" name="url" id="url" value=""/>
+</p>
+<p>
+    <label for="comment">Comment</label><br/>
+    <textarea name="comment" id="comment" rows="8" cols="50"></textarea>
+</p>
+<p><button type="submit">Submit Comment</button></p>
+</form>
+    </div>
+    
+    <nav class="post-navigation">
+    <span class="prev">« <a href="/earlier">Earlier</a></span>
+    
+</nav>
+
+</div>
+
+<div id="sidebar" role="complementary">
+    <form class="search-form" method="get" action="/">
+    <label for="s">Search</label>
+    <input type="text" name="s" id="s" value=""/>
+    <button type="submit">Search</button>
+</form>
+
+    
+    <div class="widget widget-categories">
+    <h2>Categories</h2>
+    <ul>
+        
+        <li><a href="/category/uncategorized">Uncategorized</a></li>
+        
+        <li><a href="/category/news">News</a></li>
+        
+    </ul>
+</div>
+
+    
+    
+    <div class="widget widget-archives">
+    <h2>Archives</h2>
+    <ul>
+        
+        <li><a href="/2004/01">January 2004</a></li>
+        
+        <li><a href="/2004/02">February 2004</a></li>
+        
+    </ul>
+</div>
+
+    
+    
+    <div class="widget widget-pages">
+    <h2>Pages</h2>
+    <ul>
+        
+        <li><a href="/about">About</a></li>
+        
+        <li><a href="/contact">Contact</a></li>
+        
+    </ul>
+</div>
+
+    
+    <div class="widget widget-meta">
+    <h2>Meta</h2>
+    <ul>
+        
+        <li><a href="/wp-admin/">Dashboard</a></li>
+        <li><a href="/wp-login.php?action=logout">Log out</a></li>
+        
+    </ul>
+</div>
+
+</div>
+
+
+</div>
+
+</body>
+</html>
