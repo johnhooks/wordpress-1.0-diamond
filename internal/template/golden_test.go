@@ -15,7 +15,7 @@ import (
 var update = flag.Bool("update", false, "update golden files")
 
 // themeDir is the path to the freerange theme relative to the module root.
-const themeDir = "../../local/themes/freerange"
+const themeDir = "../../themes/freerange"
 
 // --- Fixture data types (mirror server view structs with view tags) ---
 
