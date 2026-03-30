@@ -13,6 +13,7 @@ import (
 	"press/internal/config"
 	"press/internal/model"
 	"press/internal/permalink"
+	"press/internal/permission"
 	"press/internal/prosemirror"
 	"press/internal/query"
 	"press/internal/repository"
@@ -37,6 +38,7 @@ type Server struct {
 	options    *repository.OptionsRepository
 	serializer *prosemirror.Serializer
 	auth       *auth.Service
+	perms      permission.Checker
 }
 
 // New creates a new Server with routes and templates configured.
@@ -73,6 +75,7 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 
 	users := repository.NewUsersRepository(db)
 	sessions := repository.NewSessionsRepository(db)
+	permStore := permission.NewStore(db)
 	secure := !cfg.IsDevelopment()
 
 	s := &Server{
@@ -94,6 +97,7 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 		options:    opts,
 		serializer: prosemirror.DefaultSerializer(),
 		auth:       auth.NewService(users, sessions, secure, cfg.SessionMaxAge),
+		perms:      permission.NewChecker(permStore),
 	}
 
 	s.registerTagHandlers()

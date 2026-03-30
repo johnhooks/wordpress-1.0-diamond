@@ -124,6 +124,7 @@ type SingleData struct {
 	PostID       int64         `view:"post_id"`
 	Comments     []CommentView `view:"comments"`
 	CommentsOpen bool          `view:"comments_open"`
+	CanComment   bool          `view:"can_comment"`
 	PrevPost     *PageLink     `view:"prev_post"`
 	NextPost     *PageLink     `view:"next_post"`
 }

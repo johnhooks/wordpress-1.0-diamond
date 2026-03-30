@@ -54,6 +54,19 @@ func AttachmentObject(id string) Object { return Object{Type: "attachment", ID: 
 // GroupObject returns an object for a group.
 func GroupObject(slug string) Object { return Object{Type: "group", ID: slug} }
 
+// ObjectForPostType returns the correct object for a post type and ID.
+// Maps "post" → PostObject, "page" → PageObject, "attachment" → AttachmentObject.
+func ObjectForPostType(postType, id string) Object {
+	switch postType {
+	case "page":
+		return PageObject(id)
+	case "attachment":
+		return AttachmentObject(id)
+	default:
+		return PostObject(id)
+	}
+}
+
 // Group represents a permission group (analogous to WordPress roles).
 type Group struct {
 	ID          int64     `db:"id"`

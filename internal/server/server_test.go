@@ -8,15 +8,37 @@ import (
 	"strings"
 	"testing"
 
+	"crypto/rand"
+	"encoding/hex"
+	"time"
+
 	"press/internal/auth"
 	"press/internal/config"
 	"press/internal/db"
 	"press/internal/model"
+	"press/internal/permission"
 	"press/internal/repository"
 	"press/internal/server"
 )
 
+type testEnv struct {
+	server   *server.Server
+	posts    *repository.PostsRepository
+	comments *repository.CommentsRepository
+	terms    *repository.TermsRepository
+	options  *repository.OptionsRepository
+	users    *repository.UsersRepository
+	sessions *repository.SessionsRepository
+	perms    *permission.Store
+}
+
 func setupServer(t *testing.T) (*server.Server, *repository.PostsRepository, *repository.CommentsRepository, *repository.TermsRepository, *repository.OptionsRepository, *repository.UsersRepository) {
+	t.Helper()
+	env := setupEnv(t)
+	return env.server, env.posts, env.comments, env.terms, env.options, env.users
+}
+
+func setupEnv(t *testing.T) *testEnv {
 	t.Helper()
 	database := db.SetupTestDB(t)
 
@@ -50,12 +72,33 @@ func setupServer(t *testing.T) (*server.Server, *repository.PostsRepository, *re
 		t.Fatalf("server.New: %v", err)
 	}
 
-	posts := repository.NewPostsRepository(database)
-	comments := repository.NewCommentsRepository(database)
-	terms := repository.NewTermsRepository(database)
-	users := repository.NewUsersRepository(database)
+	return &testEnv{
+		server:   s,
+		posts:    repository.NewPostsRepository(database),
+		comments: repository.NewCommentsRepository(database),
+		terms:    repository.NewTermsRepository(database),
+		options:  opts,
+		users:    repository.NewUsersRepository(database),
+		sessions: repository.NewSessionsRepository(database),
+		perms:    permission.NewStore(database),
+	}
+}
 
-	return s, posts, comments, terms, opts, users
+// seedPublicCommenter inserts the group:public → commenter → type:post
+// tuple so anonymous users can comment. Tests that need to verify
+// restricted commenting should not call this.
+func seedPublicCommenter(t *testing.T, env *testEnv) {
+	t.Helper()
+	ctx := context.Background()
+	if err := env.perms.CreateTuple(ctx, &permission.Tuple{
+		SubjectType: "group",
+		SubjectID:   "public",
+		Relation:    permission.Commenter,
+		ObjectType:  "type",
+		ObjectID:    "post",
+	}); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestServer_HomeReturnsOK(t *testing.T) {
@@ -326,7 +369,9 @@ func TestServer_StaticFiles(t *testing.T) {
 }
 
 func TestServer_CommentHTMX(t *testing.T) {
-	s, posts, _, _, _, _ := setupServer(t)
+	env := setupEnv(t)
+	seedPublicCommenter(t, env)
+	s, posts := env.server, env.posts
 	ctx := context.Background()
 
 	post := &model.Post{
@@ -403,7 +448,9 @@ func TestServer_CommentHTMX(t *testing.T) {
 }
 
 func TestServer_CommentNonHTMX(t *testing.T) {
-	s, posts, _, _, _, _ := setupServer(t)
+	env := setupEnv(t)
+	seedPublicCommenter(t, env)
+	s, posts := env.server, env.posts
 	ctx := context.Background()
 
 	post := &model.Post{
@@ -440,6 +487,135 @@ func TestServer_CommentNonHTMX(t *testing.T) {
 	if !containsStr(loc, "#comment-") {
 		t.Errorf("expected redirect to comment anchor, got %q", loc)
 	}
+}
+
+func TestServer_CommentPermissions(t *testing.T) {
+	tests := []struct {
+		name          string
+		commentStatus string
+		publicTuple   bool
+		directGrant   bool // grant the specific user commenter on the specific post
+		loggedIn      bool
+		wantCode      int
+	}{
+		{
+			name:          "closed rejects even with public tuple",
+			commentStatus: "closed",
+			publicTuple:   true,
+			wantCode:      http.StatusForbidden,
+		},
+		{
+			name:          "open without public tuple rejects anonymous",
+			commentStatus: "open",
+			publicTuple:   false,
+			wantCode:      http.StatusForbidden,
+		},
+		{
+			name:          "open with public tuple allows anonymous",
+			commentStatus: "open",
+			publicTuple:   true,
+			wantCode:      http.StatusSeeOther,
+		},
+		{
+			name:          "open with direct grant allows logged-in user",
+			commentStatus: "open",
+			publicTuple:   false,
+			directGrant:   true,
+			loggedIn:      true,
+			wantCode:      http.StatusSeeOther,
+		},
+		{
+			name:          "open without grant rejects logged-in user",
+			commentStatus: "open",
+			publicTuple:   false,
+			loggedIn:      true,
+			wantCode:      http.StatusForbidden,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			env := setupEnv(t)
+			ctx := context.Background()
+
+			if tt.publicTuple {
+				seedPublicCommenter(t, env)
+			}
+
+			// Create a user for authenticated tests.
+			var user *model.User
+			var sessionToken string
+			if tt.loggedIn {
+				user = &model.User{
+					UserLogin:   "alice",
+					UserPass:    "hashed",
+					UserEmail:   "alice@example.com",
+					DisplayName: "Alice",
+				}
+				if err := env.users.Create(ctx, user); err != nil {
+					t.Fatal(err)
+				}
+				sessionToken = randomToken(t)
+				if err := env.sessions.Create(ctx, &model.Session{
+					Token:     sessionToken,
+					UserID:    user.ID,
+					ExpiresAt: time.Now().UTC().Add(time.Hour),
+				}); err != nil {
+					t.Fatal(err)
+				}
+			} else {
+				sessionToken = "anon-session-token"
+			}
+
+			post := &model.Post{
+				PostAuthor: 1, PostTitle: "Test Post", PostName: "test-post",
+				PostContent: "<p>Test</p>", PostStatus: "publish", PostType: "post",
+				CommentStatus: tt.commentStatus,
+			}
+			if err := env.posts.Create(ctx, post); err != nil {
+				t.Fatal(err)
+			}
+
+			if tt.directGrant && user != nil {
+				if err := env.perms.CreateTuple(ctx, &permission.Tuple{
+					SubjectType: "user",
+					SubjectID:   fmt.Sprintf("%d", user.ID),
+					Relation:    permission.Commenter,
+					ObjectType:  "post",
+					ObjectID:    fmt.Sprintf("%d", post.ID),
+				}); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			csrf := auth.NewCSRFHelper(sessionToken, "test-secret-key")
+			csrfToken := csrf.Token(fmt.Sprintf("comment-%d", post.ID))
+
+			form := fmt.Sprintf(
+				"comment_post_id=%d&_csrf=%s&author=Alice&email=alice%%40example.com&comment=Hello",
+				post.ID, csrfToken,
+			)
+			req := httptest.NewRequest("POST", "/comments", strings.NewReader(form))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.AddCookie(&http.Cookie{Name: auth.CookieName, Value: sessionToken})
+
+			w := httptest.NewRecorder()
+			env.server.Handler().ServeHTTP(w, req)
+
+			if w.Code != tt.wantCode {
+				t.Errorf("expected %d, got %d: %s", tt.wantCode, w.Code, w.Body.String())
+			}
+		})
+	}
+}
+
+func randomToken(t *testing.T) string {
+	t.Helper()
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		t.Fatal(err)
+	}
+	return hex.EncodeToString(b)
 }
 
 // --- Helpers ---

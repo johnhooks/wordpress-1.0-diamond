@@ -42,17 +42,6 @@
 </div>
 
         
-        <div class="comment" id="comment-11">
-    <p class="comment-meta">
-        <strong>
-            Bob
-        </strong>
-        | January 3, 2004
-    </p>
-    <div class="comment-content"><p>Thanks for sharing.</p></div>
-</div>
-
-        
     </div>
 </div>
 
@@ -71,7 +60,7 @@
         
     
     <nav class="post-navigation">
-    <span class="prev">« <a href="/earlier">Earlier</a></span>
+    
     
 </nav>
 

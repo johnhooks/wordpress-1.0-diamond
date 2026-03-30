@@ -109,6 +109,12 @@ func gSiteData() SiteData {
 	}
 }
 
+func gSiteDataLoggedOut() SiteData {
+	d := gSiteData()
+	d.IsLoggedIn = false
+	return d
+}
+
 // --- Page tests ---
 
 func TestGoldenRenderedPages(t *testing.T) {
@@ -128,8 +134,57 @@ func TestGoldenRenderedPages(t *testing.T) {
 				PostID:       1,
 				Comments:     []CommentView{gFixtureComment, gFixtureComment2},
 				CommentsOpen: true,
+				CanComment:   true,
 				PrevPost:     &PageLink{Title: "Earlier", URL: "/earlier"},
 				NextPost:     nil,
+			},
+		},
+		{
+			name: "single-logged-out",
+			ctx:  goldenCSRFContext(),
+			data: SingleData{
+				SiteData:     gSiteDataLoggedOut(),
+				Post:         gFixturePost,
+				PostID:       1,
+				Comments:     []CommentView{gFixtureComment},
+				CommentsOpen: true,
+				CanComment:   true,
+			},
+		},
+		{
+			name: "single-can-comment",
+			ctx:  goldenCSRFContext(),
+			data: SingleData{
+				SiteData:     gSiteData(),
+				Post:         gFixturePost,
+				PostID:       1,
+				Comments:     []CommentView{gFixtureComment},
+				CommentsOpen: true,
+				CanComment:   true,
+			},
+		},
+		{
+			name: "single-cannot-comment",
+			ctx:  goldenCSRFContext(),
+			data: SingleData{
+				SiteData:     gSiteData(),
+				Post:         gFixturePost,
+				PostID:       1,
+				Comments:     []CommentView{gFixtureComment},
+				CommentsOpen: true,
+				CanComment:   false,
+			},
+		},
+		{
+			name: "single-login-to-comment",
+			ctx:  goldenCSRFContext(),
+			data: SingleData{
+				SiteData:     gSiteDataLoggedOut(),
+				Post:         gFixturePost,
+				PostID:       1,
+				Comments:     []CommentView{gFixtureComment},
+				CommentsOpen: true,
+				CanComment:   false,
 			},
 		},
 		{
@@ -174,7 +229,11 @@ func TestGoldenRenderedPages(t *testing.T) {
 }
 
 var renderedPageFileMap = map[string]string{
-	"single-no-comments": "single",
+	"single-logged-out":      "single",
+	"single-can-comment":     "single",
+	"single-cannot-comment":  "single",
+	"single-login-to-comment": "single",
+	"single-no-comments":     "single",
 }
 
 // --- Tag tests ---
@@ -193,8 +252,9 @@ func TestGoldenRenderedTags(t *testing.T) {
 			tag:  "comment-form",
 			ctx:  goldenCSRFContext(),
 			data: struct {
-				PostID int64 `view:"post_id"`
-			}{PostID: 1},
+				PostID     int64 `view:"post_id"`
+				IsLoggedIn bool  `view:"is_logged_in"`
+			}{PostID: 1, IsLoggedIn: false},
 		},
 	}
 

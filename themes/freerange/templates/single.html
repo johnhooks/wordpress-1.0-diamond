@@ -9,10 +9,16 @@
     <post />
     <comment-list />
     {if comments_open}
-    <div class="comment-respond">
-        <h2>Leave a comment</h2>
-        <comment-form />
-    </div>
+        {if can_comment}
+        <div class="comment-respond">
+            <h2>Leave a comment</h2>
+            <comment-form />
+        </div>
+        {else}
+            {if !is_logged_in}
+            <p class="comments-login">You must be <a href="{login_url}">logged in</a> to comment.</p>
+            {/if}
+        {/if}
     {else}
     <p class="comments-closed">Comments are closed.</p>
     {/if}

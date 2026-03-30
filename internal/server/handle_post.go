@@ -1,11 +1,13 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"press/internal/permalink"
+	"press/internal/permission"
 )
 
 func (s *Server) handlePost(w http.ResponseWriter, r *http.Request, m *permalink.Match) {
@@ -83,6 +85,18 @@ func (s *Server) renderPost(w http.ResponseWriter, r *http.Request, post *postRe
 		}
 	}
 
+	commentsOpen := post.CommentStatus == "open"
+
+	var canComment bool
+	if commentsOpen {
+		var userID int64
+		if user := s.auth.Authenticate(r); user != nil {
+			userID = user.ID
+		}
+		obj := permission.ObjectForPostType(post.PostType, fmt.Sprintf("%d", post.ID))
+		canComment, _ = s.perms.Can(ctx, userID, permission.ActionComment, obj)
+	}
+
 	siteData := s.siteData(r)
 	siteData.PageTitle = post.PostTitle
 
@@ -91,7 +105,8 @@ func (s *Server) renderPost(w http.ResponseWriter, r *http.Request, post *postRe
 		Post:         post.View,
 		PostID:       post.ID,
 		Comments:     commentViews,
-		CommentsOpen: post.CommentStatus == "open",
+		CommentsOpen: commentsOpen,
+		CanComment:   canComment,
 	}
 
 	s.renderSite(w, r, "single", data)

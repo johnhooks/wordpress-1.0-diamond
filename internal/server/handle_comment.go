@@ -9,6 +9,7 @@ import (
 
 	"press/internal/auth"
 	"press/internal/model"
+	"press/internal/permission"
 )
 
 func (s *Server) handleCommentSubmit(w http.ResponseWriter, r *http.Request) {
@@ -29,9 +30,50 @@ func (s *Server) handleCommentSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check that the post exists, is published, and accepts comments.
+	post, err := s.posts.GetByID(r.Context(), postID)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if post.PostStatus != "publish" {
+		http.NotFound(w, r)
+		return
+	}
+	if post.CommentStatus != "open" {
+		s.httpError(w, r, "Comments are closed.", http.StatusForbidden)
+		return
+	}
+
+	// Check that the caller has permission to comment.
+	var userID int64
+	user := s.auth.Authenticate(r)
+	if user != nil {
+		userID = user.ID
+	}
+	obj := permission.ObjectForPostType(post.PostType, fmt.Sprintf("%d", postID))
+	allowed, err := s.perms.Can(r.Context(), userID, permission.ActionComment, obj)
+	if err != nil {
+		log.Printf("permission check failed: %v", err)
+		s.httpError(w, r, "An internal error occurred.", http.StatusInternalServerError)
+		return
+	}
+	if !allowed {
+		s.httpError(w, r, "You do not have permission to comment.", http.StatusForbidden)
+		return
+	}
+
 	author := strings.TrimSpace(r.FormValue("author"))
 	email := strings.TrimSpace(r.FormValue("email"))
+	url := strings.TrimSpace(r.FormValue("url"))
 	commentText := strings.TrimSpace(r.FormValue("comment"))
+
+	// Logged-in users: fill author fields from their account.
+	if user != nil {
+		author = user.DisplayName
+		email = user.UserEmail
+		url = user.UserURL
+	}
 
 	if author == "" || commentText == "" {
 		s.httpError(w, r, "Name and comment are required", http.StatusBadRequest)
@@ -42,12 +84,13 @@ func (s *Server) handleCommentSubmit(w http.ResponseWriter, r *http.Request) {
 		CommentPostID:      postID,
 		CommentAuthor:      author,
 		CommentAuthorEmail: email,
-		CommentAuthorURL:   strings.TrimSpace(r.FormValue("url")),
+		CommentAuthorURL:   url,
 		CommentAuthorIP:    r.RemoteAddr,
 		CommentContent:     commentText,
 		CommentApproved:    "1",
 		CommentAgent:       r.UserAgent(),
 		CommentType:        "comment",
+		UserID:             userID,
 	}
 
 	if err := s.comments.Create(r.Context(), comment); err != nil {
@@ -62,11 +105,6 @@ func (s *Server) handleCommentSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Non-htmx: redirect back to the post.
-	post, err := s.posts.GetByID(r.Context(), postID)
-	if err != nil {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
 	redirect := s.linker.PostPath(post.ID, post.PostDate, post.PostName)
 	http.Redirect(w, r, redirect+"#comment-"+strconv.FormatInt(comment.CommentID, 10), http.StatusSeeOther)
 }
@@ -86,8 +124,9 @@ func (s *Server) handleCommentHTMX(w http.ResponseWriter, r *http.Request, postI
 	// The tag handler owns the <form> element, hidden inputs, and htmx
 	// attrs. It reads post_id from scope and CSRF from context.
 	formScope := struct {
-		PostID int64 `view:"post_id"`
-	}{PostID: postID}
+		PostID     int64 `view:"post_id"`
+		IsLoggedIn bool  `view:"is_logged_in"`
+	}{PostID: postID, IsLoggedIn: s.auth.Authenticate(r) != nil}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := s.theme.RenderTag(w, ctx, "comment-form", formScope); err != nil {
 		log.Printf("render comment-form fragment: %v", err)

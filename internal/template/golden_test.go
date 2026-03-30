@@ -138,6 +138,12 @@ func siteData() siteFixture {
 	}
 }
 
+func siteDataLoggedOut() siteFixture {
+	d := siteData()
+	d.IsLoggedIn = false
+	return d
+}
+
 type siteFixture struct {
 	BlogName        string         `view:"blog_name"`
 	BlogDescription string         `view:"blog_description"`
@@ -285,9 +291,10 @@ var moleculeTests = []moleculeTest{
 		name: "comment-form",
 		dir:  "molecules",
 		data: struct {
-			Author string `view:"author"`
-			Email  string `view:"email"`
-			URL    string `view:"url"`
+			Author     string `view:"author"`
+			Email      string `view:"email"`
+			URL        string `view:"url"`
+			IsLoggedIn bool   `view:"is_logged_in"`
 		}{},
 	},
 	{
@@ -566,6 +573,7 @@ type singleData struct {
 	PostID       int64         `view:"post_id"`
 	Comments     []commentView `view:"comments"`
 	CommentsOpen bool          `view:"comments_open"`
+	CanComment   bool          `view:"can_comment"`
 	CSRFToken    string        `view:"csrf_token"`
 	PrevPost     *pageLink     `view:"prev_post"`
 	NextPost     *pageLink     `view:"next_post"`
@@ -627,9 +635,60 @@ var pageTemplateTests = []organismTest{
 			PostID:       1,
 			Comments:     []commentView{fixtureComment, fixtureComment2},
 			CommentsOpen: true,
+			CanComment:   true,
 			CSRFToken:    "test-csrf-token",
 			PrevPost:     &pageLink{Title: "Earlier", URL: "/earlier"},
 			NextPost:     nil,
+		},
+	},
+	{
+		name: "single-logged-out",
+		dir:  "templates",
+		data: singleData{
+			siteFixture:  siteDataLoggedOut(),
+			Post:         fixturePost,
+			PostID:       1,
+			Comments:     []commentView{fixtureComment},
+			CommentsOpen: true,
+			CanComment:   true,
+			CSRFToken:    "test-csrf-token",
+		},
+	},
+	{
+		name: "single-can-comment",
+		dir:  "templates",
+		data: singleData{
+			siteFixture:  siteData(),
+			Post:         fixturePost,
+			PostID:       1,
+			Comments:     []commentView{fixtureComment},
+			CommentsOpen: true,
+			CanComment:   true,
+			CSRFToken:    "test-csrf-token",
+		},
+	},
+	{
+		name: "single-cannot-comment",
+		dir:  "templates",
+		data: singleData{
+			siteFixture:  siteData(),
+			Post:         fixturePost,
+			PostID:       1,
+			Comments:     []commentView{fixtureComment},
+			CommentsOpen: true,
+			CanComment:   false,
+		},
+	},
+	{
+		name: "single-login-to-comment",
+		dir:  "templates",
+		data: singleData{
+			siteFixture:  siteDataLoggedOut(),
+			Post:         fixturePost,
+			PostID:       1,
+			Comments:     []commentView{fixtureComment},
+			CommentsOpen: true,
+			CanComment:   false,
 		},
 	},
 	{
@@ -674,7 +733,11 @@ var pageTemplateTests = []organismTest{
 }
 
 var pageFileMap = map[string]string{
-	"home-empty": "home",
+	"home-empty":              "home",
+	"single-logged-out":       "single",
+	"single-can-comment":      "single",
+	"single-cannot-comment":   "single",
+	"single-login-to-comment": "single",
 }
 
 func TestGoldenPages(t *testing.T) {

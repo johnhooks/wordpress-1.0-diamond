@@ -42,17 +42,6 @@
 </div>
 
         
-        <div class="comment" id="comment-11">
-    <p class="comment-meta">
-        <strong>
-            Bob
-        </strong>
-        | January 3, 2004
-    </p>
-    <div class="comment-content"><p>Thanks for sharing.</p></div>
-</div>
-
-        
     </div>
 </div>
 
@@ -61,6 +50,19 @@
         <div class="comment-respond">
             <h2>Leave a comment</h2>
             <form method="post" action="/comments" hx-post="/comments" hx-target="this" hx-swap="outerHTML" hx-disabled-elt="this, find [type=&#39;submit&#39;]"><input type="hidden" name="comment_post_id" value="1"/><input type="hidden" name="_csrf" value="87631e728be1d713a00a6ce05c3dfc43"/>
+<p>
+    <label for="author">Name</label><br/>
+    <input type="text" name="author" id="author" value=""/>
+</p>
+<p>
+    <label for="email">Email</label><br/>
+    <input type="email" name="email" id="email" value=""/>
+</p>
+<p>
+    <label for="url">Website</label><br/>
+    <input type="url" name="url" id="url" value=""/>
+</p>
+
 <p>
     <label for="comment">Comment</label><br/>
     <textarea name="comment" id="comment" rows="8" cols="50"></textarea>
@@ -71,7 +73,7 @@
         
     
     <nav class="post-navigation">
-    <span class="prev">« <a href="/earlier">Earlier</a></span>
+    
     
 </nav>
 
@@ -127,8 +129,7 @@
     <h2>Meta</h2>
     <ul>
         
-        <li><a href="/wp-admin/">Dashboard</a></li>
-        <li><a href="/wp-login.php?action=logout">Log out</a></li>
+        <li><a href="/wp-login.php">Log in</a></li>
         
     </ul>
 </div>

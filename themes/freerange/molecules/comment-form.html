@@ -1,3 +1,4 @@
+{if !is_logged_in}
 <p>
     <label for="author">Name</label><br/>
     <input type="text" name="author" id="author" value="{author}"/>
@@ -10,6 +11,7 @@
     <label for="url">Website</label><br/>
     <input type="url" name="url" id="url" value="{url}"/>
 </p>
+{/if}
 <p>
     <label for="comment">Comment</label><br/>
     <textarea name="comment" id="comment" rows="8" cols="50"></textarea>
