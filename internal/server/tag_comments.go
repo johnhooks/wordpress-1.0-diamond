@@ -7,6 +7,7 @@ import (
 	"press/internal/auth"
 	"press/internal/template"
 	"press/internal/template/parse"
+	"press/view"
 )
 
 // tagComment renders a <comment /> vocabulary tag. It resolves the
@@ -17,9 +18,9 @@ func (s *Server) tagComment(ctx context.Context, ev *template.Evaluator, el *par
 	if !ok {
 		panic("<comment />: no comment in scope")
 	}
-	comment, ok := val.(CommentView)
+	comment, ok := val.(view.Comment)
 	if !ok {
-		panic(fmt.Sprintf("<comment />: expected CommentView, got %T", val))
+		panic(fmt.Sprintf("<comment />: expected view.Comment, got %T", val))
 	}
 
 	engineAttrs := map[string]string{

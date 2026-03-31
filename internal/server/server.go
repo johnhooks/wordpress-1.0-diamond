@@ -17,6 +17,7 @@ import (
 	"press/internal/prosemirror"
 	"press/internal/query"
 	"press/internal/repository"
+	"press/view"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -262,9 +263,9 @@ func (s *Server) blogInfo(ctx context.Context) (name, description string) {
 // siteData builds the shared SiteData available on every page.
 // Sidebar data (categories, archives, pages) and auth state will be
 // populated here once the queries are wired up.
-func (s *Server) siteData(r *http.Request) SiteData {
+func (s *Server) siteData(r *http.Request) view.Site {
 	name, desc := s.blogInfo(r.Context())
-	data := SiteData{
+	data := view.Site{
 		BlogName:        name,
 		BlogDescription: desc,
 		LoginURL:        "/wp-admin/login",
@@ -286,7 +287,7 @@ func (s *Server) authorName(ctx context.Context, userID int64) string {
 // postResult bundles a model.Post with its rendered PostView.
 type postResult struct {
 	*model.Post
-	View PostView
+	View view.Post
 }
 
 // lookupPostByID fetches a published post by ID.
@@ -303,7 +304,7 @@ func (s *Server) lookupPostByID(ctx context.Context, id int64) (*postResult, err
 	if err != nil {
 		log.Printf("failed to load categories for post %d: %v", post.ID, err)
 	}
-	return &postResult{Post: post, View: newPostView(post, author, cats, s.linker, s.serializer)}, nil
+	return &postResult{Post: post, View: newPost(post, author, cats, s.linker, s.serializer)}, nil
 }
 
 // lookupPostBySlug fetches a published post by slug.
@@ -320,7 +321,7 @@ func (s *Server) lookupPostBySlug(ctx context.Context, slug string) (*postResult
 	if err != nil {
 		log.Printf("failed to load categories for post %d: %v", post.ID, err)
 	}
-	return &postResult{Post: post, View: newPostView(post, author, cats, s.linker, s.serializer)}, nil
+	return &postResult{Post: post, View: newPost(post, author, cats, s.linker, s.serializer)}, nil
 }
 
 // publishedPostQuery builds a query for published posts.
@@ -337,8 +338,8 @@ func (s *Server) publishedPostQuery(page, perPage int) query.Query {
 }
 
 // postViews builds PostViews for a slice of posts.
-func (s *Server) postViews(ctx context.Context, posts []model.Post) []PostView {
-	views := make([]PostView, len(posts))
+func (s *Server) postViews(ctx context.Context, posts []model.Post) []view.Post {
+	views := make([]view.Post, len(posts))
 	for i := range posts {
 		p := &posts[i]
 		author := s.authorName(ctx, p.PostAuthor)
@@ -346,7 +347,7 @@ func (s *Server) postViews(ctx context.Context, posts []model.Post) []PostView {
 		if err != nil {
 			log.Printf("failed to load categories for post %d: %v", p.ID, err)
 		}
-		views[i] = newPostView(p, author, cats, s.linker, s.serializer)
+		views[i] = newPost(p, author, cats, s.linker, s.serializer)
 	}
 	return views
 }

@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"press/internal/template/parse"
+	"press/view"
 )
 
 var update = flag.Bool("update", false, "update golden files")
@@ -17,62 +18,16 @@ var update = flag.Bool("update", false, "update golden files")
 // themeDir is the path to the freerange theme relative to the module root.
 const themeDir = "../../themes/freerange"
 
-// --- Fixture data types (mirror server view structs with view tags) ---
-
-type categoryLink struct {
-	Name string `view:"name"`
-	URL  string `view:"url"`
-}
-
-type categoryView struct {
-	Name  string `view:"name"`
-	Slug  string `view:"slug"`
-	URL   string `view:"url"`
-	Count int    `view:"count"`
-}
-
-type archiveView struct {
-	Label string `view:"label"`
-	URL   string `view:"url"`
-	Count int    `view:"count"`
-}
-
-type pageLink struct {
-	Title string `view:"title"`
-	URL   string `view:"url"`
-}
-
-type postView struct {
-	ID            int64          `view:"id"`
-	TheTitle      string         `view:"the_title"`
-	TheContent    string         `view:"the_content,raw"`
-	TheExcerpt    string         `view:"the_excerpt"`
-	TheDate       string         `view:"the_date"`
-	TheAuthor     string         `view:"the_author"`
-	TheCategories []categoryLink `view:"the_categories"`
-	Permalink     string         `view:"permalink"`
-	CommentCount  int            `view:"comment_count"`
-	CommentsOpen  bool           `view:"comments_open"`
-}
-
-type commentView struct {
-	ID         int64  `view:"id"`
-	TheAuthor  string `view:"the_author"`
-	URL        string `view:"url"`
-	TheDate    string `view:"the_date"`
-	TheContent string `view:"the_content,raw"`
-}
-
 // --- Fixture data ---
 
-var fixturePost = postView{
+var fixturePost = view.Post{
 	ID:         1,
 	TheTitle:   "Hello World",
 	TheContent: "<p>Welcome to Press.</p>",
 	TheExcerpt: "Welcome to Press.",
 	TheDate:    "January 1, 2004",
 	TheAuthor:  "admin",
-	TheCategories: []categoryLink{
+	TheCategories: []view.CategoryLink{
 		{Name: "Uncategorized", URL: "/category/uncategorized"},
 		{Name: "News", URL: "/category/news"},
 	},
@@ -81,18 +36,18 @@ var fixturePost = postView{
 	CommentsOpen: true,
 }
 
-var fixturePost2 = postView{
+var fixturePost2 = view.Post{
 	ID:            2,
 	TheTitle:      "Second Post",
 	TheContent:    "<p>Another post.</p>",
 	TheDate:       "January 2, 2004",
 	TheAuthor:     "admin",
-	TheCategories: []categoryLink{},
+	TheCategories: []view.CategoryLink{},
 	Permalink:     "/2004/01/second-post",
 	CommentsOpen:  false,
 }
 
-var fixtureComment = commentView{
+var fixtureComment = view.Comment{
 	ID:         10,
 	TheAuthor:  "Alice",
 	URL:        "https://alice.example.com",
@@ -100,7 +55,7 @@ var fixtureComment = commentView{
 	TheContent: "<p>Great post!</p>",
 }
 
-var fixtureComment2 = commentView{
+var fixtureComment2 = view.Comment{
 	ID:         11,
 	TheAuthor:  "Bob",
 	URL:        "",
@@ -108,24 +63,24 @@ var fixtureComment2 = commentView{
 	TheContent: "<p>Thanks for sharing.</p>",
 }
 
-var fixtureCategories = []categoryView{
+var fixtureCategories = []view.Category{
 	{Name: "Uncategorized", Slug: "uncategorized", URL: "/category/uncategorized", Count: 5},
 	{Name: "News", Slug: "news", URL: "/category/news", Count: 3},
 }
 
-var fixtureArchives = []archiveView{
+var fixtureArchives = []view.Archive{
 	{Label: "January 2004", URL: "/2004/01", Count: 2},
 	{Label: "February 2004", URL: "/2004/02", Count: 1},
 }
 
-var fixturePages = []pageLink{
+var fixturePages = []view.PageLink{
 	{Title: "About", URL: "/about"},
 	{Title: "Contact", URL: "/contact"},
 }
 
-// siteData returns a fixture struct matching SiteData fields.
-func siteData() siteFixture {
-	return siteFixture{
+// siteData returns a fixture Site.
+func siteData() view.Site {
+	return view.Site{
 		BlogName:        "Test Blog",
 		BlogDescription: "Just another Press blog",
 		Categories:      fixtureCategories,
@@ -138,24 +93,10 @@ func siteData() siteFixture {
 	}
 }
 
-func siteDataLoggedOut() siteFixture {
+func siteDataLoggedOut() view.Site {
 	d := siteData()
 	d.IsLoggedIn = false
 	return d
-}
-
-type siteFixture struct {
-	BlogName        string         `view:"blog_name"`
-	BlogDescription string         `view:"blog_description"`
-	PageTitle       string         `view:"page_title"`
-	Categories      []categoryView `view:"categories"`
-	Archives        []archiveView  `view:"archives"`
-	Pages           []pageLink     `view:"pages"`
-	IsLoggedIn      bool           `view:"is_logged_in"`
-	LoginURL        string         `view:"login_url"`
-	LogoutURL       string         `view:"logout_url"`
-	AdminURL        string         `view:"admin_url"`
-	SearchQuery     string         `view:"search_query"`
 }
 
 // --- Molecule tests (no handlers needed) ---
@@ -175,13 +116,13 @@ var moleculeTests = []moleculeTest{
 	{
 		name: "post-with-no-categories",
 		dir:  "molecules",
-		data: postView{
+		data: view.Post{
 			ID:            3,
 			TheTitle:      "No Categories",
 			TheContent:    "<p>A post with no categories.</p>",
 			TheDate:       "January 5, 2004",
 			TheAuthor:     "admin",
-			TheCategories: []categoryLink{},
+			TheCategories: []view.CategoryLink{},
 			Permalink:     "/2004/01/no-categories",
 		},
 	},
@@ -193,7 +134,7 @@ var moleculeTests = []moleculeTest{
 	{
 		name: "comment-without-url",
 		dir:  "molecules",
-		data: commentView{
+		data: view.Comment{
 			ID:         12,
 			TheAuthor:  "Charlie",
 			URL:        "",
@@ -260,7 +201,7 @@ var moleculeTests = []moleculeTest{
 	{
 		name: "meta-links-logged-out",
 		dir:  "molecules",
-		data: func() siteFixture {
+		data: func() view.Site {
 			s := siteData()
 			s.IsLoggedIn = false
 			return s
@@ -301,19 +242,19 @@ var moleculeTests = []moleculeTest{
 		name: "post-navigation-both",
 		dir:  "molecules",
 		data: struct {
-			PrevPost *pageLink `view:"prev_post"`
-			NextPost *pageLink `view:"next_post"`
+			PrevPost *view.PageLink `view:"prev_post"`
+			NextPost *view.PageLink `view:"next_post"`
 		}{
-			PrevPost: &pageLink{Title: "Earlier Post", URL: "/earlier"},
-			NextPost: &pageLink{Title: "Later Post", URL: "/later"},
+			PrevPost: &view.PageLink{Title: "Earlier Post", URL: "/earlier"},
+			NextPost: &view.PageLink{Title: "Later Post", URL: "/later"},
 		},
 	},
 	{
 		name: "post-navigation-none",
 		dir:  "molecules",
 		data: struct {
-			PrevPost *pageLink `view:"prev_post"`
-			NextPost *pageLink `view:"next_post"`
+			PrevPost *view.PageLink `view:"prev_post"`
+			NextPost *view.PageLink `view:"next_post"`
 		}{},
 	},
 }
@@ -502,32 +443,32 @@ var organismTests = []organismTest{
 		name: "comment-list",
 		dir:  "organisms",
 		data: struct {
-			Comments []commentView `view:"comments"`
+			Comments []view.Comment `view:"comments"`
 		}{
-			Comments: []commentView{fixtureComment, fixtureComment2},
+			Comments: []view.Comment{fixtureComment, fixtureComment2},
 		},
 	},
 	{
 		name: "comment-list-empty",
 		dir:  "organisms",
 		data: struct {
-			Comments []commentView `view:"comments"`
+			Comments []view.Comment `view:"comments"`
 		}{},
 	},
 	{
 		name: "post-list",
 		dir:  "organisms",
 		data: struct {
-			Posts []postView `view:"posts"`
+			Posts []view.Post `view:"posts"`
 		}{
-			Posts: []postView{fixturePost, fixturePost2},
+			Posts: []view.Post{fixturePost, fixturePost2},
 		},
 	},
 	{
 		name: "post-list-empty",
 		dir:  "organisms",
 		data: struct {
-			Posts []postView `view:"posts"`
+			Posts []view.Post `view:"posts"`
 		}{},
 	},
 	{
@@ -558,157 +499,128 @@ func TestGoldenOrganisms(t *testing.T) {
 
 // --- Page template tests ---
 
-type homeData struct {
-	siteFixture
-	Posts   []postView `view:"posts"`
-	HasPrev bool       `view:"has_prev"`
-	HasNext bool       `view:"has_next"`
-	PrevURL string     `view:"prev_url"`
-	NextURL string     `view:"next_url"`
-}
-
-type singleData struct {
-	siteFixture
-	Post         postView      `view:"post"`
-	PostID       int64         `view:"post_id"`
-	Comments     []commentView `view:"comments"`
-	CommentsOpen bool          `view:"comments_open"`
-	CanComment   bool          `view:"can_comment"`
-	CSRFToken    string        `view:"csrf_token"`
-	PrevPost     *pageLink     `view:"prev_post"`
-	NextPost     *pageLink     `view:"next_post"`
-}
-
-type pageData struct {
-	siteFixture
-	Page struct {
-		TheTitle   string `view:"the_title"`
-		TheContent string `view:"the_content,raw"`
-	} `view:"page"`
-}
-
-type archiveData struct {
-	siteFixture
-	ArchiveTitle       string     `view:"archive_title"`
-	ArchiveDescription string     `view:"archive_description"`
-	Posts              []postView `view:"posts"`
-	HasPrev            bool       `view:"has_prev"`
-	HasNext            bool       `view:"has_next"`
-	PrevURL            string     `view:"prev_url"`
-	NextURL            string     `view:"next_url"`
-}
-
-type searchData struct {
-	siteFixture
-	Posts   []postView `view:"posts"`
-	HasPrev bool       `view:"has_prev"`
-	HasNext bool       `view:"has_next"`
-	PrevURL string     `view:"prev_url"`
-	NextURL string     `view:"next_url"`
+// singleTestData extends view.SinglePage with a CSRFToken field for
+// the template golden tests. The real server provides CSRF tokens
+// through context, not scope data, but the test's comment form handler
+// reads csrf_token from scope.
+type singleTestData struct {
+	view.SinglePage
+	CSRFToken string `view:"csrf_token"`
 }
 
 var pageTemplateTests = []organismTest{
 	{
 		name: "home",
 		dir:  "templates",
-		data: homeData{
-			siteFixture: siteData(),
-			Posts:       []postView{fixturePost, fixturePost2},
-			HasNext:     true,
-			NextURL:     "/page/2",
+		data: view.HomePage{
+			Site:    siteData(),
+			Posts:   []view.Post{fixturePost, fixturePost2},
+			HasNext: true,
+			NextURL: "/page/2",
 		},
 	},
 	{
 		name: "home-empty",
 		dir:  "templates",
-		data: homeData{
-			siteFixture: siteData(),
-			Posts:       []postView{},
+		data: view.HomePage{
+			Site:  siteData(),
+			Posts: []view.Post{},
 		},
 	},
 	{
 		name: "single",
 		dir:  "templates",
-		data: singleData{
-			siteFixture:  siteData(),
-			Post:         fixturePost,
-			PostID:       1,
-			Comments:     []commentView{fixtureComment, fixtureComment2},
-			CommentsOpen: true,
-			CanComment:   true,
-			CSRFToken:    "test-csrf-token",
-			PrevPost:     &pageLink{Title: "Earlier", URL: "/earlier"},
-			NextPost:     nil,
+		data: singleTestData{
+			SinglePage: view.SinglePage{
+				Site:         siteData(),
+				Post:         fixturePost,
+				PostID:       1,
+				Comments:     []view.Comment{fixtureComment, fixtureComment2},
+				CommentsOpen: true,
+				CanComment:   true,
+				PrevPost:     &view.PageLink{Title: "Earlier", URL: "/earlier"},
+				NextPost:     nil,
+			},
+			CSRFToken: "test-csrf-token",
 		},
 	},
 	{
 		name: "single-logged-out",
 		dir:  "templates",
-		data: singleData{
-			siteFixture:  siteDataLoggedOut(),
-			Post:         fixturePost,
-			PostID:       1,
-			Comments:     []commentView{fixtureComment},
-			CommentsOpen: true,
-			CanComment:   true,
-			CSRFToken:    "test-csrf-token",
+		data: singleTestData{
+			SinglePage: view.SinglePage{
+				Site:         siteDataLoggedOut(),
+				Post:         fixturePost,
+				PostID:       1,
+				Comments:     []view.Comment{fixtureComment},
+				CommentsOpen: true,
+				CanComment:   true,
+			},
+			CSRFToken: "test-csrf-token",
 		},
 	},
 	{
 		name: "single-can-comment",
 		dir:  "templates",
-		data: singleData{
-			siteFixture:  siteData(),
-			Post:         fixturePost,
-			PostID:       1,
-			Comments:     []commentView{fixtureComment},
-			CommentsOpen: true,
-			CanComment:   true,
-			CSRFToken:    "test-csrf-token",
+		data: singleTestData{
+			SinglePage: view.SinglePage{
+				Site:         siteData(),
+				Post:         fixturePost,
+				PostID:       1,
+				Comments:     []view.Comment{fixtureComment},
+				CommentsOpen: true,
+				CanComment:   true,
+			},
+			CSRFToken: "test-csrf-token",
 		},
 	},
 	{
 		name: "single-cannot-comment",
 		dir:  "templates",
-		data: singleData{
-			siteFixture:  siteData(),
-			Post:         fixturePost,
-			PostID:       1,
-			Comments:     []commentView{fixtureComment},
-			CommentsOpen: true,
-			CanComment:   false,
+		data: singleTestData{
+			SinglePage: view.SinglePage{
+				Site:         siteData(),
+				Post:         fixturePost,
+				PostID:       1,
+				Comments:     []view.Comment{fixtureComment},
+				CommentsOpen: true,
+				CanComment:   false,
+			},
 		},
 	},
 	{
 		name: "single-login-to-comment",
 		dir:  "templates",
-		data: singleData{
-			siteFixture:  siteDataLoggedOut(),
-			Post:         fixturePost,
-			PostID:       1,
-			Comments:     []commentView{fixtureComment},
-			CommentsOpen: true,
-			CanComment:   false,
+		data: singleTestData{
+			SinglePage: view.SinglePage{
+				Site:         siteDataLoggedOut(),
+				Post:         fixturePost,
+				PostID:       1,
+				Comments:     []view.Comment{fixtureComment},
+				CommentsOpen: true,
+				CanComment:   false,
+			},
 		},
 	},
 	{
 		name: "page",
 		dir:  "templates",
-		data: func() pageData {
-			d := pageData{siteFixture: siteData()}
-			d.Page.TheTitle = "About"
-			d.Page.TheContent = "<p>About this blog.</p>"
-			return d
-		}(),
+		data: view.StaticPage{
+			Site: siteData(),
+			Page: view.Page{
+				TheTitle:   "About",
+				TheContent: "<p>About this blog.</p>",
+			},
+		},
 	},
 	{
 		name: "archive",
 		dir:  "templates",
-		data: archiveData{
-			siteFixture:        siteData(),
+		data: view.ArchivePage{
+			Site:               siteData(),
 			ArchiveTitle:       "January 2004",
 			ArchiveDescription: "Posts from January.",
-			Posts:              []postView{fixturePost},
+			Posts:              []view.Post{fixturePost},
 			HasNext:            true,
 			NextURL:            "/2004/01/page/2",
 		},
@@ -716,12 +628,12 @@ var pageTemplateTests = []organismTest{
 	{
 		name: "search",
 		dir:  "templates",
-		data: func() searchData {
+		data: func() view.ArchivePage {
 			s := siteData()
 			s.SearchQuery = "hello"
-			return searchData{
-				siteFixture: s,
-				Posts:       []postView{fixturePost},
+			return view.ArchivePage{
+				Site:  s,
+				Posts: []view.Post{fixturePost},
 			}
 		}(),
 	},

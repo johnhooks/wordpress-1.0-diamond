@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+
+	"press/view"
 )
 
 func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
@@ -38,8 +40,8 @@ func (s *Server) handleHome(w http.ResponseWriter, r *http.Request) {
 
 	views := s.postViews(ctx, result.Items)
 
-	data := HomeData{
-		SiteData:    s.siteData(r),
+	data := view.HomePage{
+		Site:    s.siteData(r),
 		Posts:       views,
 		HasPrev:     page > 1,
 		HasNext:     page < result.TotalPages,

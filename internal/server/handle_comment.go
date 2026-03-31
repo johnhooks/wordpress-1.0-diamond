@@ -10,6 +10,7 @@ import (
 	"press/internal/auth"
 	"press/internal/model"
 	"press/internal/permission"
+	"press/view"
 )
 
 func (s *Server) handleCommentSubmit(w http.ResponseWriter, r *http.Request) {
@@ -137,9 +138,9 @@ func (s *Server) handleCommentHTMX(w http.ResponseWriter, r *http.Request, postI
 	// Uses RenderTag so the tag handler injects the engine id attr.
 	// The tagComment handler looks up "comment" from scope, so wrap
 	// the view in a struct with the expected binding.
-	cv := newCommentView(comment)
+	cv := newComment(comment)
 	commentScope := struct {
-		Comment CommentView `view:"comment"`
+		Comment view.Comment `view:"comment"`
 	}{Comment: cv}
 	if _, err := fmt.Fprintf(w, `<div hx-swap-oob="beforeend:#post-%d-comments .comment-list">`, postID); err != nil {
 		return

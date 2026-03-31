@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"press/internal/auth"
+	"press/view"
 )
 
 var update = flag.Bool("update", false, "update golden files")
@@ -37,14 +38,14 @@ func goldenCSRFContext() context.Context {
 
 // --- Fixture data using real server view types ---
 
-var gFixturePost = PostView{
+var gFixturePost = view.Post{
 	ID:         1,
 	TheTitle:   "Hello World",
 	TheContent: "<p>Welcome to Press.</p>",
 	TheExcerpt: "Welcome to Press.",
 	TheDate:    "January 1, 2004",
 	TheAuthor:  "admin",
-	TheCategories: []CategoryLink{
+	TheCategories: []view.CategoryLink{
 		{Name: "Uncategorized", URL: "/category/uncategorized"},
 		{Name: "News", URL: "/category/news"},
 	},
@@ -53,18 +54,18 @@ var gFixturePost = PostView{
 	CommentsOpen: true,
 }
 
-var gFixturePost2 = PostView{
+var gFixturePost2 = view.Post{
 	ID:            2,
 	TheTitle:      "Second Post",
 	TheContent:    "<p>Another post.</p>",
 	TheDate:       "January 2, 2004",
 	TheAuthor:     "admin",
-	TheCategories: []CategoryLink{},
+	TheCategories: []view.CategoryLink{},
 	Permalink:     "/2004/01/second-post",
 	CommentsOpen:  false,
 }
 
-var gFixtureComment = CommentView{
+var gFixtureComment = view.Comment{
 	ID:         10,
 	TheAuthor:  "Alice",
 	URL:        "https://alice.example.com",
@@ -72,7 +73,7 @@ var gFixtureComment = CommentView{
 	TheContent: "<p>Great post!</p>",
 }
 
-var gFixtureComment2 = CommentView{
+var gFixtureComment2 = view.Comment{
 	ID:         11,
 	TheAuthor:  "Bob",
 	URL:        "",
@@ -80,23 +81,23 @@ var gFixtureComment2 = CommentView{
 	TheContent: "<p>Thanks for sharing.</p>",
 }
 
-var gFixtureCategories = []CategoryView{
+var gFixtureCategories = []view.Category{
 	{Name: "Uncategorized", Slug: "uncategorized", URL: "/category/uncategorized", Count: 5},
 	{Name: "News", Slug: "news", URL: "/category/news", Count: 3},
 }
 
-var gFixtureArchives = []ArchiveView{
+var gFixtureArchives = []view.Archive{
 	{Label: "January 2004", URL: "/2004/01", Count: 2},
 	{Label: "February 2004", URL: "/2004/02", Count: 1},
 }
 
-var gFixturePages = []PageLink{
+var gFixturePages = []view.PageLink{
 	{Title: "About", URL: "/about"},
 	{Title: "Contact", URL: "/contact"},
 }
 
-func gSiteData() SiteData {
-	return SiteData{
+func gSiteData() view.Site {
+	return view.Site{
 		BlogName:        "Test Blog",
 		BlogDescription: "Just another Press blog",
 		Categories:      gFixtureCategories,
@@ -109,7 +110,7 @@ func gSiteData() SiteData {
 	}
 }
 
-func gSiteDataLoggedOut() SiteData {
+func gSiteDataLoggedOut() view.Site {
 	d := gSiteData()
 	d.IsLoggedIn = false
 	return d
@@ -128,25 +129,25 @@ func TestGoldenRenderedPages(t *testing.T) {
 		{
 			name: "single",
 			ctx:  goldenCSRFContext(),
-			data: SingleData{
-				SiteData:     gSiteData(),
+			data: view.SinglePage{
+				Site:         gSiteData(),
 				Post:         gFixturePost,
 				PostID:       1,
-				Comments:     []CommentView{gFixtureComment, gFixtureComment2},
+				Comments:     []view.Comment{gFixtureComment, gFixtureComment2},
 				CommentsOpen: true,
 				CanComment:   true,
-				PrevPost:     &PageLink{Title: "Earlier", URL: "/earlier"},
+				PrevPost:     &view.PageLink{Title: "Earlier", URL: "/earlier"},
 				NextPost:     nil,
 			},
 		},
 		{
 			name: "single-logged-out",
 			ctx:  goldenCSRFContext(),
-			data: SingleData{
-				SiteData:     gSiteDataLoggedOut(),
+			data: view.SinglePage{
+				Site:         gSiteDataLoggedOut(),
 				Post:         gFixturePost,
 				PostID:       1,
-				Comments:     []CommentView{gFixtureComment},
+				Comments:     []view.Comment{gFixtureComment},
 				CommentsOpen: true,
 				CanComment:   true,
 			},
@@ -154,11 +155,11 @@ func TestGoldenRenderedPages(t *testing.T) {
 		{
 			name: "single-can-comment",
 			ctx:  goldenCSRFContext(),
-			data: SingleData{
-				SiteData:     gSiteData(),
+			data: view.SinglePage{
+				Site:         gSiteData(),
 				Post:         gFixturePost,
 				PostID:       1,
-				Comments:     []CommentView{gFixtureComment},
+				Comments:     []view.Comment{gFixtureComment},
 				CommentsOpen: true,
 				CanComment:   true,
 			},
@@ -166,11 +167,11 @@ func TestGoldenRenderedPages(t *testing.T) {
 		{
 			name: "single-cannot-comment",
 			ctx:  goldenCSRFContext(),
-			data: SingleData{
-				SiteData:     gSiteData(),
+			data: view.SinglePage{
+				Site:         gSiteData(),
 				Post:         gFixturePost,
 				PostID:       1,
-				Comments:     []CommentView{gFixtureComment},
+				Comments:     []view.Comment{gFixtureComment},
 				CommentsOpen: true,
 				CanComment:   false,
 			},
@@ -178,11 +179,11 @@ func TestGoldenRenderedPages(t *testing.T) {
 		{
 			name: "single-login-to-comment",
 			ctx:  goldenCSRFContext(),
-			data: SingleData{
-				SiteData:     gSiteDataLoggedOut(),
+			data: view.SinglePage{
+				Site:         gSiteDataLoggedOut(),
 				Post:         gFixturePost,
 				PostID:       1,
-				Comments:     []CommentView{gFixtureComment},
+				Comments:     []view.Comment{gFixtureComment},
 				CommentsOpen: true,
 				CanComment:   false,
 			},
@@ -190,22 +191,22 @@ func TestGoldenRenderedPages(t *testing.T) {
 		{
 			name: "single-no-comments",
 			ctx:  goldenCSRFContext(),
-			data: SingleData{
-				SiteData:     gSiteData(),
+			data: view.SinglePage{
+				Site:         gSiteData(),
 				Post:         gFixturePost2,
 				PostID:       2,
-				Comments:     []CommentView{},
+				Comments:     []view.Comment{},
 				CommentsOpen: false,
 			},
 		},
 		{
 			name: "home",
 			ctx:  context.Background(),
-			data: HomeData{
-				SiteData: gSiteData(),
-				Posts:    []PostView{gFixturePost, gFixturePost2},
-				HasNext:  true,
-				NextURL:  "/page/2",
+			data: view.HomePage{
+				Site:    gSiteData(),
+				Posts:   []view.Post{gFixturePost, gFixturePost2},
+				HasNext: true,
+				NextURL: "/page/2",
 			},
 		},
 	}
@@ -229,11 +230,11 @@ func TestGoldenRenderedPages(t *testing.T) {
 }
 
 var renderedPageFileMap = map[string]string{
-	"single-logged-out":      "single",
-	"single-can-comment":     "single",
-	"single-cannot-comment":  "single",
+	"single-logged-out":       "single",
+	"single-can-comment":      "single",
+	"single-cannot-comment":   "single",
 	"single-login-to-comment": "single",
-	"single-no-comments":     "single",
+	"single-no-comments":      "single",
 }
 
 // --- Tag tests ---

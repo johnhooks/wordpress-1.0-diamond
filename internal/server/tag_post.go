@@ -6,6 +6,7 @@ import (
 
 	"press/internal/template"
 	"press/internal/template/parse"
+	"press/view"
 )
 
 // tagPost renders a <post /> vocabulary tag. It resolves the post from
@@ -17,9 +18,9 @@ func (s *Server) tagPost(ctx context.Context, ev *template.Evaluator, el *parse.
 	if !ok {
 		panic("<post />: no post in scope")
 	}
-	post, ok := postVal.(PostView)
+	post, ok := postVal.(view.Post)
 	if !ok {
-		panic(fmt.Sprintf("<post />: expected PostView, got %T", postVal))
+		panic(fmt.Sprintf("<post />: expected view.Post, got %T", postVal))
 	}
 
 	engineAttrs := map[string]string{

@@ -8,6 +8,7 @@ import (
 
 	"press/internal/permalink"
 	"press/internal/query"
+	"press/view"
 )
 
 func (s *Server) handleCategory(w http.ResponseWriter, r *http.Request, m *permalink.Match) {
@@ -57,8 +58,8 @@ func (s *Server) handleCategory(w http.ResponseWriter, r *http.Request, m *perma
 	siteData := s.siteData(r)
 	siteData.PageTitle = "Category: " + cat.Name
 
-	data := ArchiveData{
-		SiteData:     siteData,
+	data := view.ArchivePage{
+		Site:     siteData,
 		ArchiveTitle: "Category: " + cat.Name,
 		Posts:        views,
 		HasPrev:      page > 1,

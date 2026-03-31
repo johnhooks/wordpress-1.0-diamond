@@ -8,6 +8,7 @@ import (
 
 	"press/internal/permalink"
 	"press/internal/query"
+	"press/view"
 )
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request, route *permalink.Route) {
@@ -67,8 +68,8 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request, route *pe
 	siteData := s.siteData(r)
 	siteData.PageTitle = "Archive: " + title
 
-	data := ArchiveData{
-		SiteData:     siteData,
+	data := view.ArchivePage{
+		Site:     siteData,
 		ArchiveTitle: "Archive: " + title,
 		Posts:        views,
 		HasPrev:      page > 1,

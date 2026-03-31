@@ -8,6 +8,7 @@ import (
 
 	"press/internal/permalink"
 	"press/internal/permission"
+	"press/view"
 )
 
 func (s *Server) handlePost(w http.ResponseWriter, r *http.Request, m *permalink.Match) {
@@ -78,10 +79,10 @@ func (s *Server) renderPost(w http.ResponseWriter, r *http.Request, post *postRe
 	if err != nil {
 		log.Printf("failed to load comments for post %d: %v", post.ID, err)
 	}
-	var commentViews []CommentView
+	var commentViews []view.Comment
 	for i := range comments {
 		if comments[i].CommentApproved == "1" {
-			commentViews = append(commentViews, newCommentView(&comments[i]))
+			commentViews = append(commentViews, newComment(&comments[i]))
 		}
 	}
 
@@ -100,8 +101,8 @@ func (s *Server) renderPost(w http.ResponseWriter, r *http.Request, post *postRe
 	siteData := s.siteData(r)
 	siteData.PageTitle = post.PostTitle
 
-	data := SingleData{
-		SiteData:     siteData,
+	data := view.SinglePage{
+		Site:     siteData,
 		Post:         post.View,
 		PostID:       post.ID,
 		Comments:     commentViews,
