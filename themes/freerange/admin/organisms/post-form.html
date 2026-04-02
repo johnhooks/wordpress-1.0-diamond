@@ -5,7 +5,8 @@
     {{template "admin-form-errors" .Errors}}
 
     {{template "admin-text-field" .Title}}
-    {{template "admin-textarea-field" .Content}}
+    <div hidden>{{template "admin-textarea-field" .Content}}</div>
+    <the-editor for="content"></the-editor>
     {{template "admin-textarea-field" .Excerpt}}
     {{template "admin-checkbox-group" .Categories}}
     {{template "admin-radio-group" .Status}}
