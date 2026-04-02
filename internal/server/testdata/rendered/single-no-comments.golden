@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Test Blog</title>
     <link rel="stylesheet" href="/theme/style.css"/>
-    <script src="/static/vendor/htmx.org.js" defer></script>
+    
+    <script type="module">import "htmx.org"</script>
 </head>
 <body>
 <div id="wrapper">

@@ -9,3 +9,5 @@ tmp/
 node_modules/
 package-lock.json
 /fixtures
+local/public/vendor/*
+!local/public/vendor/.gitkeep

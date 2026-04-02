@@ -8,9 +8,11 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"press/internal/auth"
 	"press/internal/config"
+	"press/internal/importmap"
 	"press/internal/model"
 	"press/internal/permalink"
 	"press/internal/permission"
@@ -38,8 +40,10 @@ type Server struct {
 	sessions   *repository.SessionsRepository
 	options    *repository.OptionsRepository
 	serializer *prosemirror.Serializer
-	auth       *auth.Service
-	perms      permission.Checker
+	auth        *auth.Service
+	perms       permission.Checker
+	assets      *importmap.Map
+	hashedPaths map[string]string // hashed URL path → original URL path
 }
 
 // New creates a new Server with routes and templates configured.
@@ -74,6 +78,16 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 		return nil, fmt.Errorf("failed to load site theme: %w", err)
 	}
 
+	im, err := importmap.Load(cfg.PublicDir, "vendor", "/static/vendor/")
+	if err != nil {
+		return nil, fmt.Errorf("failed to load import map: %w", err)
+	}
+	theme.assets = im
+	hashedPaths := make(map[string]string, len(im.Hashed))
+	for original, hashed := range im.Hashed {
+		hashedPaths[hashed] = original
+	}
+
 	users := repository.NewUsersRepository(db)
 	sessions := repository.NewSessionsRepository(db)
 	permStore := permission.NewStore(db)
@@ -97,8 +111,10 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 		sessions:   sessions,
 		options:    opts,
 		serializer: prosemirror.DefaultSerializer(),
-		auth:       auth.NewService(users, sessions, secure, cfg.SessionMaxAge),
-		perms:      permission.NewChecker(permStore),
+		auth:        auth.NewService(users, sessions, secure, cfg.SessionMaxAge),
+		perms:       permission.NewChecker(permStore),
+		assets:      im,
+		hashedPaths: hashedPaths,
 	}
 
 	s.registerTagHandlers()
@@ -187,7 +203,16 @@ func (s *Server) Start() error {
 func (s *Server) setupRoutes() {
 	// Static files served from the site's public directory
 	publicFS := os.DirFS(s.cfg.PublicDir)
-	s.mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(publicFS))))
+	staticFallback := http.StripPrefix("/static/", http.FileServer(http.FS(publicFS)))
+	s.mux.Handle("GET /static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if original, ok := s.hashedPaths[r.URL.Path]; ok {
+			fsPath := strings.TrimPrefix(original, "/static/")
+			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			http.ServeFileFS(w, r, publicFS, fsPath)
+			return
+		}
+		staticFallback.ServeHTTP(w, r)
+	}))
 
 	// Theme static files (style.css, images, etc.)
 	themeFS := os.DirFS(s.cfg.ThemeDir)

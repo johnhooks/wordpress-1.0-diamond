@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"press/internal/errors"
+	"press/internal/importmap"
 	"press/internal/template"
 	"press/internal/template/parse"
 )
@@ -22,6 +23,7 @@ type Theme struct {
 	devMode   bool
 	templates map[string]*parse.Node
 	handlers  map[string]template.TagNodeHandler
+	assets    *importmap.Map
 }
 
 // themeDirs is the search order for template directories.
@@ -87,15 +89,18 @@ func (th *Theme) Render(w io.Writer, ctx context.Context, name string, data any)
 	}
 
 	// Write document shell.
+	headHTML := th.assets.HeadHTML()
 	if _, err := fmt.Fprintf(w,
 		"<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n"+
 			"    <meta charset=\"utf-8\"/>\n"+
 			"    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"/>\n"+
 			"    <title>%s</title>\n"+
 			"    <link rel=\"stylesheet\" href=\"/theme/style.css\"/>\n"+
-			"    <script src=\"/static/vendor/htmx.org.js\" defer></script>\n"+
+			"    %s\n"+
+			"    <script type=\"module\">import \"htmx.org\"</script>\n"+
 			"</head>\n<body>\n",
 		html.EscapeString(title),
+		headHTML,
 	); err != nil {
 		return err
 	}

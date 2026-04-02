@@ -1,6 +1,7 @@
 package server
 
 import (
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
@@ -23,6 +24,7 @@ type AdminShell struct {
 	MenuItems   []MenuItem
 	CurrentUser AdminUser
 	Version     string
+	VendorHTML  template.HTML
 }
 
 type AdminUser struct {
@@ -160,7 +162,8 @@ func (s *Server) adminShell(r *http.Request, pageTitle, currentPage string) Admi
 			Login:       user.UserLogin,
 			DisplayName: user.DisplayName,
 		},
-		Version: "1.6-dev",
+		Version:    "1.6-dev",
+		VendorHTML: s.assets.HeadHTML(),
 	}
 }
 
