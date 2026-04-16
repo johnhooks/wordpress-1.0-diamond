@@ -237,7 +237,7 @@ templates handle htmx swaps for inline updates.
 
 The write/edit page contains a ProseMirror editor. This is a web
 component that the engine provides, not something the theme authors.
-The admin theme places a `<press-editor>` element. The engine provides
+The admin theme places a `<the-editor>` element. The engine provides
 the JavaScript, the initial content, the save endpoint, and the
 WebSocket URL for collaboration.
 

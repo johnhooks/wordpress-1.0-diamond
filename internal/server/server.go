@@ -19,6 +19,7 @@ import (
 	"press/internal/prosemirror"
 	"press/internal/query"
 	"press/internal/repository"
+	"press/js"
 	"press/view"
 
 	"github.com/jmoiron/sqlx"
@@ -78,7 +79,33 @@ func New(cfg *config.Config, db *sqlx.DB) (*Server, error) {
 		return nil, fmt.Errorf("failed to load site theme: %w", err)
 	}
 
-	im, err := importmap.Load(cfg.PublicDir, "vendor", "/static/vendor/")
+	var im *importmap.Map
+	if cfg.IsDevelopment() {
+		vendorDir := filepath.Join(cfg.PublicDir, "vendor")
+		entries, _ := os.ReadDir(vendorDir)
+		hasJS := false
+		for _, e := range entries {
+			if !e.IsDir() && strings.HasSuffix(e.Name(), ".js") {
+				hasJS = true
+				break
+			}
+		}
+		if !hasJS {
+			return nil, fmt.Errorf("no vendor JS found in %s — run 'press assets' first", vendorDir)
+		}
+
+		im, err = importmap.BuildDev(
+			importmap.DevSource{FS: js.FS, ScanDir: ".", URLPrefix: "/static/js/"},
+			importmap.DevSource{FS: os.DirFS(cfg.PublicDir), ScanDir: "vendor", URLPrefix: "/static/vendor/"},
+			importmap.DevSource{FS: os.DirFS(cfg.ThemeDir), ScanDir: "js", URLPrefix: "/static/theme/"},
+		)
+	} else {
+		im, err = importmap.Load(cfg.PublicDir,
+			importmap.AssetDir{Dir: "vendor", URLPrefix: "/static/vendor/"},
+			importmap.AssetDir{Dir: "js", URLPrefix: "/static/js/"},
+			importmap.AssetDir{Dir: "theme", URLPrefix: "/static/theme/"},
+		)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to load import map: %w", err)
 	}
@@ -200,8 +227,33 @@ func (s *Server) Start() error {
 	return http.ListenAndServe(addr, s.mux)
 }
 
-func (s *Server) setupRoutes() {
-	// Static files served from the site's public directory
+func (s *Server) setupDevStatic() {
+	noCache := func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Cache-Control", "no-cache")
+			h.ServeHTTP(w, r)
+		})
+	}
+
+	// Engine JS from embed.FS (freshly compiled by Air).
+	s.mux.Handle("GET /static/js/", http.StripPrefix("/static/js/",
+		noCache(http.FileServer(http.FS(js.FS)))))
+
+	// Vendor JS from public/vendor/.
+	vendorFS := os.DirFS(filepath.Join(s.cfg.PublicDir, "vendor"))
+	s.mux.Handle("GET /static/vendor/", http.StripPrefix("/static/vendor/",
+		noCache(http.FileServer(http.FS(vendorFS)))))
+
+	// Theme JS from theme dir (if present).
+	themeJSDir := filepath.Join(s.cfg.ThemeDir, "js")
+	if info, err := os.Stat(themeJSDir); err == nil && info.IsDir() {
+		themeJSFS := os.DirFS(themeJSDir)
+		s.mux.Handle("GET /static/theme/", http.StripPrefix("/static/theme/",
+			noCache(http.FileServer(http.FS(themeJSFS)))))
+	}
+}
+
+func (s *Server) setupProdStatic() {
 	publicFS := os.DirFS(s.cfg.PublicDir)
 	staticFallback := http.StripPrefix("/static/", http.FileServer(http.FS(publicFS)))
 	s.mux.Handle("GET /static/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -213,6 +265,14 @@ func (s *Server) setupRoutes() {
 		}
 		staticFallback.ServeHTTP(w, r)
 	}))
+}
+
+func (s *Server) setupRoutes() {
+	if s.cfg.IsDevelopment() {
+		s.setupDevStatic()
+	} else {
+		s.setupProdStatic()
+	}
 
 	// Theme static files (style.css, images, etc.)
 	themeFS := os.DirFS(s.cfg.ThemeDir)

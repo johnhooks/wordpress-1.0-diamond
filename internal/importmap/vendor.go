@@ -7,8 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
-	"strings"
 	"time"
 )
 
@@ -26,23 +24,23 @@ var commentVersion = regexp.MustCompile(`/\*\s*esm\.sh\s*-\s*([\w@][\w.\-/]*)@(\
 
 var httpClient = &http.Client{Timeout: 30 * time.Second}
 
-// Vendor fetches all packages declared in pins and their transitive
+// Vendor fetches all packages declared in deps and their transitive
 // dependencies from esm.sh, saves them to the vendor directory, and
-// builds the manifest. The resolved pins (with discovered transitive
-// deps) are written back to pinsPath.
+// builds the manifest.
 //
-// pins maps bare specifiers to versions (e.g., "prosemirror-model": "1.24.1").
-// Transitive dependencies are discovered automatically.
-func Vendor(log io.Writer, publicDir, vendorDir, urlPrefix, pinsPath string, pins map[string]string) (*Map, error) {
-	absVendor := filepath.Join(publicDir, vendorDir)
+// deps maps bare specifiers to versions (e.g., "prosemirror-model": "1.24.1").
+// Transitive dependencies are discovered automatically. Files that
+// already exist on disk are skipped.
+func Vendor(log io.Writer, publicDir string, dirs []AssetDir, deps map[string]string) (*Map, error) {
+	absVendor := filepath.Join(publicDir, "vendor")
 	if err := os.MkdirAll(absVendor, 0755); err != nil {
 		return nil, fmt.Errorf("creating vendor dir: %w", err)
 	}
 
 	// resolved tracks every package we need: name → exact version.
-	// Seeded from explicit pins, extended by dependency discovery.
-	resolved := make(map[string]string, len(pins))
-	for name, version := range pins {
+	// Seeded from explicit deps, extended by dependency discovery.
+	resolved := make(map[string]string, len(deps))
+	for name, version := range deps {
 		resolved[name] = version
 	}
 
@@ -51,8 +49,8 @@ func Vendor(log io.Writer, publicDir, vendorDir, urlPrefix, pinsPath string, pin
 	// with semver ranges. We resolve exact versions by fetching each
 	// dep's barrel and reading the comment header.
 	visited := make(map[string]bool)
-	queue := make([]string, 0, len(pins))
-	for name := range pins {
+	queue := make([]string, 0, len(deps))
+	for name := range deps {
 		queue = append(queue, name)
 	}
 
@@ -103,9 +101,16 @@ func Vendor(log io.Writer, publicDir, vendorDir, urlPrefix, pinsPath string, pin
 	}
 
 	// Phase 2: Fetch the actual module code with bare specifiers
-	// (using the * prefix) and save to vendor directory.
+	// (using the * prefix) and save to vendor directory. Skip files
+	// that already exist on disk.
 	fetched := 0
 	for name, version := range resolved {
+		dest := filepath.Join(absVendor, name+".js")
+		if _, err := os.Stat(dest); err == nil {
+			fmt.Fprintf(log, "  exists  %s@%s\n", name, version)
+			continue
+		}
+
 		fetched++
 		fmt.Fprintf(log, "  fetch   %s@%s (%d/%d)\n", name, version, fetched, len(resolved))
 		url := fmt.Sprintf("%s/*%s@%s/es2022/%s.mjs", esmBase, name, version, name)
@@ -114,62 +119,23 @@ func Vendor(log io.Writer, publicDir, vendorDir, urlPrefix, pinsPath string, pin
 			return nil, fmt.Errorf("fetching %s@%s: %w", name, version, err)
 		}
 
-		dest := filepath.Join(absVendor, name+".js")
 		if err := os.WriteFile(dest, []byte(code), 0644); err != nil {
 			return nil, fmt.Errorf("writing %s: %w", dest, err)
 		}
 	}
 
-	// Phase 3: Build manifest from the fetched files.
-	m, err := Build(os.DirFS(publicDir), vendorDir, urlPrefix)
+	// Phase 3: Build manifest from all asset directories.
+	m, err := Build(os.DirFS(publicDir), dirs...)
 	if err != nil {
 		return nil, fmt.Errorf("building manifest: %w", err)
 	}
 
-	manifestPath := filepath.Join(absVendor, manifestFile)
+	manifestPath := filepath.Join(publicDir, manifestFile)
 	if err := m.WriteManifest(manifestPath); err != nil {
 		return nil, fmt.Errorf("writing manifest: %w", err)
 	}
 
-	// Write resolved pins (with discovered transitive deps) back.
-	if err := writePins(pinsPath, resolved); err != nil {
-		return nil, fmt.Errorf("writing pins: %w", err)
-	}
-
 	return m, nil
-}
-
-// writePins writes the resolved pins as a flat JSON map.
-func writePins(path string, resolved map[string]string) error {
-	data, err := marshalSorted(resolved)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0644)
-}
-
-// marshalSorted produces indented JSON with sorted keys.
-func marshalSorted(m map[string]string) ([]byte, error) {
-	keys := sortedKeys(m)
-	var b strings.Builder
-	b.WriteString("{\n")
-	for i, k := range keys {
-		if i > 0 {
-			b.WriteString(",\n")
-		}
-		fmt.Fprintf(&b, "  %q: %q", k, m[k])
-	}
-	b.WriteString("\n}\n")
-	return []byte(b.String()), nil
-}
-
-func sortedKeys(m map[string]string) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 func fetchString(url string) (string, error) {

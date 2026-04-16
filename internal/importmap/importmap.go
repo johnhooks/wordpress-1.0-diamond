@@ -1,7 +1,8 @@
 package importmap
 
 import (
-	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -15,8 +16,15 @@ import (
 
 const manifestFile = "manifest.json"
 
-// Map holds the computed import map for vendored JavaScript modules.
-// Every vendor file is ESM and gets a bare specifier in the import map.
+// AssetDir pairs a directory name within the static filesystem with
+// the URL prefix used to serve its files.
+type AssetDir struct {
+	Dir       string
+	URLPrefix string
+}
+
+// Map holds the computed import map for JavaScript modules.
+// Every asset file is ESM and gets a bare specifier in the import map.
 type Map struct {
 	// Imports maps bare specifiers to hashed URL paths for the
 	// browser's import map resolution.
@@ -26,24 +34,40 @@ type Map struct {
 	// uses this to resolve incoming requests for hashed URLs back to
 	// the original file on disk.
 	Hashed map[string]string `json:"hashed"`
+
+	// Integrity maps hashed URL paths to SRI hashes (sha384-...).
+	Integrity map[string]string `json:"integrity,omitempty"`
 }
 
-// Build scans the vendor directory for .js files and builds the
+// Build scans the given directories for .js files and builds the
 // import map. The bare specifier is the filename without the .js
 // extension (e.g., "prosemirror-model.js" → "prosemirror-model").
-// Each file is content-hashed for cache busting.
+// Each file is content-hashed (SHA-384) for cache busting.
 //
-// If the vendor directory does not exist or contains no .js files,
-// Build returns an empty map.
-func Build(staticFS fs.FS, vendorDir, urlPrefix string) (*Map, error) {
+// If a directory does not exist or contains no .js files, it is
+// skipped. Build returns an empty map when no files are found.
+func Build(staticFS fs.FS, dirs ...AssetDir) (*Map, error) {
 	m := &Map{
-		Imports: make(map[string]string),
-		Hashed:  make(map[string]string),
+		Imports:   make(map[string]string),
+		Hashed:    make(map[string]string),
+		Integrity: make(map[string]string),
 	}
 
-	entries, err := fs.ReadDir(staticFS, vendorDir)
+	for _, d := range dirs {
+		if err := m.scanDir(staticFS, d.Dir, d.URLPrefix); err != nil {
+			return nil, err
+		}
+	}
+
+	return m, nil
+}
+
+// scanDir reads a single directory and populates the map with its
+// .js files. If the directory does not exist, it is silently skipped.
+func (m *Map) scanDir(staticFS fs.FS, dir, urlPrefix string) error {
+	entries, err := fs.ReadDir(staticFS, dir)
 	if err != nil {
-		return m, nil // no vendor directory — empty import map
+		return nil // directory missing — skip
 	}
 
 	for _, entry := range entries {
@@ -54,20 +78,22 @@ func Build(staticFS fs.FS, vendorDir, urlPrefix string) (*Map, error) {
 		filename := entry.Name()
 		specifier := strings.TrimSuffix(filename, ".js")
 
-		data, err := fs.ReadFile(staticFS, path.Join(vendorDir, filename))
+		data, err := fs.ReadFile(staticFS, path.Join(dir, filename))
 		if err != nil {
-			return nil, fmt.Errorf("reading %s: %w", filename, err)
+			return fmt.Errorf("reading %s: %w", filename, err)
 		}
 
-		hash := sha256.Sum256(data)
+		hash := sha512.Sum384(data)
 		digest := hex.EncodeToString(hash[:])
+		sri := "sha384-" + base64.StdEncoding.EncodeToString(hash[:])
 		hashedPath := urlPrefix + specifier + "-" + digest + ".js"
 
 		m.Imports[specifier] = hashedPath
 		m.Hashed[urlPrefix+filename] = hashedPath
+		m.Integrity[hashedPath] = sri
 	}
 
-	return m, nil
+	return nil
 }
 
 // WriteManifest writes the computed map to a JSON file. The file is
@@ -97,22 +123,64 @@ func LoadManifest(filePath string) (*Map, error) {
 	if m.Hashed == nil {
 		m.Hashed = make(map[string]string)
 	}
+	if m.Integrity == nil {
+		m.Integrity = make(map[string]string)
+	}
 	return &m, nil
 }
 
 // Load tries to read a pre-built manifest. If the manifest file does
-// not exist, it falls back to building from vendor files on disk.
-func Load(publicDir, vendorDir, urlPrefix string) (*Map, error) {
-	manifestPath := path.Join(publicDir, vendorDir, manifestFile)
+// not exist, it falls back to building from files on disk.
+func Load(publicDir string, dirs ...AssetDir) (*Map, error) {
+	manifestPath := path.Join(publicDir, manifestFile)
 	m, err := LoadManifest(manifestPath)
 	if err == nil {
 		return m, nil
 	}
-	return Build(os.DirFS(publicDir), vendorDir, urlPrefix)
+	return Build(os.DirFS(publicDir), dirs...)
+}
+
+// DevSource pairs a filesystem with a directory to scan and a URL
+// prefix. Used by BuildDev to assemble an import map from multiple
+// source locations without hashing.
+type DevSource struct {
+	FS        fs.FS
+	ScanDir   string
+	URLPrefix string
+}
+
+// BuildDev builds an import map for development. It scans each source
+// for .js files and maps bare specifiers to unhashed URL paths. No
+// file content is read, no hashing is performed, and the Hashed and
+// Integrity maps are left empty.
+func BuildDev(sources ...DevSource) (*Map, error) {
+	m := &Map{
+		Imports:   make(map[string]string),
+		Hashed:    make(map[string]string),
+		Integrity: make(map[string]string),
+	}
+
+	for _, src := range sources {
+		entries, err := fs.ReadDir(src.FS, src.ScanDir)
+		if err != nil {
+			continue // directory missing — skip
+		}
+
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".js") {
+				continue
+			}
+
+			specifier := strings.TrimSuffix(entry.Name(), ".js")
+			m.Imports[specifier] = src.URLPrefix + entry.Name()
+		}
+	}
+
+	return m, nil
 }
 
 // HeadHTML returns the <script type="importmap"> tag for the document
-// head. Returns empty string if there are no vendor assets.
+// head. Returns empty string if there are no imports.
 func (m *Map) HeadHTML() template.HTML {
 	if m == nil || len(m.Imports) == 0 {
 		return ""
@@ -136,7 +204,30 @@ func (m *Map) HeadHTML() template.HTML {
 		b.WriteByte(':')
 		b.Write(vb)
 	}
-	b.WriteString(`}}</script>`)
+	b.WriteByte('}')
+
+	if len(m.Integrity) > 0 {
+		ikeys := make([]string, 0, len(m.Integrity))
+		for k := range m.Integrity {
+			ikeys = append(ikeys, k)
+		}
+		sort.Strings(ikeys)
+
+		b.WriteString(`,"integrity":{`)
+		for i, k := range ikeys {
+			if i > 0 {
+				b.WriteByte(',')
+			}
+			kb, _ := json.Marshal(k)
+			vb, _ := json.Marshal(m.Integrity[k])
+			b.Write(kb)
+			b.WriteByte(':')
+			b.Write(vb)
+		}
+		b.WriteByte('}')
+	}
+
+	b.WriteString(`}</script>`)
 
 	return template.HTML(b.String())
 }

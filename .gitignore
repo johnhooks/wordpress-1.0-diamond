@@ -9,5 +9,7 @@ tmp/
 node_modules/
 package-lock.json
 /fixtures
-local/public/vendor/*
-!local/public/vendor/.gitkeep
+local/public/vendor/*.js
+local/public/js/
+local/public/theme/
+local/public/manifest.json
